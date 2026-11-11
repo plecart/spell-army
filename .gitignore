@@ -1,0 +1,33 @@
+# Node / pnpm
+**/node_modules/
+.pnpm-store/
+*.log
+
+# Next.js et build
+**/.next/
+**/out/
+**/dist/
+*.tsbuildinfo
+**/coverage/
+.turbo/
+
+# Secrets
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Vercel
+**/.vercel/
+
+# Claude Code
+.claude/worktrees/
+# taste-skill (38 Mo d'assets) : réinstallé depuis skills-lock.json par `npx skills experimental_install`
+.claude/skills/design-taste-frontend/
+.claude/settings.local.json
+
+# Système
+.DS_Store
+Thumbs.db

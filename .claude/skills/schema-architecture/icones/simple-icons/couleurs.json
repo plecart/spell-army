@@ -1,0 +1,12 @@
+{
+  "caddy": "#1F88C0",
+  "celery": "#37814A",
+  "cloudflare": "#F38020",
+  "django": "#092E20",
+  "docker": "#2496ED",
+  "hetzner": "#D50C2D",
+  "keepassxc": "#6CAC4D",
+  "postgresql": "#4169E1",
+  "redis": "#FF4438",
+  "sentry": "#362D59"
+}

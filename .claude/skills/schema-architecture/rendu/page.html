@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<title>Schéma d'architecture</title>
+<!--
+  Le gabarit du rendu, porté de la version 13 validée le 2026-11-03 : le schéma seul, centré dans
+  un carré qui remplit la fenêtre — le côté de l'image est celui de la fenêtre. `scripts/export.py`
+  remplace chaque marqueur en majuscules entre `/*` et `*/` par sa ressource en ligne : les
+  polices en `data:`, rough.js, la description, les icônes qu'elle nomme et l'attribut que la
+  page pose une fois rendue. Aucune requête.
+-->
+<style>
+@font-face { font-family: 'Manrope'; font-weight: 200 800; src: url("/*MANROPE*/") format('woff2'); }
+@font-face { font-family: 'Shantell Sans'; font-weight: 300 800; src: url("/*SHANTELL_SANS*/") format('woff2'); }
+:root {
+  --bg: #F3EDE4; --paper: #FBF8F2; --ink: #2A2622; --ink-2: #6B635A; --line: #DCD3C6;
+  --tape: #E8DFCF; --badge: #FFFDF8; --wire: #6B635A;
+  /* Une couleur par lieu, que la description nomme (`color`). */
+  --z-blue: #D3E6F5; --z-orange: #FBDCC4; --z-red: #F7CFD3; --z-green: #D6EBCB;
+  --z-grey: #E6E0D6; --z-lane: #F1ECE4; --z-gold: #F4E3A1;
+  --f-hand: 'Shantell Sans', 'Comic Sans MS', 'Segoe Print', cursive;
+  --f-body: 'Manrope', 'Segoe UI', system-ui, sans-serif;
+}
+
+body { margin: 0; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; }
+#carre { width: 100vmin; height: 100vmin; display: grid; place-items: center; }
+#cadre { position: relative; overflow: hidden; }
+.stage { position: relative; transform-origin: 0 0; }
+.stage svg.wires { position: absolute; inset: 0; overflow: visible; }
+.zone-label { position: absolute; display: flex; align-items: center; gap: 8px; font: 700 22px var(--f-hand); color: var(--ink);
+  padding: 2px 8px 2px 2px; border-radius: 8px; }
+.zone-label .ico { width: 36px; height: 36px; border-radius: 9px; }
+.zone-label .ico svg { width: 24px; height: 24px; }
+.zone-label.lane { font-size: 16px; font-weight: 500; color: var(--ink-2); }
+
+.card { position: absolute; box-sizing: border-box; background: var(--paper); border-radius: 2px; padding: 18px 12px 14px;
+  box-shadow: 0 1px 2px rgba(42,38,34,.08), 0 4px 12px rgba(42,38,34,.12); display: grid; gap: 6px; }
+/* Le scotch, centré sur le bord haut d'une carte ou d'une étiquette. */
+.card::before, .sticker::before { content: ""; position: absolute; left: 50%; background: var(--tape); opacity: .9; }
+.card::before { top: -9px; width: 54px; height: 18px; transform: translateX(-50%) rotate(var(--tilt, -2deg)); }
+.card .head { display: grid; justify-items: center; gap: 8px; text-align: center; }
+.ico { width: 34px; height: 34px; flex: none; border-radius: 9px; background: var(--badge); display: grid; place-items: center;
+  box-shadow: inset 0 0 0 1px rgba(42,38,34,.10); }
+.ico svg { width: 22px; height: 22px; }
+.card .ico { width: 56px; height: 56px; border-radius: 14px; }
+.card .ico svg { width: 38px; height: 38px; }
+.card .t { font: 800 16px/1.2 var(--f-body); text-wrap: balance; }
+/* Le logo du gestionnaire de secrets, posé sur ce qui détient un jeton ou une clé dont il garde la copie ; son titre dit lequel. */
+.kp { width: 30px; height: 30px; border-radius: 8px; background: var(--badge); display: inline-grid; place-items: center;
+  box-shadow: inset 0 0 0 1px rgba(42,38,34,.12); }
+.kp svg { width: 20px; height: 20px; }
+.card .kp { position: absolute; top: 8px; right: 8px; }
+/* L'étiquette d'un service tiers que la carte appelle, scotchée sur son coin bas-droit, sans flèche. */
+.sticker { position: absolute; right: -22px; bottom: -12px; z-index: 1; display: flex; align-items: center; gap: 5px;
+  padding: 3px 9px 3px 7px; background: var(--paper); font: 700 14px var(--f-hand); transform: rotate(-3deg);
+  box-shadow: 0 1px 2px rgba(42,38,34,.10), 0 3px 8px rgba(42,38,34,.16); }
+.sticker::before { top: -6px; width: 30px; height: 12px; transform: translateX(-50%) rotate(5deg); }
+.sticker svg { width: 17px; height: 17px; }
+</style>
+
+<div id="carre"><div id="cadre"><div class="stage" id="stage"></div></div></div>
+
+<script>/*ROUGH*/</script>
+<script>
+const DESCRIPTION = /*DESCRIPTION*/;
+// Le SVG de chaque icône que nomme la description, un logo déjà peint à sa couleur.
+const ICONES = /*ICONES*/;
+
+// Le rendu : rien ci-dessous ne connaît un projet. Les sections s'empilent de haut en bas, à écart
+// constant ; une section en contient d'autres (zones) ou des rangées de cartes (rows), placées sur
+// une grille de colonnes commune à toutes, pour que les traits verticaux restent droits.
+const L = { cw: 230, card: 180, head: 64, rowGap: 30, pad: 24, inset: 14, gap: 40, side: 28, split: 6 };
+const NS = 'http://www.w3.org/2000/svg';
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function icone(nom, cls = 'ico') { const e = el('span', cls); e.innerHTML = ICONES[nom]; return e; }
+const members = e => Array.isArray(e) ? e : [e];
+const depthOf = zs => Math.max(0, ...zs.flatMap(members).map(z => 1 + depthOf(z.zones || [])));
+const center = r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
+
+function render() {
+  const D = DESCRIPTION, depth = depthOf(D.zones), x0 = L.side + depth * L.inset;
+  const W = x0 * 2 + D.columns * L.cw;
+  const stage = document.getElementById('stage');
+  stage.style.width = W + 'px';
+
+  // 1. Les cartes, posées hors champ le temps de mesurer leur hauteur.
+  const nodes = {};
+  const all = [];
+  (function collect(zs) { for (const z of zs.flatMap(members)) { for (const row of z.rows || []) all.push(...row); collect(z.zones || []); } })(D.zones);
+  all.forEach((c, i) => {
+    const n = el('div', 'card'), head = el('div', 'head');
+    if (c.secret) {
+      const kp = icone(D.secretManager.icon, 'kp');
+      kp.title = `Dans ${D.secretManager.name} : ${c.secret}`;
+      n.append(kp);
+    }
+    if (c.sticker) {
+      const sticker = icone(c.sticker.icon, 'sticker');
+      sticker.append(c.sticker.name);
+      n.append(sticker);
+    }
+    head.append(icone(c.icon), el('div', 't', c.name));
+    n.append(head);
+    n.style.width = L.card + 'px';
+    n.style.setProperty('--tilt', (i % 3 - 1) * 3 + 'deg');
+    stage.append(n);
+    nodes[c.id] = n;
+  });
+
+  // 2. Les sections, de haut en bas : une section mesure son nom, ses rangées, puis ses sous-sections.
+  // Sans span, elle prend celui de sa parente. Au bord de sa parente, elle s'en écarte d'un retrait
+  // par niveau ; contre une voisine, d'un interstice.
+  const boxes = [], cards = {};
+  function place(z, y, level, parent) {
+    const [c0, c1] = z.span || parent.span;
+    const left = c0 === parent.span[0] ? parent.x + L.inset : x0 + c0 * L.cw + L.split;
+    const right = c1 === parent.span[1] ? parent.x + parent.w - L.inset : x0 + (c1 + 1) * L.cw - L.split;
+    const box = { z, level, span: [c0, c1], x: left, y, w: right - left };
+    let cur = y + L.head;
+    for (const row of z.rows || []) {
+      const h = Math.max(...row.map(c => nodes[c.id].offsetHeight));
+      for (const c of row) {
+        const n = nodes[c.id], x = x0 + c.column * L.cw + (L.cw - L.card) / 2;
+        n.style.left = x + 'px'; n.style.top = cur + 'px';
+        cards[c.id] = { x, y: cur, w: n.offsetWidth, h: n.offsetHeight };
+      }
+      cur += h + L.rowGap;
+    }
+    const zones = z.zones || [];
+    for (const e of zones) cur = band(e, cur, level + 1, box) + L.pad;
+    box.h = cur - (zones.length ? L.pad : L.rowGap) + L.pad - y;
+    boxes.push(box);
+    return box;
+  }
+  // Une bande : ses sections côte à côte, étirées à la hauteur de la plus haute.
+  function band(e, y, level, parent) {
+    const bs = members(e).map(z => place(z, y, level, parent)), bottom = Math.max(...bs.map(b => b.y + b.h));
+    for (const b of bs) b.h = bottom - b.y;
+    return bottom;
+  }
+  const schema = { span: [0, D.columns - 1], x: L.side, w: W - 2 * L.side };
+  let y = 6;
+  for (const e of D.zones) y = band(e, y, 1, schema) + L.gap;
+  const H = y + 10;
+  stage.style.height = H + 'px';
+
+  const svg = document.createElementNS(NS, 'svg');
+  svg.classList.add('wires'); svg.setAttribute('width', W); svg.setAttribute('height', H);
+  stage.prepend(svg);
+  const rc = rough.svg(svg), seed = 7;
+  for (const b of boxes.sort((a, c) => a.level - c.level)) {
+    const fill = css('--z-' + b.z.color);
+    svg.append(rc.rectangle(b.x, b.y, b.w, b.h, { seed, roughness: 1.3, stroke: css('--line'), strokeWidth: 1.5, fill, fillStyle: 'solid' }));
+    const lab = el('div', 'zone-label' + (b.z.icon ? '' : ' lane'));
+    if (b.z.icon) lab.append(icone(b.z.icon));
+    lab.append(b.z.label);
+    lab.style.left = b.x + 12 + 'px'; lab.style.top = b.y + (b.z.icon ? 10 : 12) + 'px';
+    lab.style.background = fill;   // un trait qui passe dessous ne raye pas le nom
+    stage.append(lab);
+  }
+
+  // 3. Les liens : des courbes douces, la pointe dans l'axe de leur fin. Entre deux rangées, un lien
+  // part et arrive à côté du scotch ; « route » fait un détour à coins arrondis.
+  const stroke = css('--wire'), TAPE = 40, GAP = 4, R = 18;
+  const draw = d => {
+    const e = document.createElementNS(NS, 'path');
+    for (const [k, v] of Object.entries({ d, fill: 'none', stroke, 'stroke-width': 1.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }))
+      e.setAttribute(k, v);
+    svg.append(e);
+  };
+  const tip = (end, from) => {
+    const a = Math.atan2(end.y - from.y, end.x - from.x), k = 9;
+    const wing = s => `${end.x - k * Math.cos(a + s * .42)},${end.y - k * Math.sin(a + s * .42)}`;
+    draw(`M${wing(-1)} L${end.x},${end.y} L${wing(1)}`);
+  };
+  // Une ligne brisée aux coins arrondis.
+  const rounded = pts => pts.slice(1, -1).reduce((d, p, i) => {
+    const toward = (q, len) => { const l = Math.hypot(q.x - p.x, q.y - p.y); return `${p.x + (q.x - p.x) * len / l},${p.y + (q.y - p.y) * len / l}`; };
+    return `${d} L${toward(pts[i], R)} Q${p.x},${p.y} ${toward(pts[i + 2], R)}`;
+  }, `M${pts[0].x},${pts[0].y}`) + ` L${pts.at(-1).x},${pts.at(-1).y}`;
+
+  for (const l of D.links || []) {
+    const A = cards[l.from], B = cards[l.to], a = center(A), b = center(B);
+    if (l.route) {
+      let pts;
+      if (l.route === 'under') {
+        const yy = Math.max(A.y + A.h, B.y + B.h) + 22;
+        pts = [{ x: a.x, y: A.y + A.h + GAP }, { x: a.x, y: yy }, { x: b.x, y: yy }, { x: b.x, y: B.y + B.h + GAP }];
+      } else {
+        const left = l.route === 'left', mx = left ? L.side / 2 : W - L.side / 2, ex = r => left ? r.x - GAP : r.x + r.w + GAP;
+        pts = [{ x: ex(A), y: a.y }, { x: mx, y: a.y }, { x: mx, y: b.y }, { x: ex(B), y: b.y }];
+      }
+      draw(rounded(pts));
+      tip(pts[3], pts[2]);
+    } else if (Math.abs(b.y - a.y) > (A.h + B.h) / 2) {
+      // Rangées différentes : de bas en haut ou de haut en bas, décalé du scotch qui coiffe chaque carte.
+      const dir = Math.sign(b.y - a.y), s = Math.sign(b.x - a.x);
+      const off = s ? TAPE * s : TAPE, p = { x: a.x + off, y: dir > 0 ? A.y + A.h + GAP : A.y - GAP };
+      const q = { x: s ? b.x - off : b.x + off, y: dir > 0 ? B.y - GAP : B.y + B.h + GAP }, k = Math.abs(q.y - p.y) / 2;
+      const c2 = { x: q.x, y: q.y - dir * k };
+      draw(`M${p.x},${p.y} C${p.x},${p.y + dir * k} ${c2.x},${c2.y} ${q.x},${q.y}`);
+      tip(q, c2);
+    } else {
+      // Même rangée : de côté à côté.
+      const dir = Math.sign(b.x - a.x), p = { x: dir > 0 ? A.x + A.w + GAP : A.x - GAP, y: a.y };
+      const q = { x: dir > 0 ? B.x - GAP : B.x + B.w + GAP, y: b.y }, k = Math.abs(q.x - p.x) / 2;
+      const c2 = { x: q.x - dir * k, y: q.y };
+      draw(`M${p.x},${p.y} C${p.x + dir * k},${p.y} ${c2.x},${c2.y} ${q.x},${q.y}`);
+      tip(q, c2);
+    }
+  }
+
+  // Le schéma tient dans 92 % du carré, à son échelle.
+  const side = Math.min(innerWidth, innerHeight), s = Math.min(side * .92 / W, side * .92 / H), cadre = document.getElementById('cadre');
+  stage.style.transform = `scale(${s})`;
+  cadre.style.width = W * s + 'px'; cadre.style.height = H * s + 'px';
+}
+
+// Le rendu attend toutes les polices, puis pose sur `<body>` l'attribut que l'export injecte ici et
+// attend avant de capturer.
+Promise.all([...document.fonts].map(f => f.load())).then(() => { render(); document.body.setAttribute(/*PRET*/, ''); });
+</script>

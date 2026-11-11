@@ -1,0 +1,53 @@
+{
+  "$schema": "https://www.schemastore.org/claude-code-settings.json",
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git switch *)",
+      "Bash(git branch *)",
+      "Bash(git worktree *)",
+      "Bash(git fetch *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(gh issue *)",
+      "Bash(gh pr *)",
+      "Bash(gh label *)",
+      "Bash(npx skills *)",
+      "Bash(python .claude/skills/cycle-pr/scripts/merge-lot.py *)",
+      "Bash(python .claude/skills/cycle-pr/scripts/porte-merge.py *)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs"
+    ],
+    "ask": [
+      "Bash(gh pr merge *)",
+      "Bash(rtk gh pr merge *)",
+      "Bash(rtk proxy gh pr merge *)",
+      "PowerShell(gh pr merge *)",
+      "Bash(gh pr update-branch *)",
+      "Bash(rtk gh pr update-branch *)",
+      "Bash(rtk proxy gh pr update-branch *)",
+      "PowerShell(gh pr update-branch *)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Bash(rtk read *.env*)",
+      "Bash(rtk grep *.env*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f*)",
+      "Bash(git push * +*)",
+      "Bash(git push -uf*)",
+      "Bash(git push * -uf*)",
+      "Edit(/.claude/skills/cycle-pr/scripts/merge-lot.py)"
+    ]
+  }
+}
