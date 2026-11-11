@@ -54,7 +54,8 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
   - Site : `apps/web/` (site public)
   - Vidéo : `apps/video/` (phase 2)
   - Infrastructure : `packages/donnees/` (Drizzle, migrations), `.github/`, configuration Vercel
-- zones sensibles (arrêt humain — cadence dans `.claude/rules/contraintes.md`) : authentification du serveur MCP ; secrets (clé du fournisseur d'abonnés, jeton MCP) ; migrations de base ; import des joueurs ; écrans à valider visuellement
+- zones sensibles (arrêt humain — cadence dans `.claude/rules/contraintes.md`) : authentification du serveur MCP ; secrets (clé du fournisseur d'abonnés, jeton MCP, mots de passe des comptes, codes de récupération) ; migrations de base ; import des joueurs ; écrans à valider visuellement
+- secrets — convention du projet (`docs/etudes/00-cadrage.md` § 2, « Architecture », ligne « Secrets ») : tout secret vit dans KeePassXC, qui fait référence. Le mainteneur les crée, les range et les saisit lui-même (réglages Vercel, `/mcp`, fichier `.env` local, exclu par `.gitignore` hors `.env.example`). Aucun secret dans un fichier suivi par git, une issue ou une conversation ; une session ne demande jamais d'en coller un.
 - hors périmètre : back-office web (remplacé par le serveur MCP) ; gestion des désabonnés ; Redis ou tout service auto-hébergé ; règle du jeu dans une fonction propre à Vercel
 - surfaces exposées — ce que la QA a le droit de vérifier ; ne lister que ce qui existe :
   interface web (site public), serveur MCP (API HTTP), persistance (Postgres), traitements asynchrones (tâches planifiées d'import et de combat), fichiers produits (vidéos, phase 2)

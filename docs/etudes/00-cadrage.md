@@ -85,6 +85,7 @@ Trois statuts, à ne pas confondre :
 | Pré-prod et prod | Toutes deux visibles en public. La pré-prod montre les personnages issus des abonnés du compte personnel du mainteneur et renvoie vers ce compte ; la prod, ceux du compte dédié. | Décidé |
 | Bandeau bêta | La pré-prod affiche un bandeau « bêta » pour qu'on ne la confonde pas avec la prod. Il est piloté par une variable d'environnement, pas par du code propre à chaque environnement. | Décidé |
 | Nom de domaine | Un domaine entièrement au nom du projet : aucune adresse Vercel visible par le public. | Décidé |
+| Secrets | Tout ce qui est sensible (jetons, mots de passe des comptes, codes de récupération) est conservé dans KeePassXC, qui fait référence. Aucun secret dans le dépôt, dans une issue ou dans une conversation. En fin de projet, le mainteneur sauvegarde la base sur un disque externe. | Décidé |
 
 ### Modèles 3D
 
