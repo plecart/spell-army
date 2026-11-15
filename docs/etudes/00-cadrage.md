@@ -103,7 +103,7 @@ Trois statuts, à ne pas confondre :
 | `/prototype` (Emil Kowalski), `taste-skill`, `no-ai-slop` | Installés au setup. | Décidé |
 | `agent-reach` | Installé au setup, pour lire le compte `@Game_feel_prompts`. Réserve : compte Instagram secondaire conseillé ; lecture des vidéos à vérifier à l'essai. | Décidé |
 | claude-code-game-studios | Installé au moment de finaliser le game design ; retiré s'il ne fait pas évoluer l'idée. | Décidé |
-| MCP Vercel, MCP Neon, `mcp-builder`, skills Vercel/React | Installés au setup. | Proposé |
+| MCP Vercel, `mcp-builder`, skills Vercel/React | Installés au setup. MCP Neon reporté : pas de compte Neon au moment du setup. | Proposé |
 | Outils vidéo et son (Remotion, Openverse, earshot, Real SFX, etc.) | Essayés ensemble en phase 2. | Décidé |
 
 Règle générale : un outil cité par le mainteneur s'installe et s'essaie avant d'être écarté.
@@ -144,8 +144,8 @@ Règle générale : un outil cité par le mainteneur s'installe et s'essaie avan
 
 ## 6. Ordre des travaux
 
-1. **Setup**, à la racine du projet : mettre les études à l'abri, supprimer l'historique git du
-   boilerplate, lancer `init-projet`, installer les outils. Non lancé : attend l'accord du mainteneur.
+1. **Setup**, à la racine du projet : mettre les études à l'abri, déplacer l'historique git du
+   boilerplate dans un dossier de sauvegarde hors du projet, lancer `init-projet`, installer les outils. Non lancé : attend l'accord du mainteneur.
 2. ADR à partir de ce cadrage.
 3. Game design avec game-studios ; direction artistique avec `/prototype`.
 4. PRD, puis issues.
