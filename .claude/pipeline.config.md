@@ -11,9 +11,12 @@ Ordre de normativité : **en cas de contradiction, le rang le plus haut l'emport
 | Rang | Fichier | Portée | Où s'inscrit un amendement |
 |---|---|---|---|
 | 1 | `docs/etudes/00-cadrage.md` | décisions du mainteneur (concept, joueurs, combat et calibrage, architecture, modèles 3D, outils), statuts Décidé/Proposé/Ouvert | le tableau ou § concerné, statut mis à jour, date « État au » de l'en-tête mise à jour |
-| 2 | issues GitHub ouvertes | découpage et planification, **dérivés** des rangs supérieurs | le corps de l'issue, jamais un commentaire — voir `repercussions` |
+| 2 | `docs/adr/*.md` | décisions techniques détaillant le cadrage : architecture, tâches planifiées, import des abonnés, environnements et sécurité | le § concerné de l'ADR, avec une ligne datée sous « Statut » ; une décision remplacée passe par un nouvel ADR qui le dit |
+| 2 | `docs/game-design.md` | règles du jeu détaillant le cadrage : personnage, sorts, monstre, combat, calibrage, saison | le tableau ou § concerné, statut mis à jour, date « État au » de l'en-tête mise à jour |
+| 3 | issues GitHub ouvertes | découpage et planification, **dérivés** des rangs supérieurs | le corps de l'issue, jamais un commentaire — voir `repercussions` |
 
-Les ADR, quand ils existeront (`docs/adr/`), s'insèreront dans ce tableau par une reconfiguration `init-projet`.
+Les deux documents de rang 2 ont des portées disjointes : technique pour les ADR, règles du jeu pour le
+game design.
 
 **Non normatif :** `docs/etudes/01-*.md` à `08-*.md` — études préparatoires, raisonnement et options écartées ; rien ne s'y décide.
 
@@ -22,7 +25,7 @@ Toute référence croisée cite un **§ ou un titre de section**, jamais un num�
 ## Stack
 - langages : TypeScript
 - frameworks : Next.js (App Router) sur Vercel, Drizzle ORM, Postgres Neon
-- gestionnaire de paquets : pnpm (monorepo pnpm workspaces — découpage proposé, non encore validé)
+- gestionnaire de paquets : pnpm (monorepo pnpm workspaces, un paquet par domaine — ADR 0001)
 - runtime + version : node 24
 
 ## Commandes du projet
