@@ -13,10 +13,11 @@ Ordre de normativité : **en cas de contradiction, le rang le plus haut l'emport
 | 1 | `docs/etudes/00-cadrage.md` | décisions du mainteneur (concept, joueurs, combat et calibrage, architecture, modèles 3D, outils), statuts Décidé/Proposé/Ouvert | le tableau ou § concerné, statut mis à jour, date « État au » de l'en-tête mise à jour |
 | 2 | `docs/adr/*.md` | décisions techniques détaillant le cadrage : architecture, tâches planifiées, import des abonnés, environnements et sécurité | le § concerné de l'ADR, avec une ligne datée sous « Statut » ; une décision remplacée passe par un nouvel ADR qui le dit |
 | 2 | `docs/game-design.md` | règles du jeu détaillant le cadrage : personnage, sorts, monstre, combat, calibrage, saison | le tableau ou § concerné, statut mis à jour, date « État au » de l'en-tête mise à jour |
+| 2 | `docs/direction-artistique.md` | direction artistique détaillant le cadrage : style, couleurs, site au MVP, carte de sort, décor et socle, personnages, contrat du fichier 3D | le tableau ou § concerné, statut mis à jour, date « État au » de l'en-tête mise à jour |
 | 3 | issues GitHub ouvertes | découpage et planification, **dérivés** des rangs supérieurs | le corps de l'issue, jamais un commentaire — voir `repercussions` |
 
-Les deux documents de rang 2 ont des portées disjointes : technique pour les ADR, règles du jeu pour le
-game design.
+Les documents de rang 2 ont des portées disjointes : technique pour les ADR, règles du jeu pour le
+game design, apparence et contrat des fichiers 3D pour la direction artistique.
 
 **Non normatif :** `docs/etudes/01-*.md` à `08-*.md` — études préparatoires, raisonnement et options écartées ; rien ne s'y décide.
 

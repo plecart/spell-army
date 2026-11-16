@@ -24,7 +24,7 @@ ligne ; il produit le script d'une vidéo, qui peut condenser ou romancer.
 | Tirage des stats | Chaque stat part de son minimum ; les points restants sont donnés un par un, au hasard de l'identifiant, aux stats sous leur maximum. Une classe est valide si Σ minimums ≤ 30 ≤ Σ maximums (vérifié par un test). Dés dérivés d'un hachage de l'identifiant, jamais du générateur aléatoire du langage. | Proposé |
 | Sort | **Un seul sort par personnage**, tiré **indépendamment de la classe** (contre-emploi assumé). | Décidé |
 | Attribution du sort | Tiré **une fois, à l'inscription**, dans la réserve tirable du moment, puis enregistré. Ajouter un sort ne change pas ceux des joueurs inscrits. Le mainteneur peut donner un sort à la main. Classe et stats restent un pur calcul à partir de l'identifiant. | Proposé |
-| Personnalisation | Plus tard, hors MVP. | Décidé |
+| Personnalisation | Plus tard, hors MVP. Au MVP, chaque personnage reçoit le modèle, le décor et le socle de sa classe ; les changer personnage par personnage, par le MCP, vient plus tard. Aucun choix n'est fait par le joueur ([direction artistique](direction-artistique.md) § 5). | Décidé |
 
 ## 2. Les sorts
 
@@ -144,7 +144,7 @@ Tous ces réglages vivent en base, modifiables par le MCP.
 
 | Sujet | Règle | Statut |
 |---|---|---|
-| L'afficher ? | Le mainteneur doute que ce soit constructif. Voir § 10, point 1. | Ouvert |
+| L'afficher ? | Pas au MVP : le site y est l'annuaire seul ([cadrage](etudes/00-cadrage.md), « Combat et calibrage », ligne « Site »). Après le MVP, le mainteneur doute encore que ce soit constructif. | Ouvert |
 | Si affichée | « Si on combattait maintenant » : le combat de minuit simulé quelques milliers de fois avec l'armée du moment. Un fait, pas une projection ; il monte à chaque recrue ; aucun objectif de recrues affiché. | Proposé |
 
 ## 9. Le journal du combat
@@ -165,7 +165,7 @@ commentaires de la vidéo précédente relèvent de la phase 2, hors journal.
 
 | # | Sujet | Ce qu'il faut |
 |---|---|---|
-| 1 | Cadrage, ligne « Site » (Décidé) : « Affiche les statistiques du monstre et une prédiction ». Le mainteneur doute de la prédiction ; rien n'est contredit tant qu'il ne l'a pas retirée. | Trancher ; amender le cadrage si on la retire. |
+| 1 | Prédiction : le cadrage, ligne « Site », la sort du MVP le 2026-11-16, avec les statistiques du monstre. Reste à savoir si elle revient après le MVP. | Trancher après le MVP ; amender le cadrage si on la retire tout à fait. |
 | 2 | Cadrage, « Conception de l'import », point 2 (Proposé) et ADR 0001 / 0003 : « le personnage est un calcul à partir de l'identifiant ». Ce document stocke le sort à l'inscription. Classe et stats restent calculées ; le tirage du sort reste une fonction pure (identifiant, réserve), écrite une fois, ce que l'import idempotent permet. | Préciser l'ADR 0003 au moment de l'implémenter. |
 | 3 | Plages des classes, coefficients des sorts et des attaques, équilibre, recrue moyenne : **réglés le 2026-11-16** (annexes A et B, § 3, § 4, § 6). Restent mesurés, non corrigés : retirer toute une classe déplace la victoire de −4 (Golem) à +5 points (Magicien) ; en duel (armée de 1), un sort de soin pur ne peut pas gagner, et le combat finit souvent au garde-fou. Sensibilité à p : sous 2 % de recrues par jour, victoire de 51 à 60 % quel que soit p ; à 10 %, 85 / 70 / 58 % pour p = 0,5 / 0,7 / 0,9. | Revoir si une classe ou un sort est ajouté : un nouveau sort se mesure contre la réserve avant d'y entrer. |
 | 4 | Effets des particularités des monstres ; contenu des 30 monstres et de l'histoire de la saison 1. | Après le MVP du moteur. |
