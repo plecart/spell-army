@@ -1,6 +1,7 @@
 # ADR 0003 — Import des abonnés : outil tiers, deux passes, auto-contrôle, retrait RGPD
 
 - **Statut** : accepté le 2026-11-15. L'essai réel du fournisseur reste à faire : il a lieu en dernier.
+  Précisé le 2026-11-16 : le sort est tiré et stocké à l'inscription (ligne « Sort à l'inscription »).
 - **Source** : `docs/etudes/00-cadrage.md` § 2 « Joueurs » et § 4 ; étude `06-abonnes-outils-tiers.md`
 
 ## Contexte
@@ -17,6 +18,7 @@ L'API officielle d'Instagram ne donne que le nombre d'abonnés, pas leur liste. 
 | Données stockées | Identifiant numérique Instagram (en texte, jamais en nombre JS) et pseudo. Pas de photo de profil. | Décidé (cadrage) |
 | Désabonnés | Non gérés : le personnage reste. | Décidé (cadrage) |
 | Écriture | Rejouable : on ajoute le joueur s'il manque, sinon on ne touche à rien ; la clé est l'identifiant. Chaque page s'écrit d'un bloc, en une transaction. La date d'arrivée est la première fois qu'on voit le joueur, et elle ne change plus. | Accepté le 2026-11-15 |
+| Sort à l'inscription | Quand l'écriture ajoute un joueur, elle lui tire son sort dans la réserve tirable du moment et le stocke dans la même transaction. Le tirage est une fonction pure (identifiant, réserve) de `packages/personnages`. Un joueur déjà présent garde le sien. Classe et statistiques restent calculées à partir de l'identifiant et ne sont pas stockées ([game design](../game-design.md) § 1, § 10 point 2). | Précisé le 2026-11-16 |
 | Passe rapide | À chaque tic, on lit depuis le haut de la liste et on s'arrête après une page entière de joueurs connus. | Accepté le 2026-11-15 |
 | Passe complète | Une fois par semaine, on relit toute la liste pour rattraper les oublis. Le curseur est noté en base, et une passe interrompue reprend au tic suivant. | Accepté le 2026-11-15 |
 | Auto-contrôle | Notre nombre de joueurs doit rester supérieur ou égal au nombre d'abonnés affiché par Instagram. Sinon, une passe complète part seule, **au plus une fois par 24 h**, pour qu'une liste tronquée ne la relance pas à chaque heure. | Accepté le 2026-11-15 |
@@ -27,8 +29,10 @@ L'API officielle d'Instagram ne donne que le nombre d'abonnés, pas leur liste. 
 
 ## Pourquoi c'est réparable seul
 
-L'écriture est idempotente et le personnage se calcule depuis l'identifiant. Un import en double, en
-retard ou dans le désordre ne change donc rien au résultat. La passe rapide repose sur un tri du plus
+L'écriture est idempotente, et la classe et les statistiques se calculent depuis l'identifiant. Un
+import en double ou dans le désordre ne change donc rien au résultat. Un import en retard ne change que
+le sort, et seulement si un sort a été ajouté à la réserve entre-temps : le joueur peut alors le
+recevoir, ce qui reste acceptable. La passe rapide repose sur un tri du plus
 récent au plus ancien, que rien ne garantit encore. Si ce tri est faux, l'auto-contrôle le détecte et
 la passe complète rattrape les oublis.
 
