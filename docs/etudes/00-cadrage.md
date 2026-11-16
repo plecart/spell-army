@@ -1,7 +1,7 @@
 # Wizard Army — Cadrage
 
-État au 2026-11-16. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`) et
-le [game design](../game-design.md) en détaillent des parties ; il sert de source au PRD.
+État au 2026-11-16. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
+le [game design](../game-design.md) et la [direction artistique](../direction-artistique.md) en détaillent des parties ; il sert de source au PRD.
 
 Trois statuts, à ne pas confondre :
 
@@ -67,7 +67,7 @@ Trois statuts, à ne pas confondre :
 | Après une défaite | Même monstre le lendemain. Le monstre ne grossit qu'après une victoire. | Décidé |
 | Réglage du pourcentage | Revu tous les 3 jours ; revu à la baisse après 2 défaites de suite. | Décidé |
 | Où vit le pourcentage | En base, modifiable par le MCP. | Proposé |
-| Site | Affiche les statistiques du monstre et une prédiction. | Décidé |
+| Site | Au MVP, l'annuaire des personnages seul ([direction artistique](../direction-artistique.md) § 3). Les statistiques du monstre viennent après le MVP ; la prédiction aussi, si elle est gardée ([game design](../game-design.md) § 8). | Décidé |
 | Trucage | On peut présélectionner des personnages qui seront forcément tirés (commentaire populaire, marque). | Décidé |
 | Statistiques, classes, sorts, formules | Réglés par le [game design](../game-design.md) (§ 1 à § 4, annexes A et B), qui porte le statut de chaque règle. Les propositions de l'étude 05 (rangs, multiplicateur 60–150 %) **ne sont pas retenues**. | Décidé |
 
@@ -96,8 +96,9 @@ Trois statuts, à ne pas confondre :
 |---|---|---|
 | Exigences | Même modèle sur le site et dans la vidéo ; même thème ; personnalisable par joueur ; modifiable. | Décidé |
 | Stockage | En base, géré par le MCP. | Décidé |
-| Format | Un fichier GLB de référence par type de personnage ou de monstre, plus une fiche de personnalisation par joueur (couleurs, chapeau, taille) tirée du seed. | Proposé |
-| Fabrication | Serveur MCP officiel de Blender (blender.org, projet « Lab ») en premier candidat ; Blender et ce serveur s'installent au moment de créer les personnages, pas avant. À essayer alors sur le premier modèle : quelques skills de `arjun988/blender-skills` (personnage, squelette, export), pas les 94. Le MCP Godot reste à regarder. | Ouvert |
+| Format | Un fichier GLB de référence par classe et par monstre, le même pour le site et la vidéo, qui respecte un contrat (ancres nommées, pièces rigides) : un designer peut le remplacer sans toucher au code ([direction artistique](../direction-artistique.md) § 7). Pas de variation par joueur au MVP : chaque classe a un modèle, un décor et un socle par défaut, que chaque personnage reçoit et qui pourront plus tard être changés personnage par personnage par le MCP ([direction artistique](../direction-artistique.md) § 5). | Décidé |
+| Fabrication | Blender, installé le 2026-11-16. Personnages en pièces rigides flottantes, animées par leurs ancres : ni fusion des volumes ni poids d'os, écartés par l'essai du même jour ([direction artistique](../direction-artistique.md) § 6). | Décidé |
+| Pilotage de Blender | Serveur MCP officiel de Blender (blender.org, projet « Lab ») en premier candidat ; l'essai s'en est passé, Blender piloté par un script Python. À essayer sur le premier modèle : quelques skills de `arjun988/blender-skills` (personnage, export), pas les 94. Le MCP Godot reste à regarder. | Ouvert |
 
 ### Outils
 
@@ -116,9 +117,7 @@ Règle générale : un outil cité par le mainteneur s'installe et s'essaie avan
 
 | Sujet | Quand | Avec |
 |---|---|---|
-| Format et fabrication des modèles 3D | Direction artistique | MCP Blender |
-| Direction artistique, thème récurrent | Après le setup | `/prototype` |
-| Organisation du site : boss du jour en accueil, annuaire à part | Direction artistique | mainteneur |
+| Design final des personnages, des monstres et des visuels de sort | Avant leur fabrication | mainteneur, avec ses références |
 | Histoire des 30 monstres ; que faire après le 30e | Game design | mainteneur |
 | Type du compte de prod (professionnel ou personnel) | Après l'essai réel | — |
 | Nom de domaine : lequel | Avant la mise en ligne | mainteneur |
@@ -131,6 +130,8 @@ Tranchés depuis :
 - Baisse du pourcentage après 2 défaites : le monstre en cours est recalculé avec le pourcentage baissé
   et ne peut que rétrécir ([game design](../game-design.md) § 6). Le montant de la baisse reste ouvert là.
 - Page d'information et retrait d'un joueur (RGPD) : [ADR 0003](../adr/0003-import-des-abonnes.md).
+- Direction artistique, organisation du site, format et fabrication des modèles 3D : [direction artistique](../direction-artistique.md), qui garde
+  ses propres points ouverts (§ 9).
 - Où acheter le domaine (Cloudflare Registrar) et pré-prod sur deux projets Vercel :
   [ADR 0004](../adr/0004-environnements-domaine-et-securite.md).
 
@@ -159,7 +160,7 @@ Tranchés depuis :
    boilerplate dans un dossier de sauvegarde hors du projet, lancer `init-projet`, installer les outils. Fait.
 2. ADR à partir de ce cadrage. Fait : [`docs/adr/`](../adr/), ADR 0001 à 0004.
 3. Game design avec game-studios : fait, [`docs/game-design.md`](../game-design.md). Direction
-   artistique avec `/prototype` : **prochaine étape**.
+   artistique avec `/prototype` : fait, [`docs/direction-artistique.md`](../direction-artistique.md).
 4. PRD, puis issues.
 5. Développement : import, personnages, moteur de combat, MCP, site.
 6. Essai réel du fournisseur d'abonnés.
