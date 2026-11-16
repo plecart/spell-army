@@ -1,6 +1,6 @@
 # Wizard Army — Cadrage
 
-État au 2026-11-11. Ce document rassemble ce qui a été décidé en conversation, avant tout ADR. Il sert
+État au 2026-11-16. Ce document rassemble ce qui a été décidé en conversation, avant tout ADR. Il sert
 de source à l'ADR et au PRD ; il ne les remplace pas.
 
 Trois statuts, à ne pas confondre :
@@ -59,7 +59,7 @@ Trois statuts, à ne pas confondre :
 | Objectif annoncé | Pas de chiffre de recrues réclamé au public. | Décidé |
 | Jour 1 | Le mainteneur seul contre un monstre de sa force ; vidéo déjà générée. Pas de seuil de lancement. | Décidé |
 | Jour 2 | Monstre prévu pour une armée de 10, choix arbitraire. | Décidé |
-| Jours suivants | Monstre dimensionné pour l'armée actuelle + environ 70 % des recrues gagnées la veille. | Décidé |
+| Jours suivants | Monstre dimensionné pour l'armée actuelle + environ 70 % des recrues gagnées par jour, en médiane sur les 3 derniers jours. | Décidé |
 | Moment | Le monstre est fixé 24 h avant le combat, qui a lieu à minuit. | Décidé |
 | Après une défaite | Même monstre le lendemain. Le monstre ne grossit qu'après une victoire. | Décidé |
 | Réglage du pourcentage | Revu tous les 3 jours ; revu à la baisse après 2 défaites de suite. | Décidé |
@@ -115,7 +115,6 @@ Règle générale : un outil cité par le mainteneur s'installe et s'essaie avan
 | Game design complet : statistiques, classes, sorts, formule de puissance de l'armée | Après le setup | game-studios |
 | À 1 000 joueurs, bien ou mal recruter change le rapport de force de moins de 1 % : comment le combat amplifie-t-il cet écart ? | Game design | game-studios |
 | Baisser le pourcentage après 2 défaites : redimensionne-t-on aussi le monstre en cours ? | Game design | mainteneur |
-| Lisser le gain d'abonnés sur plusieurs jours | Game design | mainteneur |
 | Format et fabrication des modèles 3D | Direction artistique | MCP Blender |
 | Direction artistique, thème récurrent | Après le setup | `/prototype` |
 | Organisation du site : boss du jour en accueil, annuaire à part | Direction artistique | mainteneur |
