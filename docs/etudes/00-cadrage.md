@@ -94,7 +94,7 @@ Trois statuts, à ne pas confondre :
 | Exigences | Même modèle sur le site et dans la vidéo ; même thème ; personnalisable par joueur ; modifiable. | Décidé |
 | Stockage | En base, géré par le MCP. | Décidé |
 | Format | Un fichier GLB de référence par type de personnage ou de monstre, plus une fiche de personnalisation par joueur (couleurs, chapeau, taille) tirée du seed. | Proposé |
-| Fabrication | MCP Blender en premier candidat ; voir ce que proposent game-studios et le MCP Godot. | Ouvert |
+| Fabrication | Serveur MCP officiel de Blender (blender.org, projet « Lab ») en premier candidat ; Blender et ce serveur s'installent au moment de créer les personnages, pas avant. À essayer alors sur le premier modèle : quelques skills de `arjun988/blender-skills` (personnage, squelette, export), pas les 94. Le MCP Godot reste à regarder. | Ouvert |
 
 ### Outils
 
@@ -104,7 +104,8 @@ Trois statuts, à ne pas confondre :
 | `agent-reach` | Installé au setup, pour lire le compte `@Game_feel_prompts`. Réserve : compte Instagram secondaire conseillé ; lecture des vidéos à vérifier à l'essai. | Décidé |
 | claude-code-game-studios | Installé au moment de finaliser le game design ; retiré s'il ne fait pas évoluer l'idée. | Décidé |
 | MCP Vercel, `mcp-builder`, skills Vercel/React | Installés au setup. MCP Neon reporté : pas de compte Neon au moment du setup. | Proposé |
-| Outils vidéo et son (Remotion, Openverse, earshot, Real SFX, etc.) | Essayés ensemble en phase 2. | Décidé |
+| Outils vidéo et son (Remotion et ses skills officiels, `Remocn/remocn`, `Jakeschincariol/instagram-agent-skill`, `mromidev/claude-animated-shorts`, Openverse, earshot, Real SFX, etc.) | Étudiés et essayés ensemble en phase 2, au moment de choisir ; rien n'est installé avant. Premier avis du 2026-11-16, à reprendre alors : remocn composant par composant, sans son plugin ni son serveur MCP ; d'`instagram-agent-skill`, seulement `ig-reel` et `ig-caption` ; `claude-animated-shorts` n'est pas encore évalué. | Décidé |
+| UniRig, `achimala/dream-loop` | Non installés après lecture, le 2026-11-16. UniRig exige une carte Nvidia et le poste a une carte AMD : à reprendre seulement si un service hébergé convient. `dream-loop` est écrit pour Codex et demande un outil de génération d'images : à essayer à la direction artistique si le mainteneur le souhaite. | Proposé |
 
 Règle générale : un outil cité par le mainteneur s'installe et s'essaie avant d'être écarté.
 
