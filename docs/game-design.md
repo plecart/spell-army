@@ -56,8 +56,9 @@ magicien parfait.
 | Attaques | **2 à 4 attaques nommées**, propres à lui, chacune avec sa recette (Force et Magie du monstre) et son coefficient. | Décidé |
 | Choix de l'attaque | **Au hasard parmi ses attaques**, comme l'armée tire parmi ses personnages : le monstre est « une petite armée de sorts ». | Décidé |
 | Tirage sans remise | Comme pour l'armée : chaque attaque sort une fois avant qu'une autre ne ressorte (pas quatre souffles d'affilée). | Proposé |
+| Puissance d'une attaque | Coefficient × stat du monstre selon la recette, **sans efficacité** (le monstre n'a pas de lanceur). Coefficient moyen des attaques d'un monstre : **×0,78**, dans l'unité de l'annexe B (§ 6, « Équilibre »). | Décidé |
 | Particularité | Une par monstre : résiste à la magie de X %, faible contre une classe, se régénère… Effets détaillés plus tard. | Décidé (effets ouverts) |
-| Profil | Chaque monstre répartit son budget à sa façon (un golem de lave : beaucoup de Vie, peu de Vitesse), sans changer sa difficulté (§ 6). | Proposé |
+| Profil | Chaque monstre répartit son budget à sa façon (un golem de lave : beaucoup de Vie, peu de Vitesse), sans changer sa difficulté (§ 6). Des multiplicateurs de moyenne 1 n'y suffisent pas (mesuré : golem de lave, Vie ×1,5 et Vitesse ×0,5, laisse 100 % de victoire à budget égal) : chaque profil reçoit un **facteur d'échelle** trouvé une fois par simulation, pour que le monstre égal à l'armée lui laisse 50 % (golem de lave : ×1,165). | Proposé |
 | Pas d'éléments | Aucun système feu / eau / … au MVP. | Décidé |
 
 ## 4. Le combat
@@ -66,7 +67,7 @@ magicien parfait.
 |---|---|---|
 | Action de l'armée | On tire un personnage, il lance **son** sort avec la puissance de l'armée (§ 2). | Décidé |
 | Tirage | **Jamais deux fois le même personnage** dans un combat tant que tous n'ont pas joué. | Décidé |
-| Initiative | Rapport R = Vitesse de l'armée / Vitesse du monstre. Le monstre joue une fois par tour ; l'armée cumule R actions par tour et joue chaque fois que son compteur passe 1, le reste étant gardé (R = 1,25 → 5 actions pour 4). Égalité : l'armée d'abord. Une vitesse totale de 0 compte pour 1. | Décidé (délégué à Claude) |
+| Initiative | Rapport R = Vitesse de l'armée / Vitesse du monstre. Le monstre joue une fois par tour ; l'armée cumule R actions par tour et joue chaque fois que son compteur passe 1, le reste étant gardé (R = 1,25 → 5 actions pour 4). Égalité : l'armée d'abord. Une vitesse totale de 0 compte pour 1. Le compteur part de **0,5** : parti de 0, il retirait sa première action à l'armée dès que le monstre est un peu plus rapide (mesuré : monstre 2 % plus fort, victoire de 51 % à 7 % ; avec 0,5, 35 %). | Décidé (délégué à Claude) |
 | Fin | Victoire quand la Vie du monstre tombe à 0 ; défaite quand celle de l'armée tombe à 0. **Pas de limite de durée** : un long combat se raconte en ellipse. | Décidé |
 | Garde-fou | Au-delà d'environ 10 000 actions, défaite « par épuisement », signalée au journal. Sécurité du programme, pas règle du jeu. | Proposé |
 | Soin | Ne dépasse pas la Vie maximale de l'armée. | Proposé |
@@ -122,9 +123,9 @@ voulue : on ne perd pas plusieurs fois de suite contre le même monstre.
 |---|---|---|
 | p | 70 % | Décidé |
 | Recrues de référence | médiane des 3 derniers jours | Décidé |
-| Recrue moyenne | moyenne par stat tirée des tables de classes (≈ 7,5) | Proposé |
-| Équilibre | réglé une fois par simulation : un monstre égal à l'armée lui laisse **50 %** de chances (« de sa force ») | Décidé |
-| Jour 2 | budget = 10 × recrue moyenne | Proposé |
+| Recrue moyenne | moyenne par stat tirée des tables de classes : Vie 7,6, Force 7,6, Magie 7,5, Vitesse 7,3 (annexe A) | Décidé |
+| Équilibre | réglé une fois par simulation : un monstre égal à l'armée lui laisse **50 %** de chances (« de sa force »). Réglé par le coefficient moyen des attaques du monstre, ×0,78 : 51 % à 1 000 et à 100 000 personnages, 56 % à 10 ; un combat équilibré dure 9 actions de l'armée en médiane (7 à 12 pour 80 % des combats). Équilibre raide : ×0,79 donne 44 %, un monstre 5 % plus faible 89 à 90 %, 5 % plus fort 12 à 13 %. | Décidé |
+| Jour 2 | budget = 10 × recrue moyenne (mesuré : 52 % contre 10 personnages tirés) | Proposé |
 | Baisse de p à la 2e défaite | montant à fixer | Ouvert |
 
 Tous ces réglages vivent en base, modifiables par le MCP.
@@ -166,49 +167,53 @@ commentaires de la vidéo précédente relèvent de la phase 2, hors journal.
 |---|---|---|
 | 1 | Cadrage, ligne « Site » (Décidé) : « Affiche les statistiques du monstre et une prédiction ». Le mainteneur doute de la prédiction ; rien n'est contredit tant qu'il ne l'a pas retirée. | Trancher ; amender le cadrage si on la retire. |
 | 2 | Cadrage, « Conception de l'import », point 2 (Proposé) et ADR 0001 / 0003 : « le personnage est un calcul à partir de l'identifiant ». Ce document stocke le sort à l'inscription. Classe et stats restent calculées ; le tirage du sort reste une fonction pure (identifiant, réserve), écrite une fois, ce que l'import idempotent permet. | Préciser l'ADR 0003 au moment de l'implémenter. |
-| 3 | Plages des classes, coefficients des sorts et des attaques, équilibre, recrue moyenne. | Simulation (skill `balance-check`), validation du mainteneur. |
+| 3 | Plages des classes, coefficients des sorts et des attaques, équilibre, recrue moyenne : **réglés le 2026-11-16** (annexes A et B, § 3, § 4, § 6). Restent mesurés, non corrigés : retirer toute une classe déplace la victoire de −4 (Golem) à +5 points (Magicien) ; en duel (armée de 1), un sort de soin pur ne peut pas gagner, et le combat finit souvent au garde-fou. Sensibilité à p : sous 2 % de recrues par jour, victoire de 51 à 60 % quel que soit p ; à 10 %, 85 / 70 / 58 % pour p = 0,5 / 0,7 / 0,9. | Revoir si une classe ou un sort est ajouté : un nouveau sort se mesure contre la réserve avant d'y entrer. |
 | 4 | Effets des particularités des monstres ; contenu des 30 monstres et de l'histoire de la saison 1. | Après le MVP du moteur. |
 
-## Annexe A — Plages des classes (premier jet, à régler par simulation)
+## Annexe A — Plages des classes
+
+Mesuré le 2026-11-16 par simulation (simulateur jetable hors dépôt, armées de 1 à 100 000 personnages, 800 à 6 000 combats par cas) : chaque stat vaut en moyenne près de 7,5 (Vie 7,6, Force 7,6, Magie 7,5, Vitesse 7,3 ; le premier jet donnait 8,5 / 7,7 / 7,5 / 6,3), et aucune classe ne domine.
 
 | Classe | Vie | Force | Magie | Vitesse |
 |---|---|---|---|---|
-| Magicien | 0–10 | 0–10 | 5–15 | 0–5 |
-| Golem | 8–15 | 8–15 | 0–3 | 0 |
-| Guerrier | 5–12 | 8–15 | 0–5 | 3–10 |
-| Nain | 8–15 | 5–12 | 0–8 | 0–5 |
+| Magicien | 0–8 | 0–10 | 5–15 | 0–8 |
+| Golem | 7–14 | 8–15 | 0–3 | 0–3 |
+| Guerrier | 4–11 | 8–15 | 0–5 | 4–11 |
+| Nain | 6–13 | 5–12 | 0–8 | 0–8 |
 | Vampire | 3–10 | 3–10 | 5–12 | 5–12 |
-| Druide | 5–12 | 0–5 | 5–12 | 3–10 |
+| Druide | 3–10 | 0–5 | 5–12 | 5–12 |
 | Paysan | 0–15 | 0–15 | 0–15 | 0–15 |
 | Fée | 0–5 | 0–3 | 8–15 | 8–15 |
 
-## Annexe B — Réserve de départ (24 sorts, coefficients à régler)
+## Annexe B — Réserve de départ (24 sorts)
 
-×1,0 = un coup normal. « Meilleure stat » : celle du lanceur où il est le plus fort.
+Mesuré le 2026-11-16 par simulation (simulateur jetable hors dépôt, armées de 1 à 100 000 personnages, 800 à 6 000 combats par cas) : chaque sort, retiré de la réserve, déplace la victoire de moins de 4 points (Météore : 12 points avant réglage).
+
+×1,0 = un coup normal, soit un coefficient de **0,2** dans la formule du § 2. « Meilleure stat » : celle du lanceur où il est le plus fort.
 
 | # | Sort | Recette | Forme | Effet |
 |---|---|---|---|---|
 | 1 | Coup d'épée | 100 % Force | sûr | dégâts ×1,0 |
 | 2 | Lancer de rocher | 60 % Force + 40 % Vie | sûr | dégâts ×1,0 |
-| 3 | Charge | 50 % Force + 50 % Vitesse | coûteux | dégâts ×1,6 ; l'armée perd 10 % des dégâts infligés |
-| 4 | Coup de marteau | 100 % Force | selon la Vie du monstre | dégâts ×1,5 (monstre intact) → ×0,5 (monstre à bout) |
+| 3 | Charge | 50 % Force + 50 % Vitesse | coûteux | dégâts ×1,15 ; l'armée perd 10 % des dégâts infligés |
+| 4 | Coup de marteau | 100 % Force | selon la Vie du monstre | dégâts ×1,4 (monstre intact) → ×0,4 (monstre à bout) |
 | 5 | Coup vampirique | 100 % Force | sûr | vol de vie : dégâts ×0,5 + soin ×0,5 |
 | 6 | Boule de feu | 100 % Magie | sûr | dégâts ×1,0 |
-| 7 | Météore | 100 % Magie | coûteux | dégâts ×1,8 ; l'armée perd 15 % des dégâts infligés |
+| 7 | Météore | 100 % Magie | coûteux | dégâts ×1,2 ; l'armée perd 15 % des dégâts infligés |
 | 8 | Éclair | 70 % Magie + 30 % Vitesse | sûr | dégâts ×1,0 |
 | 9 | Drain de vie | 100 % Magie | sûr | vol de vie : dégâts ×0,5 + soin ×0,5 |
 | 10 | Tornade | 100 % Vitesse | sûr | dégâts ×1,0 |
-| 11 | Soin | 100 % Magie | sûr | soin ×1,0 |
+| 11 | Soin | 100 % Magie | sûr | soin ×1,2 |
 | 12 | Prière | 20 % Force + 80 % Magie | sûr | soin ×0,6 + dégâts ×0,4 |
-| 13 | Soin des blessés graves | 100 % Magie | selon les blessures de l'armée | soin ×0,5 (armée intacte) → ×1,5 (armée presque morte) |
-| 14 | Cri de ralliement | 100 % Vie | sûr | soin de 15 % de la Vie maximale de l'armée |
-| 15 | Rage du désespoir | 100 % Force | selon les blessures de l'armée | dégâts ×0,5 → ×2,0 |
+| 13 | Soin des blessés graves | 100 % Magie | selon les blessures de l'armée | soin ×0,6 (armée intacte) → ×1,6 (armée presque morte) |
+| 14 | Cri de ralliement | 100 % Vie | sûr | soin de 20 % de la Vie maximale de l'armée |
+| 15 | Rage du désespoir | 100 % Force | selon les blessures de l'armée | dégâts ×0,5 → ×1,5 |
 | 16 | Le Barbare ignorant | 100 % Magie | inversé | dégâts ×1,0 |
-| 17 | Les golems se relèvent | 100 % Vie | selon la part de golems | soin ×(0,5 + 4 × part de golems) |
-| 18 | Appel du clan | meilleure stat | selon la part de la classe du lanceur | dégâts ×(0,5 + 4 × part de sa classe) |
-| 19 | Talent caché | meilleure stat | sûr | dégâts ×1,0 |
-| 20 | Vengeance | dernier coup reçu (efficacité sur la Vie) | sûr | dégâts = 120 % du dernier coup du monstre |
+| 17 | Les golems se relèvent | 100 % Vie | selon la part de golems | soin ×(0,6 + 4 × part de golems) |
+| 18 | Appel du clan | meilleure stat | selon la part de la classe du lanceur | dégâts ×(0,4 + 3,5 × part de sa classe) |
+| 19 | Talent caché | meilleure stat | sûr | dégâts ×0,85 |
+| 20 | Vengeance | dernier coup reçu (efficacité sur la Vie) | sûr | dégâts = 140 % du dernier coup du monstre |
 | 21 | Le Poids plume | 100 % Force | inversé | dégâts ×1,0 |
-| 22 | Le Rebouteux | 100 % Magie | inversé | soin ×1,0 |
+| 22 | Le Rebouteux | 100 % Magie | inversé | soin ×1,2 |
 | 23 | Le Coup lent | 100 % Vitesse | inversé | dégâts ×1,0 |
-| 24 | Le Sacrifice | 100 % Vie | inversé | soin ×1,0 |
+| 24 | Le Sacrifice | 100 % Vie | inversé | soin ×1,1 |
