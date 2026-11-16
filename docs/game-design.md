@@ -97,7 +97,7 @@ chiffres grossissent.
 **Le combat décide, sur les statistiques** (décidé). Pas de moral, pas de verdict tiré à part : si le
 monstre est trop fort, c'est un objectif à passer ; trop faible, le suivant grossit.
 
-**Règle du mainteneur**, reprise telle quelle (cadrage) : jour 1, le mainteneur seul contre un monstre
+**Règle d'origine du mainteneur**, reprise telle quelle : jour 1, le mainteneur seul contre un monstre
 de sa force ; jour 2, un monstre prévu pour 10 ; ensuite, l'armée actuelle + environ 70 % des recrues
 de la veille, fixé 24 h avant le combat de minuit ; après une défaite, même monstre ; il ne grossit
 qu'après une victoire ; pourcentage revu tous les 3 jours, à la baisse après 2 défaites de suite.
@@ -109,7 +109,7 @@ voulue : on ne perd pas plusieurs fois de suite contre le même monstre.
 | Cassure | Correction | Statut |
 |---|---|---|
 | Dimensionner sur le nombre de têtes ignore le hasard de la composition (une armée tombée sur beaucoup de fées). | Dimensionner sur les **stats réelles** de l'armée (sommes). | Décidé |
-| Un pic viral d'un jour fixe un monstre énorme et la traîne ne le rattrape pas (simulé : 19 défaites d'affilée après 5 000 recrues). | Recrues de référence = **médiane des 3 derniers jours**. Voir § 10, point 1. | Décidé |
+| Un pic viral d'un jour fixe un monstre énorme et la traîne ne le rattrape pas (simulé : 19 défaites d'affilée après 5 000 recrues). | Recrues de référence = **médiane des 3 derniers jours**. Le cadrage est amendé en ce sens. | Décidé |
 | « Baisser le pourcentage après 2 défaites » n'agit pas : le monstre en cours est déjà fixé. | À la 2e défaite, le même monstre est **recalculé avec p baissé**, depuis son budget d'origine. Il ne peut que rétrécir. | Décidé |
 | À grande échelle, une armée qui croît lentement voit l'écart de recrues (≤ 1 %) écrasé par le hasard du tirage. | **Assumé**, conséquence de « le combat décide ». L'absence de pari et de critique réduit ce hasard. La vidéo ne dit pas « il manquait des recrues » quand ce n'est pas vrai. | Décidé (limite connue) |
 
@@ -143,7 +143,7 @@ Tous ces réglages vivent en base, modifiables par le MCP.
 
 | Sujet | Règle | Statut |
 |---|---|---|
-| L'afficher ? | Le mainteneur doute que ce soit constructif. Voir § 10, point 2. | Ouvert |
+| L'afficher ? | Le mainteneur doute que ce soit constructif. Voir § 10, point 1. | Ouvert |
 | Si affichée | « Si on combattait maintenant » : le combat de minuit simulé quelques milliers de fois avec l'armée du moment. Un fait, pas une projection ; il monte à chaque recrue ; aucun objectif de recrues affiché. | Proposé |
 
 ## 9. Le journal du combat
@@ -164,11 +164,10 @@ commentaires de la vidéo précédente relèvent de la phase 2, hors journal.
 
 | # | Sujet | Ce qu'il faut |
 |---|---|---|
-| 1 | **Contradiction — cadrage § 2 « Combat et calibrage », ligne « Jours suivants »** (Décidé) : « Monstre dimensionné pour l'armée actuelle + environ 70 % des recrues gagnées la veille ». Ce document : « recrues de référence = médiane des 3 derniers jours ». Le cadrage ouvre lui-même « Lisser le gain d'abonnés sur plusieurs jours ». | Amender la ligne du cadrage et fermer le point ouvert, ou revenir à « la veille ». |
-| 2 | Cadrage, ligne « Site » (Décidé) : « Affiche les statistiques du monstre et une prédiction ». Le mainteneur doute de la prédiction ; rien n'est contredit tant qu'il ne l'a pas retirée. | Trancher ; amender le cadrage si on la retire. |
-| 3 | Cadrage, « Conception de l'import », point 2 (Proposé) et ADR 0001 / 0003 : « le personnage est un calcul à partir de l'identifiant ». Ce document stocke le sort à l'inscription. Classe et stats restent calculées ; le tirage du sort reste une fonction pure (identifiant, réserve), écrite une fois, ce que l'import idempotent permet. | Préciser l'ADR 0003 au moment de l'implémenter. |
-| 4 | Plages des classes, coefficients des sorts et des attaques, équilibre, recrue moyenne. | Simulation (skill `balance-check`), validation du mainteneur. |
-| 5 | Effets des particularités des monstres ; contenu des 30 monstres et de l'histoire de la saison 1. | Après le MVP du moteur. |
+| 1 | Cadrage, ligne « Site » (Décidé) : « Affiche les statistiques du monstre et une prédiction ». Le mainteneur doute de la prédiction ; rien n'est contredit tant qu'il ne l'a pas retirée. | Trancher ; amender le cadrage si on la retire. |
+| 2 | Cadrage, « Conception de l'import », point 2 (Proposé) et ADR 0001 / 0003 : « le personnage est un calcul à partir de l'identifiant ». Ce document stocke le sort à l'inscription. Classe et stats restent calculées ; le tirage du sort reste une fonction pure (identifiant, réserve), écrite une fois, ce que l'import idempotent permet. | Préciser l'ADR 0003 au moment de l'implémenter. |
+| 3 | Plages des classes, coefficients des sorts et des attaques, équilibre, recrue moyenne. | Simulation (skill `balance-check`), validation du mainteneur. |
+| 4 | Effets des particularités des monstres ; contenu des 30 monstres et de l'histoire de la saison 1. | Après le MVP du moteur. |
 
 ## Annexe A — Plages des classes (premier jet, à régler par simulation)
 
