@@ -99,12 +99,12 @@ avant la sortie du draft si elles dévient. Toute PR qui n'est pas l'œuvre d'un
   - `vercel-react-best-practices` — `vercel-labs/agent-skills`
   - `mcp-builder` — `anthropics/skills`
   - `find-skills` — `vercel-labs/skills`
+  - `balance-check`, avec l'agent `systems-designer` — `donchitos/claude-code-game-studios` @ `abc0de79`, copiés à la main le 2026-11-16 (hors `skills-lock.json`) et adaptés au projet : préambule `yaml-helper.sh` et renvois au framework retirés ; le reste du dépôt, essayé pendant le game design, a été retiré
 - Hors dépôt (portée utilisateur, pas dans `.claude/skills/`) : `agent-reach` — programme `uv tool` (vérifier avec `agent-reach version`), son skill lié dans `~/.claude/skills/agent-reach` par `agent-reach setup` ; canaux sans connexion seulement, canal `instagram` non ajouté (attend l'accord du mainteneur, compte Instagram secondaire conseillé)
 - Serveurs MCP (hors dépôt ; vérifier avec `claude mcp list`) :
   - `context7` — portée utilisateur
   - `vercel` — `https://mcp.vercel.com`, portée locale ; authentification OAuth à faire par le mainteneur via `/mcp`
 - Reportés :
-  - `claude-code-game-studios` — au moment de finaliser le game design (cadrage § 2 « Outils »)
   - MCP Neon — pas encore de compte Neon
   - outils vidéo et son (Remotion, Openverse, earshot, Real SFX…) — phase 2
   - MCP Playwright — plus tard, vérification visuelle du site (étude 02)
