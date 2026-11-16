@@ -1,7 +1,7 @@
 # Wizard Army — Cadrage
 
-État au 2026-11-16. Ce document rassemble ce qui a été décidé en conversation, avant tout ADR. Il sert
-de source à l'ADR et au PRD ; il ne les remplace pas.
+État au 2026-11-16. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`) et
+le [game design](../game-design.md) en détaillent des parties ; il sert de source au PRD.
 
 Trois statuts, à ne pas confondre :
 
@@ -28,7 +28,7 @@ Trois statuts, à ne pas confondre :
 |---|---|---|
 | Enrôlement | Suivre le compte = avoir un personnage. Pas d'enrôlement par commentaire. | Décidé |
 | Source de la liste | Un outil tiers interrogé régulièrement (l'API officielle ne donne que le nombre d'abonnés). | Décidé |
-| Fournisseur | HikerAPI en principal, un acteur Apify sans cookie en repli, derrière une même interface. | Proposé |
+| Fournisseur | HikerAPI seul, derrière une interface ; le repli Apify n'est codé que si l'essai réel ou une panne durable le justifie ([ADR 0003](../adr/0003-import-des-abonnes.md)). | Décidé |
 | Seed | L'identifiant numérique Instagram sert de seed aux statistiques. | Décidé |
 | Données stockées | Identifiant et pseudo. **Pas de photo de profil** : on la récupère à la génération de la vidéo, si besoin. | Décidé |
 | Désabonnés | Non gérés : le personnage reste. À revoir seulement quand l'entrée des joueurs sera solide. | Décidé |
@@ -36,10 +36,13 @@ Trois statuts, à ne pas confondre :
 | Robustesse | Quoi qu'il arrive, ça doit fonctionner, même partiellement, et se réparer seul. Un retard est acceptable, une réparation manuelle ne l'est pas. | Décidé |
 | Essai réel du fournisseur | En dernier, quand il ne restera que ça. Tout le reste avance en parallèle. | Décidé |
 
-**Conception de l'import (proposée)** :
+**Conception de l'import (décidée le 2026-11-15, détaillée par l'[ADR 0003](../adr/0003-import-des-abonnes.md))** :
 
 1. Écriture rejouable : « ajoute le joueur s'il manque, sinon ne touche à rien », clé = identifiant Instagram.
-2. Le personnage est un calcul à partir de l'identifiant, donc indépendant de l'ordre et de la date d'import.
+2. La classe et les statistiques sont un calcul à partir de l'identifiant, donc indépendantes de l'ordre et
+   de la date d'import. Le sort est tiré une fois, à l'inscription, puis stocké
+   ([game design](../game-design.md) § 1) : un import en retard ne le change que si un sort a été ajouté
+   à la réserve entre-temps.
 3. Deux passes : une rapide chaque heure (depuis le haut de la liste, arrêt après une page entière de
    joueurs connus) ; une complète chaque semaine qui rattrape tout oubli.
 4. Contrôle : notre nombre de joueurs doit rester supérieur ou égal au nombre d'abonnés affiché par
@@ -66,25 +69,25 @@ Trois statuts, à ne pas confondre :
 | Où vit le pourcentage | En base, modifiable par le MCP. | Proposé |
 | Site | Affiche les statistiques du monstre et une prédiction. | Décidé |
 | Trucage | On peut présélectionner des personnages qui seront forcément tirés (commentaire populaire, marque). | Décidé |
-| Statistiques, classes, sorts, formules | Les propositions de l'étude 05 (rangs, multiplicateur 60–150 %) **ne sont pas retenues**. | Ouvert |
+| Statistiques, classes, sorts, formules | Réglés par le [game design](../game-design.md) (§ 1 à § 4, annexes A et B), qui porte le statut de chaque règle. Les propositions de l'étude 05 (rangs, multiplicateur 60–150 %) **ne sont pas retenues**. | Décidé |
 
 ### Architecture
 
 | Sujet | Décision | Statut |
 |---|---|---|
-| Hébergement | Next.js sur Vercel : un seul projet pour le site, le serveur MCP et les tâches planifiées. | Décidé |
+| Hébergement | Next.js sur Vercel : une seule application pour le site, le serveur MCP et les tâches planifiées, déployée dans un projet Vercel par environnement ([ADR 0004](../adr/0004-environnements-domaine-et-securite.md)). | Décidé |
 | Base | Neon (Postgres), deux projets séparés pré-prod et prod ; Drizzle. | Décidé |
-| Découpage | Dépôt à paquets partagés : moteur de combat, accès aux données, affichage des personnages 3D (commun au site et à la vidéo). | Proposé |
+| Découpage | Monorepo pnpm, un paquet par domaine ([ADR 0001](../adr/0001-architecture-applicative.md), « Paquets ») ; le paquet d'affichage 3D, commun au site et à la vidéo, n'arrive qu'en phase 2. | Décidé |
 | Plan Vercel | Gratuit tant qu'on n'est pas bloqué, puis Pro. | Décidé |
-| Portabilité | Pouvoir migrer ailleurs : aucune règle du jeu dans une fonction propre à Vercel. Pas de Workflows au départ. | Proposé |
-| File d'attente | Pas de Redis ni de service auto-hébergé : la base note où l'import s'est arrêté. | Proposé |
-| Planification | Vercel Schedules (toutes les 15 minutes au plus en gratuit, en bêta). | Proposé |
+| Portabilité | Pouvoir migrer ailleurs : aucune règle du jeu dans une fonction propre à Vercel. Pas de Workflows au départ ([ADR 0001](../adr/0001-architecture-applicative.md)). | Décidé |
+| File d'attente | Pas de Redis ni de service auto-hébergé : la base note où l'import s'est arrêté ([ADR 0001](../adr/0001-architecture-applicative.md), [ADR 0002](../adr/0002-taches-planifiees-et-auto-reparation.md)). | Décidé |
+| Planification | Vercel Schedules (en bêta) : un tic horaire rejouable par environnement, doublé d'un filet GitHub Actions ([ADR 0002](../adr/0002-taches-planifiees-et-auto-reparation.md)). | Décidé |
 | Back-office | Aucun. Un serveur MCP, piloté depuis Claude, le remplace. | Décidé |
 | Authentification MCP | Jeton fixe en v1 (seul le poste du mainteneur) ; OAuth plus tard. | Décidé |
 | Cloudflare | DNS seul avec DNSSEC. La sécurité est portée par Vercel, tous les leviers du plan gratuit activés. | Décidé |
 | Pré-prod et prod | Toutes deux visibles en public. La pré-prod montre les personnages issus des abonnés du compte personnel du mainteneur et renvoie vers ce compte ; la prod, ceux du compte dédié. | Décidé |
 | Bandeau bêta | La pré-prod affiche un bandeau « bêta » pour qu'on ne la confonde pas avec la prod. Il est piloté par une variable d'environnement, pas par du code propre à chaque environnement. | Décidé |
-| Nom de domaine | Un domaine entièrement au nom du projet : aucune adresse Vercel visible par le public. | Décidé |
+| Nom de domaine | Un domaine entièrement au nom du projet : aucune adresse Vercel visible par le public. Acheté chez Cloudflare Registrar ; le nom reste à choisir ([ADR 0004](../adr/0004-environnements-domaine-et-securite.md)). | Décidé |
 | Secrets | Tout ce qui est sensible (jetons, mots de passe des comptes, codes de récupération) est conservé dans KeePassXC, qui fait référence. Aucun secret dans le dépôt, dans une issue ou dans une conversation. En fin de projet, le mainteneur sauvegarde la base sur un disque externe. | Décidé |
 
 ### Modèles 3D
@@ -113,17 +116,23 @@ Règle générale : un outil cité par le mainteneur s'installe et s'essaie avan
 
 | Sujet | Quand | Avec |
 |---|---|---|
-| Game design complet : statistiques, classes, sorts, formule de puissance de l'armée | Après le setup | game-studios |
-| À 1 000 joueurs, bien ou mal recruter change le rapport de force de moins de 1 % : comment le combat amplifie-t-il cet écart ? | Game design | game-studios |
-| Baisser le pourcentage après 2 défaites : redimensionne-t-on aussi le monstre en cours ? | Game design | mainteneur |
 | Format et fabrication des modèles 3D | Direction artistique | MCP Blender |
 | Direction artistique, thème récurrent | Après le setup | `/prototype` |
 | Organisation du site : boss du jour en accueil, annuaire à part | Direction artistique | mainteneur |
 | Histoire des 30 monstres ; que faire après le 30e | Game design | mainteneur |
 | Type du compte de prod (professionnel ou personnel) | Après l'essai réel | — |
-| Page d'information et retrait d'un joueur sur demande (RGPD) | ADR | mainteneur |
-| Nom de domaine : lequel, acheté où (Vercel, Cloudflare, ou sous-domaine d'un domaine existant) | ADR | mainteneur |
-| Pré-prod publique sur le plan gratuit : un seul projet Vercel avec une branche, ou deux projets Vercel | ADR | mainteneur |
+| Nom de domaine : lequel | Avant la mise en ligne | mainteneur |
+
+Tranchés depuis :
+
+- Game design complet (statistiques, classes, sorts, formule de puissance de l'armée) : [game
+  design](../game-design.md), qui garde ses propres points ouverts (§ 10).
+- Écart de recrues écrasé par le hasard à grande échelle : assumé ([game design](../game-design.md) § 6).
+- Baisse du pourcentage après 2 défaites : le monstre en cours est recalculé avec le pourcentage baissé
+  et ne peut que rétrécir ([game design](../game-design.md) § 6). Le montant de la baisse reste ouvert là.
+- Page d'information et retrait d'un joueur (RGPD) : [ADR 0003](../adr/0003-import-des-abonnes.md).
+- Où acheter le domaine (Cloudflare Registrar) et pré-prod sur deux projets Vercel :
+  [ADR 0004](../adr/0004-environnements-domaine-et-securite.md).
 
 ## 4. À vérifier par l'essai réel du fournisseur
 
@@ -139,15 +148,18 @@ Règle générale : un outil cité par le mainteneur s'installe et s'essaie avan
 - Conditions d'utilisation de HikerAPI ambiguës (« non commercial ») : à faire confirmer par leur support.
 - Le plan gratuit de Vercel est réservé à l'usage non commercial : Pro dès le premier partenariat rémunéré.
 - Vercel Schedules est en bêta : ses limites peuvent changer.
-- Comportement du plan gratuit en cas de pic de trafic sur le site : non vérifié.
+- Pic de trafic sur le plan gratuit : le projet peut être mis en pause, et la reprise se fait à la main.
+  C'est la seule panne qui demande une intervention ([ADR 0002](../adr/0002-taches-planifiees-et-auto-reparation.md),
+  « Ce qui reste hors de portée du code »).
 - Licence Remotion en cas de vidéo sponsorisée : à demander à Remotion avant de signer.
 
 ## 6. Ordre des travaux
 
 1. **Setup**, à la racine du projet : mettre les études à l'abri, déplacer l'historique git du
-   boilerplate dans un dossier de sauvegarde hors du projet, lancer `init-projet`, installer les outils. Non lancé : attend l'accord du mainteneur.
-2. ADR à partir de ce cadrage.
-3. Game design avec game-studios ; direction artistique avec `/prototype`.
+   boilerplate dans un dossier de sauvegarde hors du projet, lancer `init-projet`, installer les outils. Fait.
+2. ADR à partir de ce cadrage. Fait : [`docs/adr/`](../adr/), ADR 0001 à 0004.
+3. Game design avec game-studios : fait, [`docs/game-design.md`](../game-design.md). Direction
+   artistique avec `/prototype` : **prochaine étape**.
 4. PRD, puis issues.
 5. Développement : import, personnages, moteur de combat, MCP, site.
 6. Essai réel du fournisseur d'abonnés.
