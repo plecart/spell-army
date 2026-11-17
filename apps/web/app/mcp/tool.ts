@@ -28,6 +28,12 @@ export interface McpTool<Input extends z.ZodObject = z.ZodObject> {
 const UNNAMED_ERROR = "Erreur sans message";
 
 /**
+ * Message rendu quand la ligne en erreur ne s'écrit pas, à la place de l'erreur de Drizzle, qui
+ * recopie la requête et l'entrée.
+ */
+const AUDIT_FAILED = "Audit impossible : l'appel n'a pas été enregistré.";
+
+/**
  * `tools/list` : chaque outil, avec le schéma JSON tiré de son schéma Zod. Celui d'un `ZodObject`
  * est un schéma `object`, que le type de Zod ne sait pas dire en valeurs JSON : d'où la conversion.
  */
@@ -49,7 +55,7 @@ export function listTools(tools: readonly McpTool[]): Tool[] {
  *   résultat est `isError`.
  *
  * L'entrée auditée est l'entrée brute, `{}` quand `args` manque. Si la ligne en erreur ne peut pas
- * s'écrire, l'erreur remonte : rien n'a été validé.
+ * s'écrire, une erreur de protocole `InternalError` au message court remonte : rien n'a été validé.
  *
  * Limite : une requête que le SDK refuse comme malformée n'atteint pas cette fonction, et n'a donc
  * ni exécution ni ligne d'audit. Ainsi d'`arguments` qui n'est pas un objet : le SDK 2.4.0 répond
@@ -65,7 +71,7 @@ export async function callTool(
 	const tool = tools.find((candidate) => candidate.name === name);
 	if (!tool) {
 		const message = `Tool ${name} not found`;
-		await writeAuditEntry(executor, { tool: name, input, error: message });
+		await auditError(executor, name, input, message);
 		throw new ProtocolError(ProtocolErrorCode.InvalidParams, message);
 	}
 	const parsed = tool.input.safeParse(input);
@@ -91,8 +97,22 @@ async function refuse(
 	input: unknown,
 	message: string,
 ): Promise<CallToolResult> {
-	await writeAuditEntry(executor, { tool, input, error: message });
+	await auditError(executor, tool, input, message);
 	return { content: [{ type: "text", text: message }], isError: true };
+}
+
+/** Écrit la ligne en erreur ; si elle ne s'écrit pas, lève `InternalError` avec `AUDIT_FAILED`. */
+async function auditError(
+	executor: Executor,
+	tool: string,
+	input: unknown,
+	message: string,
+): Promise<void> {
+	try {
+		await writeAuditEntry(executor, { tool, input, error: message });
+	} catch {
+		throw new ProtocolError(ProtocolErrorCode.InternalError, AUDIT_FAILED);
+	}
 }
 
 /**

@@ -37,6 +37,20 @@ export async function connectClient(
 	return client;
 }
 
+/**
+ * `serve`, devant lequel le corps de chaque POST passe par `rewrite` : la voie d'un corps que le
+ * client, qui sérialise par `JSON.stringify`, ne sait pas écrire.
+ */
+export function rewritingBodies(
+	serve: Serve,
+	rewrite: (body: string) => string,
+): Serve {
+	return async (request) =>
+		request.method === "POST"
+			? serve(new Request(request, { body: rewrite(await request.text()) }))
+			: serve(request);
+}
+
 /** Une base migrée neuve, fermée à la fin du test. */
 export async function freshDatabase() {
 	const db = createClient(
