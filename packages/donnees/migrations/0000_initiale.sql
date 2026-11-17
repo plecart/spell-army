@@ -1,1 +1,1 @@
--- Custom SQL migration file, put your code below! --
+-- Migration initiale, vide : elle pose le journal de drizzle-kit (meta/_journal.json) que le migrateur exige ; le socle n'a encore aucune table.

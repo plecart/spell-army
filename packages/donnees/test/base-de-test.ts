@@ -7,9 +7,10 @@ const IMAGE = "postgres:18";
 
 /** Docker ne répond pas : la base de test ne peut pas démarrer. */
 export class DockerUnreachable extends Error {
-	constructor() {
+	constructor(options?: ErrorOptions) {
 		super(
 			"Docker est injoignable : démarre Docker Desktop pour lancer les tests de la base (packages/donnees).",
+			options,
 		);
 	}
 }
@@ -20,17 +21,14 @@ export interface TestDatabase {
 }
 
 /**
- * Démarre la base de test. `probeDocker` joint Docker avant tout conteneur, pour qu'un Docker
- * éteint lève `DockerUnreachable` plutôt qu'une erreur de testcontainers ; un test la remplace
- * pour simuler Docker éteint.
+ * Démarre la base de test. Joint Docker avant tout conteneur, pour qu'un Docker injoignable lève
+ * `DockerUnreachable`, cause jointe, plutôt qu'une erreur de testcontainers.
  */
-export async function startTestDatabase(
-	probeDocker: () => Promise<unknown> = getContainerRuntimeClient,
-): Promise<TestDatabase> {
+export async function startTestDatabase(): Promise<TestDatabase> {
 	try {
-		await probeDocker();
-	} catch {
-		throw new DockerUnreachable();
+		await getContainerRuntimeClient();
+	} catch (cause) {
+		throw new DockerUnreachable({ cause });
 	}
 	const container = await new PostgreSqlContainer(IMAGE).start();
 	return {

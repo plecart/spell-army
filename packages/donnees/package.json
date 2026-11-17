@@ -6,7 +6,7 @@
 		".": "./src/client.ts"
 	},
 	"scripts": {
-		"migrate": "node --env-file-if-exists=../../.env src/migrate.ts",
+		"migrate": "node --env-file-if-exists=../../.env src/migrate-command.ts",
 		"test": "vitest run",
 		"typecheck": "tsc"
 	},
