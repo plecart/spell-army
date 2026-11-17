@@ -5,5 +5,4 @@ export {
 	updateCalibrationSettings,
 } from "./calibration-settings.ts";
 export { createClient } from "./client.ts";
-export { applyMigrations } from "./migrate.ts";
 export { auditLog, calibrationSettings } from "./schema.ts";

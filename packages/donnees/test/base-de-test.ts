@@ -17,7 +17,7 @@ export const UNREACHABLE_DATABASE_URL =
 export class DockerUnreachable extends Error {
 	constructor(options?: ErrorOptions) {
 		super(
-			"Docker est injoignable : démarre Docker Desktop pour lancer les tests de la base (packages/donnees).",
+			"Docker est injoignable : démarre Docker Desktop pour lancer les tests qui joignent la base.",
 			options,
 		);
 	}

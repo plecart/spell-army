@@ -36,7 +36,9 @@ export async function readCalibrationSettings(
 
 /**
  * Modifie les seuls réglages que porte `patch` et rend les réglages avant et après, tels que la base
- * les a écrits. Un patch sans aucune valeur est refusé avant toute requête. Les bornes sont celles
+ * les a écrits. Un patch dont aucune valeur n'est définie est refusé avant toute requête. Seules les
+ * clés de `CalibrationSettings` sont prévues, le type excluant les autres : une entrée venue de
+ * l'extérieur se valide chez l'appelant (l'outil MCP, par son schéma strict). Les bornes sont celles
  * des contraintes de la base, dont la violation remonte telle quelle.
  *
  * Ouvre sa propre transaction, un point de sauvegarde quand `executor` en est déjà une : refusée,
