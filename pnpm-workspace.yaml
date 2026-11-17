@@ -1,0 +1,12 @@
+packages:
+  - packages/*
+
+# pnpm 11 refuse tout script d'installation non revu (`strictDepBuilds`). Aucun n'est utile ici :
+# esbuild (sous drizzle-kit et vite) trouve son binaire par son paquet de plateforme optionnel ;
+# ssh2 et cpu-features (sous testcontainers) ne compilent que des liaisons natives facultatives ;
+# protobufjs ne fait qu'un contrôle de version.
+allowBuilds:
+  cpu-features: false
+  esbuild: false
+  protobufjs: false
+  ssh2: false
