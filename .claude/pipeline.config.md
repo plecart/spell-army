@@ -32,7 +32,7 @@ Toute référence croisée cite un **§ ou un titre de section**, jamais un num�
 ## Commandes du projet
 Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape absente du projet.
 - install      : `pnpm install --frozen-lockfile`
-- test         : `pnpm -r test` (Vitest)                  # suite complète ; Docker allumé pour `packages/donnees`
+- test         : `pnpm -r test` (Vitest)                  # suite complète ; Docker allumé pour `packages/donnees` et `apps/web`
 - test ciblé   : `pnpm vitest run <chemin>`   # une seule cible, pour la boucle TDD
 - test brut    : n/a                    # sortie du lanceur sans résumeur, si le poste en a un (cycle-pr 3.2)
 - lint         : `pnpm biome lint .`
@@ -48,7 +48,7 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - seuil de couverture : aucun
 - règles sensibles à la plateforme : poste Windows, CI Linux — casse des chemins et fins de ligne, vérifiées en CI
 - gates bloquants en CI : audit, lint, format:check, typecheck, test
-- services requis en CI : Docker, fourni par `ubuntu-latest`, pour la base de test (Postgres 18 jetable que la suite de `packages/donnees` démarre elle-même)
+- services requis en CI : Docker, fourni par `ubuntu-latest`, pour la base de test (Postgres 18 jetable que le harnais de `packages/donnees` démarre lui-même, pour sa suite et celle de `apps/web`)
 
 ## Périmètre
 - domaines (nom métier → chemin) — servent aussi de thèmes/milestones à `triage` (chemins prévus, confirmés à la première PR de code) :
