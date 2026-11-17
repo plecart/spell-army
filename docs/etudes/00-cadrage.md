@@ -1,6 +1,6 @@
 # Wizard Army — Cadrage
 
-État au 2026-11-16. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
+État au 2026-11-17. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
 le [game design](../game-design.md) et la [direction artistique](../direction-artistique.md) en détaillent des parties ; il sert de source au PRD.
 
 Trois statuts, à ne pas confondre :
@@ -63,7 +63,7 @@ Trois statuts, à ne pas confondre :
 | Jour 1 | Le mainteneur seul contre un monstre de sa force ; vidéo déjà générée. Pas de seuil de lancement. | Décidé |
 | Jour 2 | Monstre prévu pour une armée de 10, choix arbitraire. | Décidé |
 | Jours suivants | Monstre dimensionné pour l'armée actuelle + environ 70 % des recrues gagnées par jour, en médiane sur les 3 derniers jours. | Décidé |
-| Moment | Le monstre est fixé 24 h avant le combat, qui a lieu à minuit. | Décidé |
+| Moment | Le monstre est fixé 24 h avant le combat, qui a lieu à minuit. Au MVP, le mainteneur lance le combat à la main, par le MCP ; le lancement automatique à minuit vient après le MVP. | Décidé |
 | Après une défaite | Même monstre le lendemain. Le monstre ne grossit qu'après une victoire. | Décidé |
 | Réglage du pourcentage | Revu tous les 3 jours ; revu à la baisse après 2 défaites de suite. | Décidé |
 | Où vit le pourcentage | En base, modifiable par le MCP. | Proposé |
