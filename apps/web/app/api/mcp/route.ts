@@ -1,4 +1,5 @@
 import { createClient } from "donnees";
+import { registry } from "../../mcp/registry.ts";
 import { createMcpEndpoint } from "../../mcp/server.ts";
 
 let client: ReturnType<typeof createClient> | undefined;
@@ -18,11 +19,10 @@ function database() {
 	return client;
 }
 
-// Le registre des outils arrive avec `lire_reglages` et `modifier_reglages`.
 const endpoint = createMcpEndpoint({
 	token: () => process.env.MCP_TOKEN,
 	database,
-	tools: [],
+	tools: registry,
 });
 
 // Toutes les méthodes qu'une route peut servir : toute requête sans jeton reçoit le même `401`.

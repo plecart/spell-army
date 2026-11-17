@@ -1,7 +1,12 @@
 import { Socket } from "node:net";
 import { UNREACHABLE_DATABASE_URL } from "donnees/test/base-de-test";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { AUTHORIZATION, ENDPOINT_URL, TOKEN } from "./montage.ts";
+import {
+	AUTHORIZATION,
+	connectClient,
+	ENDPOINT_URL,
+	TOKEN,
+} from "./montage.ts";
 
 // Les méthodes HTTP qu'une route de Next.js peut exporter (doc Next.js 16, `route.js`).
 const METHODS = [
@@ -53,5 +58,17 @@ describe("route /api/mcp", () => {
 		);
 		// Admise, la requête atteint le gestionnaire du SDK, qui refuse un GET (ADR 0005, « Sans SSE »).
 		expect(response.status).toBe(405);
+	});
+
+	// La base, injoignable, n'est demandée qu'au premier `tools/call`.
+	test("avec MCP_TOKEN, tools/list rend les outils du registre, base injoignable", async () => {
+		vi.stubEnv("MCP_TOKEN", TOKEN);
+		const { POST } = await importRoute();
+		const client = await connectClient(POST);
+		const { tools } = await client.listTools();
+		expect(tools.map(({ name }) => name)).toEqual([
+			"lire_reglages",
+			"modifier_reglages",
+		]);
 	});
 });
