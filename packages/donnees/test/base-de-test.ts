@@ -1,7 +1,11 @@
 // Image et réglages de la base de test, qu'un seul fichier porte (issue #9) : un Postgres 18
 // jetable dans Docker, la version de Neon. Image Debian, pas alpine : les collations glibc de Neon.
+import { randomUUID } from "node:crypto";
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
+import { sql } from "drizzle-orm";
 import { getContainerRuntimeClient } from "testcontainers";
+import { createClient } from "../src/client.ts";
+import { applyMigrations } from "../src/migrate.ts";
 
 const IMAGE = "postgres:18";
 
@@ -37,4 +41,25 @@ export async function startTestDatabase(): Promise<TestDatabase> {
 			await container.stop();
 		},
 	};
+}
+
+/**
+ * Crée sur le serveur de `serverUrl` une base au nom unique, y applique les migrations et en rend
+ * l'URL : une base migrée neuve par test qui écrit. Sans dépendance au lanceur de tests, pour
+ * servir depuis un autre paquet.
+ */
+export async function createMigratedDatabase(
+	serverUrl: string,
+): Promise<string> {
+	const name = `test_${randomUUID().replaceAll("-", "")}`;
+	const server = createClient(serverUrl);
+	try {
+		await server.execute(sql`create database ${sql.identifier(name)}`);
+	} finally {
+		await server.$client.end();
+	}
+	const url = new URL(serverUrl);
+	url.pathname = `/${name}`;
+	await applyMigrations(url.href);
+	return url.href;
 }
