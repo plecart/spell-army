@@ -5,6 +5,8 @@
 
 # Next.js et build
 **/.next/
+# Régénéré par `next typegen`, `next dev` et `next build` ; à ignorer (doc Next.js 16, TypeScript)
+**/next-env.d.ts
 **/out/
 **/dist/
 *.tsbuildinfo

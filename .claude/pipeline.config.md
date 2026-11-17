@@ -40,9 +40,9 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - format:check : `pnpm biome format .`                  # vérifie sans écrire
 - typecheck    : `pnpm -r typecheck`
 - audit        : `pnpm audit --audit-level=high`            # audit des dépendances, porte de CI
-- build        : `pnpm -r --if-present run build`   # paquets qui ont un script `build` ; aucun encore
+- build        : `pnpm -r --if-present run build`   # paquets qui ont un script `build` : `apps/web` (`next build`)
 - migration    : `pnpm --filter donnees run migrate`   # applique les migrations à la base de `DATABASE_URL` (shell ou `.env` racine)
-- run local    : `pnpm --filter web dev`   # non vérifiée
+- run local    : `pnpm --filter web dev`   # Next.js en développement ; lit le `.env` racine, sans écraser une variable déjà posée
 
 ## Qualité
 - seuil de couverture : aucun
