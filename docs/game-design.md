@@ -111,7 +111,7 @@ voulue : on ne perd pas plusieurs fois de suite contre le même monstre.
 |---|---|---|
 | Dimensionner sur le nombre de têtes ignore le hasard de la composition (une armée tombée sur beaucoup de fées). | Dimensionner sur les **stats réelles** de l'armée (sommes). | Décidé |
 | Un pic viral d'un jour fixe un monstre énorme et la traîne ne le rattrape pas (simulé : 19 défaites d'affilée après 5 000 recrues). | Recrues de référence = **médiane des 3 derniers jours**. Le cadrage est amendé en ce sens. | Décidé |
-| « Baisser le pourcentage après 2 défaites » n'agit pas : le monstre en cours est déjà fixé. | À la 2e défaite, le même monstre est **recalculé avec p baissé**, depuis son budget d'origine. Il ne peut que rétrécir. | Décidé |
+| « Baisser le pourcentage après 2 défaites » n'agit pas : le monstre en cours est déjà fixé. | À la 2e défaite, puis à chaque nouvelle paire de défaites de suite, le même monstre est **recalculé avec p baissé**, depuis son budget d'origine. Il ne peut que rétrécir. | Décidé |
 | À grande échelle, une armée qui croît lentement voit l'écart de recrues (≤ 1 %) écrasé par le hasard du tirage. | **Assumé**, conséquence de « le combat décide ». L'absence de pari et de critique réduit ce hasard. La vidéo ne dit pas « il manquait des recrues » quand ce n'est pas vrai. | Décidé (limite connue) |
 
 **Calcul du prochain monstre** (décidé), fixé juste après le combat précédent :
@@ -126,7 +126,7 @@ voulue : on ne perd pas plusieurs fois de suite contre le même monstre.
 | Recrue moyenne | moyenne par stat tirée des tables de classes : Vie 7,6, Force 7,6, Magie 7,5, Vitesse 7,3 (annexe A) | Décidé |
 | Équilibre | réglé une fois par simulation : un monstre égal à l'armée lui laisse **50 %** de chances (« de sa force »). Réglé par le coefficient moyen des attaques du monstre, ×0,78 : 51 % à 1 000 et à 100 000 personnages, 56 % à 10 ; un combat équilibré dure 9 actions de l'armée en médiane (7 à 12 pour 80 % des combats). Équilibre raide : ×0,79 donne 44 %, un monstre 5 % plus faible 89 à 90 %, 5 % plus fort 12 à 13 %. | Décidé |
 | Jour 2 | budget = 10 × recrue moyenne (mesuré : 52 % contre 10 personnages tirés) | Proposé |
-| Baisse de p à la 2e défaite | 10 points (70 % → 60 %) à la 2e défaite de suite ; le monstre en cours est recalculé depuis son budget d'origine. La baisse reste pour les monstres suivants. Nouvelle baisse de 10 points, avec un nouveau recalcul, à chaque nouvelle paire de défaites de suite (4e, 6e…). p ne descend jamais sous 0. p ne remonte jamais seul : une victoire le laisse tel quel, il ne remonte qu'à la revue des 3 jours du mainteneur, par le MCP. | Décidé |
+| Baisse de p à la 2e défaite | 10 points (p de départ : 70 % → 60 %) à la 2e défaite de suite ; le monstre en cours est recalculé depuis son budget d'origine. La baisse reste pour les monstres suivants. Nouvelle baisse de 10 points, avec un nouveau recalcul, à chaque nouvelle paire de défaites de suite (4e, 6e…). p ne descend jamais sous 0. p ne remonte jamais seul : une victoire le laisse tel quel, il ne remonte qu'à la revue des 3 jours du mainteneur, par le MCP. | Décidé |
 
 Tous ces réglages vivent en base, modifiables par le MCP.
 
