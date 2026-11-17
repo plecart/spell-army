@@ -1,1 +1,1 @@
--- Migration initiale, vide : elle pose le journal de drizzle-kit (meta/_journal.json) que le migrateur exige ; le socle n'a encore aucune table.
+-- Migration initiale, vide : le socle n'a encore aucune table. Elle donne au mécanisme de migration une entrée réelle à appliquer, que le harnais de test vérifie.
