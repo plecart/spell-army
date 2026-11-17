@@ -1,11 +1,8 @@
 import { Socket } from "node:net";
 import { UNREACHABLE_DATABASE_URL } from "donnees/test/base-de-test";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import { AUTHORIZATION, ENDPOINT_URL, TOKEN } from "./montage.ts";
 
-// Jeton factice de 32 octets, le minimum admis.
-const TOKEN = "t".repeat(32);
-const AUTHORIZATION = `Bearer ${TOKEN}`;
-const ENDPOINT_URL = "http://wizard-army.test/api/mcp";
 // Les méthodes HTTP qu'une route de Next.js peut exporter (doc Next.js 16, `route.js`).
 const METHODS = [
 	"GET",
