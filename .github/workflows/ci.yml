@@ -143,6 +143,8 @@ jobs:
         if: *portes-de-code
         run: pnpm -r --if-present run build
 
+      # La suite démarre elle-même son Postgres de test dans le Docker d'`ubuntu-latest` : pas de
+      # bloc `services`.
       - name: Tests
         if: *portes-de-code
         run: pnpm -r test
