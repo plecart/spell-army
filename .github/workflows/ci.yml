@@ -120,9 +120,7 @@ jobs:
       # Avant les portes de code : un avis de sécurité sur une dépendance n'a pas à attendre
       # que la suite passe pour être signalé. Seuil `high` : un avis high ou critical bloque ;
       # moderate et low ne bloquent pas, le journal n'en donne que le compte (`pnpm audit` sans
-      # seuil les détaille). Au premier relevé (2026-11-17), les trois avis
-      # moderate venaient de dépendances transitives des outils de migration et de test
-      # (drizzle-kit, testcontainers), hors du code livré.
+      # seuil les détaille).
       - name: Audit
         run: pnpm audit --audit-level=high
 
