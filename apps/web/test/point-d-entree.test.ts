@@ -1,34 +1,29 @@
 import {
-	Client,
-	type ClientOptions,
-	StreamableHTTPClientTransport,
-} from "@modelcontextprotocol/client";
-import {
 	ProtocolErrorCode,
 	Server,
 	type ServerContext,
 } from "@modelcontextprotocol/server";
 import {
-	auditLog,
-	createClient,
 	type Executor,
 	readCalibrationSettings,
 	updateCalibrationSettings,
 } from "donnees";
-import { createMigratedDatabase } from "donnees/test/base-de-test";
-import { describe, expect, inject, onTestFinished, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { z } from "zod";
 import { createMcpEndpoint } from "../app/mcp/server.ts";
 import type { McpTool } from "../app/mcp/tool.ts";
+import {
+	AUTHORIZATION,
+	auditRows,
+	connectClient,
+	ENDPOINT_URL,
+	freshDatabase,
+	type Serve,
+	TOKEN,
+} from "./montage.ts";
 
-// Jeton factice de 32 octets, le minimum admis.
-const TOKEN = "t".repeat(32);
-const AUTHORIZATION = `Bearer ${TOKEN}`;
-const ENDPOINT_URL = "http://wizard-army.test/api/mcp";
 // Posé par la migration `0002_reglages_de_depart`.
 const STARTING_RECRUIT_SHARE = 0.7;
-// Le client de Claude Code négocie la spécification 2026-07-28 (ADR 0005, « Conséquences »).
-const NEGOTIATING: ClientOptions = { versionNegotiation: { mode: "auto" } };
 
 // U+0000, que ni `text` ni `jsonb` n'admettent, et le caractère de remplacement U+FFFD.
 const NUL = String.fromCharCode(0);
@@ -105,10 +100,7 @@ function trialTools() {
  * réponse sont relevées.
  */
 async function freshEndpoint(token: () => string | undefined = () => TOKEN) {
-	const db = createClient(
-		await createMigratedDatabase(inject("testDatabaseUrl")),
-	);
-	onTestFinished(() => db.$client.end());
+	const db = await freshDatabase();
 	const tools = trialTools();
 	const database = vi.fn(() => db);
 	const endpoint = createMcpEndpoint({
@@ -125,31 +117,6 @@ async function freshEndpoint(token: () => string | undefined = () => TOKEN) {
 		return response;
 	};
 	return { db, database, tools, serve, requestBodies, responses };
-}
-
-type Serve = (request: Request) => Promise<Response>;
-
-/** Le `Client` officiel, branché sur `serve` par l'option `fetch` de son transport. */
-async function connectClient(
-	serve: Serve,
-	headers: Record<string, string> = { authorization: AUTHORIZATION },
-	options: ClientOptions = NEGOTIATING,
-) {
-	const transport = new StreamableHTTPClientTransport(new URL(ENDPOINT_URL), {
-		fetch: (url, init) => serve(new Request(url, init)),
-		requestInit: { headers },
-	});
-	const client = new Client(
-		{ name: "client-de-test", version: "0.0.0" },
-		options,
-	);
-	onTestFinished(() => client.close());
-	await client.connect(transport);
-	return client;
-}
-
-function auditRows(db: Executor) {
-	return db.select().from(auditLog);
 }
 
 /**
