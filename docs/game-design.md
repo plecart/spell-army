@@ -1,6 +1,6 @@
 # Wizard Army — Game design
 
-État au 2026-11-16. Ce document détaille la section « Combat et calibrage » du
+État au 2026-11-17. Ce document détaille la section « Combat et calibrage » du
 [cadrage](etudes/00-cadrage.md), qui fait foi en cas de désaccord (rang 1 des sources de vérité). Il
 remplace l'[étude 05](etudes/05-game-design.md), non retenue.
 
@@ -126,7 +126,7 @@ voulue : on ne perd pas plusieurs fois de suite contre le même monstre.
 | Recrue moyenne | moyenne par stat tirée des tables de classes : Vie 7,6, Force 7,6, Magie 7,5, Vitesse 7,3 (annexe A) | Décidé |
 | Équilibre | réglé une fois par simulation : un monstre égal à l'armée lui laisse **50 %** de chances (« de sa force »). Réglé par le coefficient moyen des attaques du monstre, ×0,78 : 51 % à 1 000 et à 100 000 personnages, 56 % à 10 ; un combat équilibré dure 9 actions de l'armée en médiane (7 à 12 pour 80 % des combats). Équilibre raide : ×0,79 donne 44 %, un monstre 5 % plus faible 89 à 90 %, 5 % plus fort 12 à 13 %. | Décidé |
 | Jour 2 | budget = 10 × recrue moyenne (mesuré : 52 % contre 10 personnages tirés) | Proposé |
-| Baisse de p à la 2e défaite | montant à fixer | Ouvert |
+| Baisse de p à la 2e défaite | 10 points (70 % → 60 %) à la 2e défaite de suite ; le monstre en cours est recalculé depuis son budget d'origine. La baisse reste pour les monstres suivants. Nouvelle baisse de 10 points, avec un nouveau recalcul, à chaque nouvelle paire de défaites de suite (4e, 6e…). p ne descend jamais sous 0. p ne remonte jamais seul : une victoire le laisse tel quel, il ne remonte qu'à la revue des 3 jours du mainteneur, par le MCP. | Décidé |
 
 Tous ces réglages vivent en base, modifiables par le MCP.
 
@@ -167,7 +167,7 @@ commentaires de la vidéo précédente relèvent de la phase 2, hors journal.
 |---|---|---|
 | 1 | Prédiction : le cadrage, ligne « Site », la sort du MVP le 2026-11-16, avec les statistiques du monstre. Reste à savoir si elle revient après le MVP. | Trancher après le MVP ; amender le cadrage si on la retire tout à fait. |
 | 2 | Cadrage, « Conception de l'import », point 2 (Proposé) et ADR 0001 / 0003 : « le personnage est un calcul à partir de l'identifiant ». Ce document stocke le sort à l'inscription. Classe et stats restent calculées ; le tirage du sort reste une fonction pure (identifiant, réserve), écrite une fois, ce que l'import idempotent permet. | Préciser l'ADR 0003 au moment de l'implémenter. |
-| 3 | Plages des classes, coefficients des sorts et des attaques, équilibre, recrue moyenne : **réglés le 2026-11-16** (annexes A et B, § 3, § 4, § 6). Restent mesurés, non corrigés : retirer toute une classe déplace la victoire de −4 (Golem) à +5 points (Magicien) ; en duel (armée de 1), un sort de soin pur ne peut pas gagner, et le combat finit souvent au garde-fou. Sensibilité à p : sous 2 % de recrues par jour, victoire de 51 à 60 % quel que soit p ; à 10 %, 85 / 70 / 58 % pour p = 0,5 / 0,7 / 0,9. | Revoir si une classe ou un sort est ajouté : un nouveau sort se mesure contre la réserve avant d'y entrer. |
+| 3 | Plages des classes, coefficients des sorts et des attaques, équilibre, recrue moyenne : **réglés le 2026-11-16** (annexes A et B, § 3, § 4, § 6). Deux écarts mesurés, **assumés le 2026-11-17** sans correction. Retirer toute une classe déplace la victoire de −4 (Golem) à +5 points (Magicien) : une armée réelle ne perd jamais toute une classe, et le monstre suit les stats réelles de l'armée (§ 6). En duel (armée de 1), un sort de soin pur (6 sur 24, annexe B) ne peut pas gagner, et le combat finit souvent au garde-fou : seul le duel du jour 1 est concerné, son issue se connaît d'avance (sort tiré à l'inscription), et une défaite reste permise. Sensibilité à p : sous 2 % de recrues par jour, victoire de 51 à 60 % quel que soit p ; à 10 %, 85 / 70 / 58 % pour p = 0,5 / 0,7 / 0,9. | Revoir si une classe ou un sort est ajouté : un nouveau sort se mesure contre la réserve avant d'y entrer. |
 | 4 | Effets des particularités des monstres ; contenu des 30 monstres et de l'histoire de la saison 1. | Après le MVP du moteur. |
 
 ## Annexe A — Plages des classes

@@ -128,7 +128,8 @@ Tranchés depuis :
   design](../game-design.md), qui garde ses propres points ouverts (§ 10).
 - Écart de recrues écrasé par le hasard à grande échelle : assumé ([game design](../game-design.md) § 6).
 - Baisse du pourcentage après 2 défaites : le monstre en cours est recalculé avec le pourcentage baissé
-  et ne peut que rétrécir ([game design](../game-design.md) § 6). Le montant de la baisse reste ouvert là.
+  et ne peut que rétrécir. La baisse est de 10 points, renouvelée à chaque nouvelle paire de défaites de
+  suite, sans remontée automatique ([game design](../game-design.md) § 6).
 - Page d'information et retrait d'un joueur (RGPD) : [ADR 0003](../adr/0003-import-des-abonnes.md).
 - Direction artistique, organisation du site, format et fabrication des modèles 3D : [direction artistique](../direction-artistique.md), qui garde
   ses propres points ouverts (§ 9).
