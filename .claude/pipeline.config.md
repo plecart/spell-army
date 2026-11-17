@@ -40,7 +40,8 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - format:check : `pnpm biome format .`                  # vérifie sans écrire # non vérifiée
 - typecheck    : `pnpm -r typecheck`   # non vérifiée
 - audit        : `pnpm audit --audit-level=high`            # audit des dépendances, porte de CI # non vérifiée
-- build        : `pnpm -r build`   # non vérifiée
+- build        : `pnpm -r --if-present run build`   # paquets qui ont un script `build` ; aucun encore # non vérifiée
+- migration    : `pnpm --filter donnees run migrate`   # applique les migrations à la base de `DATABASE_URL` (shell ou `.env` racine) # non vérifiée
 - run local    : `pnpm --filter web dev`   # non vérifiée
 
 ## Qualité
