@@ -31,17 +31,17 @@ Toute référence croisée cite un **§ ou un titre de section**, jamais un num�
 
 ## Commandes du projet
 Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape absente du projet.
-- install      : `pnpm install --frozen-lockfile`   # non vérifiée
-- test         : `pnpm -r test` (Vitest)                  # suite complète # non vérifiée
-- test ciblé   : `pnpm vitest run <chemin>`   # une seule cible, pour la boucle TDD # non vérifiée
+- install      : `pnpm install --frozen-lockfile`
+- test         : `pnpm -r test` (Vitest)                  # suite complète ; Docker allumé pour `packages/donnees`
+- test ciblé   : `pnpm vitest run <chemin>`   # une seule cible, pour la boucle TDD
 - test brut    : n/a                    # sortie du lanceur sans résumeur, si le poste en a un (cycle-pr 3.2)
-- lint         : `pnpm biome lint .`   # non vérifiée
-- format       : `pnpm biome format --write .`                  # écrit # non vérifiée
-- format:check : `pnpm biome format .`                  # vérifie sans écrire # non vérifiée
-- typecheck    : `pnpm -r typecheck`   # non vérifiée
-- audit        : `pnpm audit --audit-level=high`            # audit des dépendances, porte de CI # non vérifiée
-- build        : `pnpm -r --if-present run build`   # paquets qui ont un script `build` ; aucun encore # non vérifiée
-- migration    : `pnpm --filter donnees run migrate`   # applique les migrations à la base de `DATABASE_URL` (shell ou `.env` racine) # non vérifiée
+- lint         : `pnpm biome lint .`
+- format       : `pnpm biome format --write .`                  # écrit
+- format:check : `pnpm biome format .`                  # vérifie sans écrire
+- typecheck    : `pnpm -r typecheck`
+- audit        : `pnpm audit --audit-level=high`            # audit des dépendances, porte de CI
+- build        : `pnpm -r --if-present run build`   # paquets qui ont un script `build` ; aucun encore
+- migration    : `pnpm --filter donnees run migrate`   # applique les migrations à la base de `DATABASE_URL` (shell ou `.env` racine)
 - run local    : `pnpm --filter web dev`   # non vérifiée
 
 ## Qualité
