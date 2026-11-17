@@ -27,7 +27,7 @@ export interface Character {
 
 /** La plage d'une stat, bornes comprises. */
 type StatRange = readonly [min: number, max: number];
-type ClassRanges = Readonly<Record<StatKey, StatRange>>;
+export type ClassRanges = Readonly<Record<StatKey, StatRange>>;
 
 /** Annexe A du game design : la plage de chaque stat, par classe. */
 export const CLASS_RANGES: Readonly<Record<ClassKey, ClassRanges>> = {
@@ -41,7 +41,7 @@ export const CLASS_RANGES: Readonly<Record<ClassKey, ClassRanges>> = {
 	fairy: { life: [0, 5], strength: [0, 3], magic: [8, 15], speed: [8, 15] },
 };
 
-const STATS_TOTAL = 30;
+export const STATS_TOTAL = 30;
 
 /**
  * Le personnage d'un identifiant Instagram (game design § 1, « Classe » et « Tirage des stats »).
@@ -63,17 +63,17 @@ export function characterOf(instagramId: string): Character {
 }
 
 /** Chaque stat à son minimum : le départ du tirage. */
-function startingStats(ranges: ClassRanges): Stats {
+export function startingStats(ranges: ClassRanges): Stats {
 	return Object.fromEntries(
 		STAT_KEYS.map((key) => [key, ranges[key][0]]),
 	) as Stats;
 }
 
 /** Les stats encore sous leur maximum, dans l'ordre de `STAT_KEYS` : elles se disputent le point suivant. */
-function openStats(stats: Stats, ranges: ClassRanges): StatKey[] {
+export function openStats(stats: Stats, ranges: ClassRanges): StatKey[] {
 	return STAT_KEYS.filter((key) => stats[key] < ranges[key][1]);
 }
 
-function statsTotal(stats: Stats): number {
+export function statsTotal(stats: Stats): number {
 	return STAT_KEYS.reduce((total, key) => total + stats[key], 0);
 }
