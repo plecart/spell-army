@@ -1,4 +1,5 @@
 packages:
+  - apps/*
   - packages/*
 
 # pnpm 11 refuse tout script d'installation non revu (`strictDepBuilds`). Aucun n'est utile ici :
