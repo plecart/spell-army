@@ -2,12 +2,11 @@ import { describe, expect, test } from "vitest";
 import {
 	CLASS_KEYS,
 	CLASS_RANGES,
-	type Character,
 	type ClassKey,
 	characterOf,
 	STAT_KEYS,
 } from "../src/index.ts";
-import { identifiers } from "./identifiants.ts";
+import { population } from "./identifiants.ts";
 
 // Annexe A du game design, recopiée : le test la confronte au code, jamais le code à lui-même.
 const ANNEX_A = {
@@ -22,12 +21,6 @@ const ANNEX_A = {
 } as const;
 const ANNEX_A_CLASSES = Object.keys(ANNEX_A) as ClassKey[];
 const ANNEX_A_STATS = ["life", "strength", "magic", "speed"] as const;
-
-// Calculée au premier test qui la lit : une classe invalide fait rougir ces tests sans empêcher le
-// test de validité des classes de dire laquelle.
-let characters: Character[] | undefined;
-const population = () =>
-	(characters ??= identifiers(100_000).map((id) => characterOf(id)));
 
 describe("contrat du paquet", () => {
 	test("les classes, dans l'ordre de l'annexe A, et les stats sont les clés exportées", () => {
