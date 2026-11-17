@@ -26,8 +26,17 @@ const INVALID_IDENTIFIERS: [string, unknown][] = [
 	["qui est un nombre JS", 12],
 ];
 
-// Une ligne par forme de réserve fautive ; le poids fautif suit un poids valide.
-const INVALID_POOLS: [string, SpellEntry[], RangeError][] = [
+// Une ligne par poids fautif ; il suit un poids valide dans la réserve.
+const INVALID_WEIGHTS: [string, number][] = [
+	["négatif", -1],
+	["NaN", Number.NaN],
+	["infini", Number.POSITIVE_INFINITY],
+	["infini négatif", Number.NEGATIVE_INFINITY],
+];
+
+// Une ligne par forme de réserve fautive.
+type InvalidPool = [label: string, pool: SpellEntry[], error: RangeError];
+const INVALID_POOLS: InvalidPool[] = [
 	["vide", [], NO_POSITIVE_WEIGHT],
 	[
 		"toute à 0",
@@ -37,38 +46,13 @@ const INVALID_POOLS: [string, SpellEntry[], RangeError][] = [
 		],
 		NO_POSITIVE_WEIGHT,
 	],
-	[
-		"avec un poids négatif",
-		[
-			{ id: "eclair", weight: 1 },
-			{ id: "gel", weight: -1 },
+	...INVALID_WEIGHTS.map(
+		([label, weight]): InvalidPool => [
+			`avec un poids ${label}`,
+			[...VALID_POOL, { id: "gel", weight }],
+			invalidWeight("gel", weight),
 		],
-		invalidWeight("gel", -1),
-	],
-	[
-		"avec un poids NaN",
-		[
-			{ id: "eclair", weight: 1 },
-			{ id: "gel", weight: Number.NaN },
-		],
-		invalidWeight("gel", Number.NaN),
-	],
-	[
-		"avec un poids infini",
-		[
-			{ id: "eclair", weight: 1 },
-			{ id: "gel", weight: Number.POSITIVE_INFINITY },
-		],
-		invalidWeight("gel", Number.POSITIVE_INFINITY),
-	],
-	[
-		"avec un poids infini négatif",
-		[
-			{ id: "eclair", weight: 1 },
-			{ id: "gel", weight: Number.NEGATIVE_INFINITY },
-		],
-		invalidWeight("gel", Number.NEGATIVE_INFINITY),
-	],
+	),
 	[
 		"dont la somme des poids n'est plus un nombre fini",
 		[
