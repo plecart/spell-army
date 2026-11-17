@@ -107,7 +107,8 @@ jobs:
           printf 'Fusion explicite : %s Merge %s into %s (workflow %s)\n' "$(git rev-parse HEAD)" "$(git rev-parse HEAD^2)" "$(git rev-parse HEAD^1)" "$GITHUB_SHA"
 
       # pnpm d'abord, à la version du champ `packageManager` de `package.json` ; puis Node, à la
-      # version de `.nvmrc`, avec le cache du store pnpm.
+      # version exacte de `.nvmrc` — le plancher d'`engines`, qu'un test de `packages/donnees`
+      # épingle —, avec le cache du store pnpm.
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:

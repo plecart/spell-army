@@ -23,7 +23,7 @@ export default async function setup(project: Pick<TestProject, "provide">) {
 // Levée ici, l'erreur s'imprimerait en pile d'appels derrière un « No test files found » trompeur
 // (Vitest 5.1) : Docker éteint, la suite s'arrête sur la seule ligne qui le dit. Toute autre erreur
 // garde sa pile.
-function exitIfDockerUnreachable(error: unknown): never {
+export function exitIfDockerUnreachable(error: unknown): never {
 	if (error instanceof DockerUnreachable) {
 		console.error(error.message);
 		process.exit(1);
