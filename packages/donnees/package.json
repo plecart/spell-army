@@ -3,7 +3,7 @@
 	"private": true,
 	"type": "module",
 	"exports": {
-		".": "./src/client.ts"
+		".": "./src/index.ts"
 	},
 	"scripts": {
 		"migrate": "node --env-file-if-exists=../../.env src/migrate-command.ts",

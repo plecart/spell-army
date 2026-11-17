@@ -8,6 +8,20 @@
       "when": 1794910325609,
       "tag": "0000_initiale",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794933402316,
+      "tag": "0001_reglages_et_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794933403293,
+      "tag": "0002_reglages_de_depart",
+      "breakpoints": true
     }
   ]
 }
