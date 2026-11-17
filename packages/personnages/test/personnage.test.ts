@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
 	CLASS_KEYS,
 	CLASS_RANGES,
+	type Character,
 	type ClassKey,
 	characterOf,
 	STAT_KEYS,
@@ -22,7 +23,11 @@ const ANNEX_A = {
 const ANNEX_A_CLASSES = Object.keys(ANNEX_A) as ClassKey[];
 const ANNEX_A_STATS = ["life", "strength", "magic", "speed"] as const;
 
-const CHARACTERS = identifiers(100_000).map((id) => characterOf(id));
+// Calculée au premier test qui la lit : une classe invalide fait rougir ces tests sans empêcher le
+// test de validité des classes de dire laquelle.
+let characters: Character[] | undefined;
+const population = () =>
+	(characters ??= identifiers(100_000).map((id) => characterOf(id)));
 
 describe("contrat du paquet", () => {
 	test("les classes, dans l'ordre de l'annexe A, et les stats sont les clés exportées", () => {
@@ -57,7 +62,7 @@ test("l'identifiant reste un texte : des identifiants qu'un nombre JS confond do
 });
 
 test("sur les identifiants 1 à 100 000, chaque personnage a 30 points, chaque stat dans la plage de sa classe", () => {
-	const deviations = CHARACTERS.filter(({ class: classKey, stats }) => {
+	const deviations = population().filter(({ class: classKey, stats }) => {
 		const total = ANNEX_A_STATS.reduce((sum, stat) => sum + stats[stat], 0);
 		const outOfRange = ANNEX_A_STATS.some((stat) => {
 			const value = stats[stat];
@@ -68,7 +73,7 @@ test("sur les identifiants 1 à 100 000, chaque personnage a 30 points, chaque s
 		return total !== 30 || outOfRange;
 	});
 
-	expect(CHARACTERS).toHaveLength(100_000);
+	expect(population()).toHaveLength(100_000);
 	expect(deviations).toEqual([]);
 });
 
@@ -88,7 +93,7 @@ test("sur les identifiants 1 à 80 000, chaque classe compte entre 9 400 et 10 6
 	const counts = Object.fromEntries(
 		ANNEX_A_CLASSES.map((classKey) => [classKey, 0]),
 	);
-	for (const { class: classKey } of CHARACTERS.slice(0, 80_000)) {
+	for (const { class: classKey } of population().slice(0, 80_000)) {
 		counts[classKey] = (counts[classKey] ?? 0) + 1;
 	}
 	const outside = Object.entries(counts).filter(
