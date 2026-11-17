@@ -1,0 +1,105 @@
+import {
+	type CallToolResult,
+	ProtocolError,
+	ProtocolErrorCode,
+	type Tool,
+} from "@modelcontextprotocol/server";
+import type { Executor } from "donnees";
+import { z } from "zod";
+import { writeAuditEntry } from "./audit.ts";
+
+/** Ce que rend un outil : sa sortie et, pour une modification, l'état avant et après. */
+export interface ToolOutcome {
+	output: unknown;
+	before?: unknown;
+	after?: unknown;
+}
+
+/** Un outil du serveur MCP (ADR 0005, « Conséquences »). */
+export interface McpTool<Input extends z.ZodObject = z.ZodObject> {
+	name: string;
+	description: string;
+	/** Schéma d'entrée strict, `z.strictObject(…)` : un champ inconnu est refusé. */
+	input: Input;
+	run(executor: Executor, input: z.output<Input>): Promise<ToolOutcome>;
+}
+
+/** Message d'un appel refusé sans message propre : une ligne d'audit en erreur en porte toujours un. */
+const UNNAMED_ERROR = "Erreur sans message";
+
+/**
+ * `tools/list` : chaque outil, avec le schéma JSON tiré de son schéma Zod. Celui d'un `ZodObject`
+ * est un schéma `object`, que le type de Zod ne sait pas dire en valeurs JSON : d'où la conversion.
+ */
+export function listTools(tools: readonly McpTool[]): Tool[] {
+	return tools.map(({ name, description, input }) => ({
+		name,
+		description,
+		inputSchema: z.toJSONSchema(input) as Tool["inputSchema"],
+	}));
+}
+
+/**
+ * `tools/call` : valide l'entrée, exécute l'outil et écrit exactement une ligne d'audit.
+ *
+ * - Outil inconnu : ligne en erreur, puis erreur de protocole `InvalidParams`, comme `McpServer`.
+ * - Entrée invalide : ligne en erreur, outil jamais appelé, résultat `isError`.
+ * - Entrée valide : l'outil et sa ligne en succès dans une même transaction. Si l'outil ou
+ *   l'écriture de sa ligne échoue, elle s'annule, la ligne en erreur s'écrit hors d'elle et le
+ *   résultat est `isError`.
+ *
+ * L'entrée auditée est l'entrée brute, `{}` quand `args` manque. Si la ligne en erreur ne peut pas
+ * s'écrire, l'erreur remonte : rien n'a été validé.
+ */
+export async function callTool(
+	tools: readonly McpTool[],
+	executor: Executor,
+	name: string,
+	args: Record<string, unknown> | undefined,
+): Promise<CallToolResult> {
+	const input = args ?? {};
+	const tool = tools.find((candidate) => candidate.name === name);
+	if (!tool) {
+		const message = `Tool ${name} not found`;
+		await writeAuditEntry(executor, { tool: name, input, error: message });
+		throw new ProtocolError(ProtocolErrorCode.InvalidParams, message);
+	}
+	const parsed = tool.input.safeParse(input);
+	if (!parsed.success) {
+		return refuse(executor, name, input, z.prettifyError(parsed.error));
+	}
+	try {
+		const output = await executor.transaction(async (tx) => {
+			const { output, before, after } = await tool.run(tx, parsed.data);
+			await writeAuditEntry(tx, { tool: name, input, before, after });
+			return output;
+		});
+		return { content: [{ type: "text", text: JSON.stringify(output) }] };
+	} catch (error) {
+		return refuse(executor, name, input, errorMessage(error));
+	}
+}
+
+/** Écrit la ligne en erreur et rend le résultat d'erreur d'outil, convention de `McpServer`. */
+async function refuse(
+	executor: Executor,
+	tool: string,
+	input: unknown,
+	message: string,
+): Promise<CallToolResult> {
+	await writeAuditEntry(executor, { tool, input, error: message });
+	return { content: [{ type: "text", text: message }], isError: true };
+}
+
+/**
+ * Le message de la cause quand elle existe — l'erreur `pg` sous une erreur de requête Drizzle, dont
+ * le message recopie la requête SQL —, sinon celui de l'erreur ; jamais une pile, jamais vide.
+ */
+function errorMessage(error: unknown): string {
+	const source =
+		error instanceof Error && error.cause instanceof Error
+			? error.cause
+			: error;
+	const message = source instanceof Error ? source.message : String(source);
+	return message || UNNAMED_ERROR;
+}
