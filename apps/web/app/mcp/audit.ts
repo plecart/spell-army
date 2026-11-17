@@ -15,14 +15,12 @@ export async function writeAuditEntry(
 	executor: Executor,
 	{ tool, input, error, before, after }: AuditEntry,
 ): Promise<void> {
-	await executor
-		.insert(auditLog)
-		.values({
-			tool,
-			input,
-			succeeded: error === undefined,
-			error,
-			before,
-			after,
-		});
+	await executor.insert(auditLog).values({
+		tool,
+		input,
+		succeeded: error === undefined,
+		error,
+		before,
+		after,
+	});
 }
