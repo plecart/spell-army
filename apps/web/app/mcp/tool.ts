@@ -50,6 +50,10 @@ export function listTools(tools: readonly McpTool[]): Tool[] {
  *
  * L'entrée auditée est l'entrée brute, `{}` quand `args` manque. Si la ligne en erreur ne peut pas
  * s'écrire, l'erreur remonte : rien n'a été validé.
+ *
+ * Limite : une requête que le SDK refuse comme malformée n'atteint pas cette fonction, et n'a donc
+ * ni exécution ni ligne d'audit. Ainsi d'`arguments` qui n'est pas un objet : le SDK 2.4.0 répond
+ * l'erreur `-32602` « Invalid tools/call request ».
  */
 export async function callTool(
 	tools: readonly McpTool[],

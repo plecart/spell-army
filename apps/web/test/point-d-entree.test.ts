@@ -30,6 +30,10 @@ const STARTING_RECRUIT_SHARE = 0.7;
 // Le client de Claude Code négocie la spécification 2026-07-28 (ADR 0005, « Conséquences »).
 const NEGOTIATING: ClientOptions = { versionNegotiation: { mode: "auto" } };
 
+// U+0000, que ni `text` ni `jsonb` n'admettent, et le caractère de remplacement U+FFFD.
+const NUL = String.fromCharCode(0);
+const REPLACEMENT = String.fromCharCode(0xfffd);
+
 const shareInput = z.strictObject({ part: z.number().min(0).max(1) });
 const noInput = z.strictObject({});
 
@@ -377,6 +381,51 @@ describe("point d'entrée du serveur MCP", () => {
 			);
 		},
 	);
+
+	test.each<[string, string, Record<string, unknown>, object]>([
+		[
+			"dans le nom d'un outil inconnu",
+			`inc${NUL}onnu`,
+			{ champ: `a${NUL}b` },
+			{ champ: `a${REPLACEMENT}b` },
+		],
+		[
+			"dans un champ refusé",
+			"regler_part",
+			{ part: 0.5, [`in${NUL}connu`]: `a${NUL}b` },
+			{ part: 0.5, [`in${REPLACEMENT}connu`]: `a${REPLACEMENT}b` },
+		],
+	])(
+		"U+0000 %s : exactement une ligne d'audit, où il est remplacé",
+		async (_, name, args, input) => {
+			const { db, serve } = await freshEndpoint();
+			const client = await connectClient(serve);
+			// L'issue de l'appel, erreur de protocole ou d'outil, n'importe pas ici : seule sa ligne.
+			await client.callTool({ name, arguments: args }).catch(() => {});
+			const rows = await auditRows(db);
+			expect(rows).toEqual([
+				expect.objectContaining({
+					tool: name.replaceAll(NUL, REPLACEMENT),
+					input,
+					succeeded: false,
+				}),
+			]);
+			expect(rows[0]?.error).toContain(REPLACEMENT);
+			expect(JSON.stringify(rows)).not.toContain(NUL);
+		},
+	);
+
+	test("sans table d'audit, l'appel échoue et l'écriture de l'outil est annulée", async () => {
+		const { db, serve } = await freshEndpoint();
+		const client = await connectClient(serve);
+		await db.$client.query("drop table audit_log");
+		await expect(
+			client.callTool({ name: "regler_part", arguments: { part: 0.5 } }),
+		).rejects.toMatchObject({ code: ProtocolErrorCode.InternalError });
+		expect((await readCalibrationSettings(db)).recruitShare).toBe(
+			STARTING_RECRUIT_SHARE,
+		);
+	});
 
 	// Les quatre voies vers le SSE de l'ADR 0005, « Sans SSE », et un échange nominal.
 	test.each<[string, (serve: Serve) => Promise<unknown>]>([
