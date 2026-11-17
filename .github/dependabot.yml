@@ -1,0 +1,49 @@
+# Mises à jour des dépendances par Dependabot — modèle copié et complété par `init-projet`.
+#
+# Les actions du `ci.yml` sont épinglées par empreinte de commit, et une empreinte que rien ne met
+# à jour est une version gelée : l'écosystème `github-actions` vaut donc pour tout projet.
+# `init-projet` ajoute une entrée par écosystème de la stack déclarée, sur le même modèle.
+#
+# Politique commune à toutes les entrées :
+# - passage mensuel. Les mises à jour de sécurité ne suivent pas l'intervalle : elles partent à
+#   l'avis, si le dépôt les active (doc GitHub « Dependabot security updates », lue le 2026-10-28) ;
+# - versions mineures et correctifs groupés en une PR par entrée ; chaque montée majeure a sa
+#   PR à elle — elle casse plus souvent, et mêlée au lot elle bloquerait tout le reste —,
+#   sauf celles qu'une entrée refuse (`ignore`, raison en commentaire) ;
+# - aucun libellé (`labels: []`) : sans cette ligne, Dependabot crée `dependencies` et un libellé
+#   par langage, hors du mapping de `.claude/pipeline.config.md` ;
+# - commits `chore(deps): …` ou `chore(deps-dev): …` : le préfixe conventional du dépôt ; les PR du
+#   bot sont exemptées des métadonnées de PR et de la description en français, qui reste en
+#   anglais — Dependabot ne sait pas l'écrire autrement (`.claude/rules/taille-pr.md`).
+#
+# Une PR du bot se merge comme toute autre : CI verte et go humain, jamais d'auto-merge.
+
+version: 2
+updates:
+  # Les empreintes de `.github/workflows/*.yml` et leur commentaire de version, mis à jour
+  # ensemble.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    labels: []
+    commit-message:
+      prefix: chore
+      include: scope
+
+  # Les dépendances du monorepo pnpm — `package.json` de la racine et des paquets,
+  # `pnpm-lock.yaml` : l'écosystème `npm` couvre pnpm (référence des options Dependabot).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    labels: []
+    commit-message:
+      prefix: chore
+      include: scope

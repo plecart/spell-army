@@ -1,0 +1,173 @@
+# CI du dépôt : les portes bloquantes de `.claude/pipeline.config.md` (« Qualité ») — audit, lint,
+# format:check, typecheck, test — plus le build, chacune lancée par sa commande de « Commandes du
+# projet ». Généré depuis le modèle du boilerplate selon `init-projet` (étape 7).
+#
+# Le garde `if:`, `concurrency` et le pas « Fusion explicite du trunk » se conservent : `cycle-pr`
+# en dépend (Étapes 5 et 7). Tout job ajouté qui tourne sur une PR extrait la tête comme le job
+# `ci`, puis reprend le pas par `*fusion`, comme le job `auteurs`. Chaque `uses:` est épinglé par
+# l'empreinte de commit de sa version, étiquette la plus précise en commentaire ; Dependabot les
+# fait avancer ensemble (`.github/dependabot.yml`).
+
+name: CI
+
+# Aucune étape n'écrit sur le dépôt : le jeton ne reçoit que la lecture. Le défaut d'un dépôt
+# peut être bien plus large ; un job qui doit écrire élève ses droits à son niveau, jamais le
+# workflow entier.
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    # `ready_for_review` produit le premier run d'une PR : le garde `if:` du job `ci` saute toute
+    # draft, et aucun run n'a donc couvert son SHA. `cycle-pr` sort du draft, puis attend ce run
+    # (Étape 5) ; chaque push en lance un autre ; `reopened` relance une PR dont l'événement s'est
+    # perdu, ou dont le trunk a changé la définition du workflow depuis le déclenchement : seul un
+    # événement neuf la relit.
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  # L'audit lit une base d'avis, dont le verdict change sans commit : il tourne aussi chaque jour,
+  # et à la demande pour éprouver ce chemin sans attendre. Ces deux déclencheurs ne lancent que
+  # lui ; les autres portes les écartent par `if:`. `schedule` ne part que de la branche par
+  # défaut, et GitHub le désactive dans un dépôt public resté 60 jours sans activité.
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+# Un run par PR, le plus récent : un push qui en suit un autre annule le run encore en cours de la
+# même PR, qui ne vérifiait plus la tête. Sur un push vers `main`, `github.event.pull_request` est
+# vide : le groupe se replie sur le SHA, propre à chaque commit, et rien ne s'annule.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    name: Audit + Lint + Format + Typecheck + Build + Tests
+    runs-on: ubuntu-latest
+
+    # Aucune PR en draft ne tourne, quel que soit l'événement — ouverture, push, réouverture : une
+    # draft change à chaque commit, et la CI ne paie un run que là où son verdict peut tenir — au
+    # passage en ready, puis à chaque push. Un rouge propre à la plateforme cible se voit donc au
+    # passage en ready, après la relecture (`cycle-pr`, Étape 4) : le prix assumé. Une PR ouverte
+    # prête — un bot de dépendances, une branche déjà écrite — tourne dès l'ouverture.
+    #
+    # La condition sur `event_name` est nécessaire : sur un push vers `main`, l'objet
+    # `pull_request` n'existe pas.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+
+    steps:
+      # Sur une PR, la tête, que le pas suivant fusionne au trunk courant ; sur un push vers `main`,
+      # le commit poussé, et rien ne se fusionne.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      # La fusion explicite du trunk, écrite ici en entier sous l'ancre `fusion`, que tout autre job
+      # d'une PR reprend par `*fusion` (doc GitHub « Reusing workflow configurations ») ; une ancre
+      # ne vaut que dans son fichier. La référence de fusion de la forge est calculée au
+      # déclenchement, et un `gh run rerun` la réutilise : fusionnée ici, la tête l'est au trunk du
+      # moment, et la trace dit lequel à `porte-merge.py trunk` (`cycle-pr` Étape 7). Elle vit dans
+      # la définition du workflow, que le run lit à son commit, jamais dans l'arbre extrait : une
+      # action locale se lirait dans la tête, qu'une PR ouverte avant elle ne porte pas.
+      #
+      # Le trunk est la branche que la PR vise — une PR de lot vise la branche d'intégration de son
+      # issue —, lue dans `refs/remotes/origin/`, que le clone complet écrit pour chaque branche
+      # (`getRefSpecForAllHistory` d'`actions/checkout`, lu le 2026-11-08). Branche et tête passent
+      # par l'environnement, jamais développées dans le script.
+      #
+      # Le runner n'a pas d'identité git : le commit prend celle du robot d'Actions. `--quiet` : le
+      # résumé de la fusion, un nom de fichier par ligne, ne s'écrit pas — un fichier nommé comme la
+      # trace l'imiterait ; un conflit s'écrit quand même. Une tête que le trunk contient déjà ne
+      # construit rien, et `merge` sort pourtant en 0 : le pas échoue plutôt que de donner un commit
+      # du trunk pour une fusion. La trace, en dernier, relit les parents du commit et nomme le
+      # `GITHUB_SHA` du run, la référence de fusion dont il a lu cette définition, qu'un
+      # `gh run rerun` garde : une ligne destinée à `porte-merge.py trunk`, et aucune ligne du
+      # script, que le journal recopie, ne commence par son préfixe — celle qui l'écrit commence
+      # par `printf`.
+      - &fusion
+        name: Fusion explicite du trunk
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          TRUNK: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git checkout --quiet --detach "refs/remotes/origin/$TRUNK"
+          trunk=$(git rev-parse HEAD)
+          if ! git -c 'user.name=github-actions[bot]' -c 'user.email=41898282+github-actions[bot]@users.noreply.github.com' merge --no-ff --quiet -m "Merge $HEAD_SHA into $trunk" "$HEAD_SHA"; then
+            echo "::error::La tête $HEAD_SHA ne se fusionne pas sans conflit dans origin/$TRUNK ($trunk). Fichiers en conflit : $(git diff --name-only --diff-filter=U | paste -sd ' ' -)"
+            exit 1
+          fi
+          if [ "$(git rev-parse HEAD)" = "$trunk" ]; then
+            echo "::error::La tête $HEAD_SHA est déjà dans origin/$TRUNK ($trunk) : rien à fusionner."
+            exit 1
+          fi
+          printf 'Fusion explicite : %s Merge %s into %s (workflow %s)\n' "$(git rev-parse HEAD)" "$(git rev-parse HEAD^2)" "$(git rev-parse HEAD^1)" "$GITHUB_SHA"
+
+      # pnpm d'abord, à la version du champ `packageManager` de `package.json` ; puis Node, à la
+      # version de `.nvmrc`, avec le cache du store pnpm.
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Avant les portes de code : un avis de sécurité sur une dépendance n'a pas à attendre
+      # que la suite passe pour être signalé. Seuil `high` : un avis high ou critical bloque ;
+      # moderate et low ne bloquent pas, le journal n'en donne que le compte (`pnpm audit` sans
+      # seuil les détaille). Au premier relevé (2026-11-17), les trois avis
+      # moderate venaient de dépendances transitives des outils de migration et de test
+      # (drizzle-kit, testcontainers), hors du code livré.
+      - name: Audit
+        run: pnpm audit --audit-level=high
+
+      # Portes de code : une PR et un push sur `main`, jamais l'horloge de l'audit.
+      - name: Lint
+        if: &portes-de-code github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+        run: pnpm biome lint .
+
+      - name: Format check
+        if: *portes-de-code
+        run: pnpm biome format .
+
+      - name: Typecheck
+        if: *portes-de-code
+        run: pnpm -r typecheck
+
+      - name: Build
+        if: *portes-de-code
+        run: pnpm -r --if-present run build
+
+      - name: Tests
+        if: *portes-de-code
+        run: pnpm -r test
+
+  auteurs:
+    name: Auteurs — aucun commit d'auteur Claude
+    runs-on: ubuntu-latest
+
+    # Un commit d'auteur Claude entre au panneau des contributeurs une fois mergé, et un hook local
+    # ne couvre pas une session cloud : ce contrôle vaut pour toute PR, d'où que viennent ses
+    # commits. Hors draft, comme le job `ci`.
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+
+    steps:
+      # Le pas de fusion combine la tête de la PR (`HEAD^2`) au trunk courant (`HEAD^1`), et
+      # `HEAD^1..HEAD^2` lit ses commits.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - *fusion
+
+      - name: Refuser un auteur Claude
+        shell: bash
+        run: |
+          commits=$(git log --no-mailmap -i -F --author='<noreply@anthropic.com>' --format='%h %s' HEAD^1..HEAD^2)
+          if [ -n "$commits" ]; then echo "$commits"; exit 1; fi
