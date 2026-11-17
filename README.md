@@ -5,7 +5,7 @@ Monorepo pnpm, un paquet par domaine sous `packages/` (`docs/adr/0001-architectu
 
 ## Prérequis
 
-- **Node 24**, la version de `.nvmrc`.
+- **Node 24**, au moins la version de `.nvmrc` : le plancher d'`engines`, celle que la CI exécute.
 - **pnpm par corepack** : `corepack enable` une fois, puis `pnpm` prend la version du champ
   `packageManager` de `package.json`.
 - **Docker Desktop allumé** pour les tests de `packages/donnees` : la suite démarre elle-même un

@@ -1,7 +1,5 @@
 // Commande `pnpm --filter donnees run migrate` : applique les migrations à la base de
-// `DATABASE_URL`, posée dans le shell ou dans le fichier `.env` de la racine. Fichier d'entrée à
-// part, sans garde de module principal : `import.meta.main` n'arrive qu'en Node 24.2,
-// quand `engines` admet tout Node 24.
+// `DATABASE_URL`, posée dans le shell ou dans le fichier `.env` de la racine.
 import { applyMigrations } from "./migrate.ts";
 
 const url = process.env.DATABASE_URL;
