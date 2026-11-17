@@ -35,7 +35,7 @@ export function diceOf(domain: DiceDomain, instagramId: string) {
 	return {
 		/** Un élément de `items` (de 1 à 256 éléments), à chances égales. */
 		pick<T>(items: readonly T[]): T {
-			// Les octets de la dernière tranche incomplète se rejettent : l'octet modulo n reste uniforme.
+			// Les octets de la dernière tranche incomplète se rejettent : le modulo reste uniforme.
 			const accepted = BYTE_VALUES - (BYTE_VALUES % items.length);
 			for (;;) {
 				const byte = nextByte();

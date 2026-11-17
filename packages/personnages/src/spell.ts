@@ -11,11 +11,11 @@ export interface SpellEntry {
  * design § 1, « Sort » ; § 2, « Rareté »). Le tirage ne lit que le flux `spell` des dés : il est
  * indépendant de la classe.
  *
- * Les sorts de poids positif se trient par `id` en unités de code (`<`, jamais `localeCompare`, dont
- * l'ordre change avec la locale : « ä » avant « z » en allemand, après en suédois), puis par poids
- * entre `id` en double, pour que l'ordre de la réserve ne change rien. Avec u, 48 bits du flux
- * `spell`, et r = u × Σ des poids, le sort tiré est le premier dont la somme cumulée des poids, dans
- * cet ordre, dépasse strictement r : un sort de poids 0 n'ouvre aucun intervalle.
+ * Les sorts de poids positif se trient par `id` en unités de code (`<`, jamais `localeCompare`,
+ * dont l'ordre change avec la locale : « ä » avant « z » en allemand, après en suédois), puis par
+ * poids entre `id` en double, pour que l'ordre de la réserve ne change rien. Avec u, 48 bits du
+ * flux `spell`, et r = u × Σ des poids, le sort tiré est le premier dont la somme cumulée des
+ * poids, dans cet ordre, dépasse strictement r : un sort de poids 0 n'ouvre aucun intervalle.
  *
  * @throws {RangeError} si l'identifiant n'est pas un texte non vide de chiffres décimaux, si un
  * poids est négatif ou non fini, si aucun poids n'est positif ou si leur somme n'est pas finie.
@@ -63,7 +63,7 @@ function drawableSpells(pool: readonly SpellEntry[]): SpellEntry[] {
 }
 
 // Le poids départage les `id` en double : deux entrées égales en tout sont interchangeables, donc
-// l'ordre trié ne dépend que du contenu de la réserve, jusque dans les arrondis de la somme cumulée.
+// l'ordre trié ne dépend que du contenu de la réserve, jusqu'aux arrondis de la somme cumulée.
 function byIdThenWeight(a: SpellEntry, b: SpellEntry): number {
 	if (a.id !== b.id) return a.id < b.id ? -1 : 1;
 	return a.weight - b.weight;

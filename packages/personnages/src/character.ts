@@ -1,6 +1,8 @@
 import { diceOf } from "./dice.ts";
 
-/** Les classes, dans l'ordre de l'annexe A du game design. Ordre figé : la classe se tire par rang. */
+/**
+ * Les classes, dans l'ordre de l'annexe A du game design. Ordre figé : la classe se tire par rang.
+ */
 export const CLASS_KEYS = [
 	"wizard",
 	"golem",
@@ -69,7 +71,10 @@ export function startingStats(ranges: ClassRanges): Stats {
 	) as Stats;
 }
 
-/** Les stats encore sous leur maximum, dans l'ordre de `STAT_KEYS` : elles se disputent le point suivant. */
+/**
+ * Les stats encore sous leur maximum, dans l'ordre de `STAT_KEYS` : elles se disputent le point
+ * suivant.
+ */
 export function openStats(stats: Stats, ranges: ClassRanges): StatKey[] {
 	return STAT_KEYS.filter((key) => stats[key] < ranges[key][1]);
 }
