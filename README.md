@@ -29,17 +29,18 @@ terminal.
    ranger dans KeePassXC, puis l'écrire soi-même à la ligne `MCP_TOKEN=` du `.env` de la racine
    (gabarit : `.env.example`) : le seul `.env` du dépôt, que le serveur charge par
    `apps/web/next.config.ts`.
-3. **Lancer le serveur** : `pnpm --filter web dev`. Il écoute à l'adresse qu'il affiche,
-   `http://localhost:3000` par défaut.
-4. **Brancher Claude Code**, depuis Git Bash à la racine du dépôt, jamais en le demandant à Claude :
-   Claude verrait le jeton. `read -rs` le lit sans l'afficher ni l'écrire dans l'historique du shell ;
-   `claude mcp add` l'enregistre à la portée locale, celle par défaut, dans `~/.claude.json`, hors du
-   dépôt. Jamais `--scope project`, qui l'écrirait dans le `.mcp.json` de la racine, fait pour être
-   commité.
+3. **Lancer le serveur** : `pnpm --filter web dev`. Il n'écoute que sur ce poste,
+   `http://127.0.0.1:3000` par défaut, à l'adresse qu'il affiche.
+4. **Brancher Claude Code**, depuis Git Bash à la racine du clone principal, jamais en le demandant à
+   Claude : Claude verrait le jeton. `read -rs` le lit sans l'afficher ni l'écrire dans l'historique
+   du shell ; `claude mcp add` l'enregistre à la portée locale, celle par défaut, dans
+   `~/.claude.json`, hors du dépôt. La portée locale rattache le serveur au dossier où la commande est
+   lancée : les sessions d'agents ouvertes dans un worktree n'ont pas besoin de modifier les réglages.
+   Jamais `--scope project`, qui l'écrirait dans le `.mcp.json` de la racine, fait pour être commité.
 
    ```bash
    read -rsp "Jeton MCP : " JETON_MCP; echo
-   claude mcp add --transport http wizard-army http://localhost:3000/api/mcp --header "Authorization: Bearer $JETON_MCP"
+   claude mcp add --transport http wizard-army http://127.0.0.1:3000/api/mcp --header "Authorization: Bearer $JETON_MCP"
    unset JETON_MCP
    ```
 
