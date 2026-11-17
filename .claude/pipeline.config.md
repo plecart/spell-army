@@ -48,7 +48,7 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - seuil de couverture : aucun
 - règles sensibles à la plateforme : poste Windows, CI Linux — casse des chemins et fins de ligne, vérifiées en CI
 - gates bloquants en CI : audit, lint, format:check, typecheck, test
-- services requis en CI : aucun (à revoir à la première PR de code)
+- services requis en CI : Docker, fourni par `ubuntu-latest`, pour la base de test (Postgres 18 jetable que la suite de `packages/donnees` démarre elle-même)
 
 ## Périmètre
 - domaines (nom métier → chemin) — servent aussi de thèmes/milestones à `triage` (chemins prévus, confirmés à la première PR de code) :

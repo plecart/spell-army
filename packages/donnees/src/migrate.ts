@@ -8,7 +8,8 @@ const MIGRATIONS_FOLDER = fileURLToPath(
 
 /**
  * Applique à la base désignée par `url` les migrations de `migrations/` qu'elle n'a pas encore
- * reçues. Appelée par la commande `migrate` (`migrate-command.ts`).
+ * reçues. Appelée par la commande `migrate` (`migrate-command.ts`) et par le harnais de test
+ * (`test/global-setup.ts`), qui éprouve ainsi le chemin de la commande.
  */
 export async function applyMigrations(url: string): Promise<void> {
 	const client = createClient(url);
