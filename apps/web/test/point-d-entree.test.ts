@@ -18,6 +18,7 @@ import {
 	connectClient,
 	ENDPOINT_URL,
 	freshDatabase,
+	rewritingBodies,
 	type Serve,
 	TOKEN,
 } from "./montage.ts";
@@ -28,6 +29,28 @@ const STARTING_RECRUIT_SHARE = 0.7;
 // U+0000, que ni `text` ni `jsonb` n'admettent, et le caractère de remplacement U+FFFD.
 const NUL = String.fromCharCode(0);
 const REPLACEMENT = String.fromCharCode(0xfffd);
+
+// Les formes d'une chaîne que `jsonb` refuse. Un surrogate isolé, `JSON.stringify` l'écrit en
+// séquence d'échappement Unicode, que `jsonb` refuse aussi (mesuré le 2026-11-17, Postgres 18).
+const UNSTORABLE: [string, string][] = [
+	["U+0000", NUL],
+	["un surrogate haut seul", String.fromCharCode(0xd800)],
+	["un surrogate bas seul", String.fromCharCode(0xdc00)],
+];
+
+// Un caractère en clé, puis en valeur, d'un champ que le schéma strict refuse.
+const REFUSED_FIELD: [
+	string,
+	(character: string) => Record<string, unknown>,
+][] = [
+	["en clé", (character) => ({ part: 0.5, [`in${character}connu`]: 1 })],
+	["en valeur", (character) => ({ part: 0.5, inconnu: `a${character}b` })],
+];
+
+// Des tableaux imbriqués sur 2 000 000 niveaux : un corps de 4 000 308 octets, que le gestionnaire
+// du SDK admet sous sa limite de 4 194 304. Mesuré le 2026-11-17 (Node 24) : sans borne, la ligne
+// se perd dès 5 000 niveaux, et `JSON.stringify`, par lequel le client sérialise, déborde aussi.
+const DEEPEST = 2_000_000;
 
 const shareInput = z.strictObject({ part: z.number().min(0).max(1) });
 const noInput = z.strictObject({});
@@ -349,50 +372,104 @@ describe("point d'entrée du serveur MCP", () => {
 		},
 	);
 
-	test.each<[string, string, Record<string, unknown>, object]>([
-		[
-			"dans le nom d'un outil inconnu",
-			`inc${NUL}onnu`,
-			{ champ: `a${NUL}b` },
-			{ champ: `a${REPLACEMENT}b` },
-		],
-		[
-			"dans un champ refusé",
-			"regler_part",
-			{ part: 0.5, [`in${NUL}connu`]: `a${NUL}b` },
-			{ part: 0.5, [`in${REPLACEMENT}connu`]: `a${REPLACEMENT}b` },
-		],
-	])(
-		"U+0000 %s : exactement une ligne d'audit, où il est remplacé",
-		async (_, name, args, input) => {
+	test("U+0000 dans le nom d'un outil inconnu : exactement une ligne d'audit, où il est remplacé", async () => {
+		const { db, serve } = await freshEndpoint();
+		const client = await connectClient(serve);
+		await expect(
+			client.callTool({ name: `inc${NUL}onnu`, arguments: { x: 1 } }),
+		).rejects.toMatchObject({ code: ProtocolErrorCode.InvalidParams });
+		const rows = await auditRows(db);
+		expect(rows).toEqual([
+			expect.objectContaining({
+				tool: `inc${REPLACEMENT}onnu`,
+				input: { x: 1 },
+				succeeded: false,
+			}),
+		]);
+		expect(rows[0]?.error).toContain(REPLACEMENT);
+	});
+
+	// Les trois formes, chacune en clé et en valeur d'un champ refusé (dénombrement de la relecture 2).
+	test.each(
+		UNSTORABLE.flatMap(([form, character]) =>
+			REFUSED_FIELD.map(
+				([position, args]) =>
+					[form, position, args(character), args(REPLACEMENT)] as const,
+			),
+		),
+	)(
+		"%s %s d'un champ refusé : exactement une ligne d'audit, où il est remplacé",
+		async (_, _position, args, input) => {
 			const { db, serve } = await freshEndpoint();
 			const client = await connectClient(serve);
-			// L'issue de l'appel, erreur de protocole ou d'outil, n'importe pas ici : seule sa ligne.
-			await client.callTool({ name, arguments: args }).catch(() => {});
-			const rows = await auditRows(db);
-			expect(rows).toEqual([
+			const result = await client.callTool({
+				name: "regler_part",
+				arguments: args,
+			});
+			expect(result.isError).toBe(true);
+			expect(await auditRows(db)).toEqual([
 				expect.objectContaining({
-					tool: name.replaceAll(NUL, REPLACEMENT),
+					tool: "regler_part",
 					input,
 					succeeded: false,
 				}),
 			]);
-			expect(rows[0]?.error).toContain(REPLACEMENT);
-			expect(JSON.stringify(rows)).not.toContain(NUL);
 		},
 	);
 
-	test("sans table d'audit, l'appel échoue et l'écriture de l'outil est annulée", async () => {
+	test("une imbrication de 2 000 000 niveaux sous un champ refusé : exactement une ligne d'audit, tronquée", async () => {
 		const { db, serve } = await freshEndpoint();
-		const client = await connectClient(serve);
-		await db.$client.query("drop table audit_log");
-		await expect(
-			client.callTool({ name: "regler_part", arguments: { part: 0.5 } }),
-		).rejects.toMatchObject({ code: ProtocolErrorCode.InternalError });
-		expect((await readCalibrationSettings(db)).recruitShare).toBe(
-			STARTING_RECRUIT_SHARE,
+		const client = await connectClient(
+			rewritingBodies(serve, (body) =>
+				body.replace(
+					'"__profond__"',
+					"[".repeat(DEEPEST) + "]".repeat(DEEPEST),
+				),
+			),
+		);
+		const result = await client.callTool({
+			name: "regler_part",
+			arguments: { part: 0.5, profond: "__profond__" },
+		});
+		expect(result.isError).toBe(true);
+		const rows = await auditRows(db);
+		expect(rows).toEqual([
+			expect.objectContaining({
+				tool: "regler_part",
+				succeeded: false,
+				error: expect.stringContaining('Unrecognized key: "profond"'),
+			}),
+		]);
+		expect(JSON.stringify(rows[0]?.input)).toContain(
+			'"[imbrication tronquée]"',
 		);
 	});
+
+	test.each<[string, string, Record<string, unknown>]>([
+		["un outil connu", "regler_part", { part: 0.5 }],
+		["un outil inconnu", "inconnu", { x: 1 }],
+	])(
+		"sans table d'audit, %s : erreur interne au message court, sans la requête ni l'entrée, écriture annulée",
+		async (_, name, args) => {
+			const { db, serve } = await freshEndpoint();
+			const client = await connectClient(serve);
+			await db.$client.query("drop table audit_log");
+			const error = await client
+				.callTool({ name, arguments: args })
+				.catch((error: unknown) => error);
+			expect(error).toMatchObject({
+				code: ProtocolErrorCode.InternalError,
+				message: expect.stringContaining(
+					"Audit impossible : l'appel n'a pas été enregistré.",
+				),
+			});
+			expect(String(error)).not.toContain("insert into");
+			expect(String(error)).not.toContain(JSON.stringify(args));
+			expect((await readCalibrationSettings(db)).recruitShare).toBe(
+				STARTING_RECRUIT_SHARE,
+			);
+		},
+	);
 
 	// Les quatre voies vers le SSE de l'ADR 0005, « Sans SSE », et un échange nominal.
 	test.each<[string, (serve: Serve) => Promise<unknown>]>([
