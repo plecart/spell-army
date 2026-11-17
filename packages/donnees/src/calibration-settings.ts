@@ -1,0 +1,65 @@
+import { getTableColumns } from "drizzle-orm";
+import type { NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
+import type { PgDatabase } from "drizzle-orm/pg-core";
+import { calibrationSettings } from "./schema.ts";
+
+/** Réglages du calibrage (`docs/game-design.md` § 6) : la ligne de `calibration_settings` sans `id`. */
+export type CalibrationSettings = Omit<
+	typeof calibrationSettings.$inferSelect,
+	"id"
+>;
+
+/** Le client que rend `createClient`, ou une transaction ouverte sur lui. */
+export type Executor = PgDatabase<NodePgQueryResultHKT>;
+
+// Colonnes lues et rendues : celles de `CalibrationSettings`.
+const { id: _id, ...settingsColumns } = getTableColumns(calibrationSettings);
+
+function settingsRow(rows: CalibrationSettings[]): CalibrationSettings {
+	const [row] = rows;
+	if (!row) {
+		throw new Error(
+			"Réglages du calibrage absents : la base n'est pas migrée (pnpm --filter donnees run migrate).",
+		);
+	}
+	return row;
+}
+
+/** Lit les réglages du calibrage. Lève une erreur si la ligne manque (base non migrée). */
+export async function readCalibrationSettings(
+	executor: Executor,
+): Promise<CalibrationSettings> {
+	return settingsRow(
+		await executor.select(settingsColumns).from(calibrationSettings),
+	);
+}
+
+/**
+ * Modifie les seuls réglages que porte `patch` et rend les réglages avant et après, tels que la base
+ * les a écrits. Un patch sans aucune valeur est refusé avant toute requête. Les bornes sont celles
+ * des contraintes de la base, dont la violation remonte telle quelle.
+ *
+ * Ouvre sa propre transaction, un point de sauvegarde quand `executor` en est déjà une : refusée,
+ * la modification laisse la transaction de l'appelant utilisable. La ligne est verrouillée dès la
+ * lecture de `before`, qu'aucune modification concurrente ne périme.
+ */
+export async function updateCalibrationSettings(
+	executor: Executor,
+	patch: Partial<CalibrationSettings>,
+): Promise<{ before: CalibrationSettings; after: CalibrationSettings }> {
+	if (Object.values(patch).every((value) => value === undefined)) {
+		throw new Error("Aucun réglage à modifier : le patch est vide.");
+	}
+	return executor.transaction(async (tx) => {
+		const before = settingsRow(
+			await tx.select(settingsColumns).from(calibrationSettings).for("update"),
+		);
+		const after = settingsRow(
+			await tx
+				.update(calibrationSettings)
+				.set(patch)
+				.returning(settingsColumns),
+		);
+		return { before, after };
+	});
+}

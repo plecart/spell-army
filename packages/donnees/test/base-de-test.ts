@@ -9,6 +9,10 @@ import { applyMigrations } from "../src/migrate.ts";
 
 const IMAGE = "postgres:18";
 
+/** Port 9 (discard) : aucune base n'y répond, une requête qui la joindrait échouerait. */
+export const UNREACHABLE_DATABASE_URL =
+	"postgres://piege:piege@127.0.0.1:9/piege";
+
 /** Docker ne répond pas : la base de test ne peut pas démarrer. */
 export class DockerUnreachable extends Error {
 	constructor(options?: ErrorOptions) {

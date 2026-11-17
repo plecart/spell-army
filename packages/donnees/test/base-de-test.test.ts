@@ -2,11 +2,12 @@ import { readFileSync } from "node:fs";
 import { type SQL, sql } from "drizzle-orm";
 import { describe, expect, inject, test, vi } from "vitest";
 import { createClient } from "../src/client.ts";
-import { createMigratedDatabase } from "./base-de-test.ts";
+import {
+	createMigratedDatabase,
+	UNREACHABLE_DATABASE_URL,
+} from "./base-de-test.ts";
 import setup from "./global-setup.ts";
 
-// Port 9 (discard) : aucune base n'y répond, un test qui la joindrait échouerait.
-const FOREIGN_DATABASE_URL = "postgres://piege:piege@127.0.0.1:9/piege";
 const CONTAINER_START_TIMEOUT_MS = 120_000;
 const MIGRATION_COUNT: number = JSON.parse(
 	readFileSync(
@@ -54,7 +55,7 @@ describe("base de test", () => {
 	test(
 		"un DATABASE_URL posé dans le shell n'atteint pas les tests",
 		async () => {
-			vi.stubEnv("DATABASE_URL", FOREIGN_DATABASE_URL);
+			vi.stubEnv("DATABASE_URL", UNREACHABLE_DATABASE_URL);
 			const provided = new Map<string, string>();
 			const stop = await setup({
 				provide: (key, value) => provided.set(key, value),
