@@ -15,8 +15,9 @@ test("les dés lisent dans l'ordre les blocs SHA-256 de « domaine:identifiant:c
 	expect(read).toEqual(blocks.slice(0, 40));
 });
 
-// Une classe dont les maximums ne font pas 30 laisserait le tirage sans stat ouverte : il doit
-// échouer, pas boucler sans fin avant que le test de validité des classes ne le dise.
+// Hors de 1 à 256 éléments, aucun octet ne serait accepté : le tirage doit échouer, pas boucler
+// sans fin. Zéro, c'est une classe dont les maximums ne font pas 30, à court de stat ouverte : sans
+// cet échec, la suite bloquerait avant que le test de validité des classes ne dise laquelle.
 test.each([0, 257])("les dés refusent de tirer parmi %i éléments", (count) => {
 	const items = Array.from({ length: count }, (_, index) => index);
 

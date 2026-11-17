@@ -51,7 +51,8 @@ export const STATS_TOTAL = 30;
  * part de son minimum, puis chaque point restant jusqu'à 30 va à l'une des stats encore sous leur
  * maximum, à chances égales, prises dans l'ordre de `STAT_KEYS` (flux `stats`).
  *
- * @throws {RangeError} si l'identifiant n'est pas un texte non vide de chiffres décimaux.
+ * @throws {RangeError} si l'identifiant n'est pas un texte non vide de chiffres décimaux, ou si
+ * une classe ne peut atteindre 30 points (aucune stat ouverte).
  */
 export function characterOf(instagramId: string): Character {
 	const characterClass = diceOf("class", instagramId).pick(CLASS_KEYS);

@@ -100,9 +100,9 @@ function scoreDistributionOf(
 		const next: typeof layer = new Map();
 		for (const { stats, probability } of layer.values()) {
 			const open = openStats(stats, ranges);
+			const share = probability / open.length;
 			for (const key of open) {
 				const grown = { ...stats, [key]: stats[key] + 1 };
-				const share = probability / open.length;
 				const grownKey = layerKey(grown);
 				const reached = next.get(grownKey);
 				if (reached === undefined) {

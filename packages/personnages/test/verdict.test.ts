@@ -1,11 +1,6 @@
 import { expect, test } from "vitest";
-import {
-	type ClassKey,
-	characterOf,
-	VERDICT_LEVELS,
-	verdictOf,
-} from "../src/index.ts";
-import { identifiers } from "./identifiants.ts";
+import { type ClassKey, VERDICT_LEVELS, verdictOf } from "../src/index.ts";
+import { population } from "./identifiants.ts";
 
 const LEVELS = ["ill_born", "weak", "average", "gifted", "excellent"];
 
@@ -22,30 +17,24 @@ const SHARES_BY_CLASS: Record<ClassKey, readonly number[]> = {
 };
 const TOLERANCE_POINTS = 3;
 
-const VERDICTS = identifiers(100_000).map((id) => {
-	const character = characterOf(id);
-	return { classKey: character.class, level: verdictOf(character) };
-});
-
 test("le verdict rend un niveau de la liste ordonnée, et chacun est atteint sur les identifiants 1 à 100 000", () => {
 	expect(VERDICT_LEVELS).toEqual(LEVELS);
-	expect(new Set(VERDICTS.map(({ level }) => level))).toEqual(new Set(LEVELS));
+	expect(new Set(population().map(verdictOf))).toEqual(new Set(LEVELS));
 });
 
 test("sur les identifiants 1 à 100 000, la part de chaque niveau dans chaque classe est à ± 3 points de la table", () => {
-	const byClass = Map.groupBy(VERDICTS, ({ classKey }) => classKey);
-	const deviations = [...byClass].flatMap(([classKey, verdicts]) =>
-		LEVELS.flatMap((level, index) => {
-			const count = verdicts.filter(
-				(verdict) => verdict.level === level,
-			).length;
-			const share = (100 * count) / verdicts.length;
+	const byClass = Map.groupBy(population(), (character) => character.class);
+	const deviations = [...byClass].flatMap(([classKey, characters]) => {
+		const levels = characters.map(verdictOf);
+		return LEVELS.flatMap((level, index) => {
+			const count = levels.filter((reached) => reached === level).length;
+			const share = (100 * count) / levels.length;
 			const expected = SHARES_BY_CLASS[classKey][index] ?? Number.NaN;
 			return Math.abs(share - expected) <= TOLERANCE_POINTS
 				? []
 				: [{ classKey, level, share, expected }];
-		}),
-	);
+		});
+	});
 
 	expect([...byClass.keys()].sort()).toEqual(
 		Object.keys(SHARES_BY_CLASS).sort(),
