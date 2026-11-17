@@ -1,9 +1,13 @@
 import { createHash } from "node:crypto";
 
-/** Un flux de dés par usage : un tirage n'en décale aucun autre. */
-type DiceDomain = "class" | "stats";
+/**
+ * Un flux de dés par usage : aucun tirage n'en décale un autre, et le sort reste indépendant de la
+ * classe.
+ */
+type DiceDomain = "class" | "stats" | "spell";
 
 const BYTE_VALUES = 256;
+const FRACTION_BYTES = 6;
 const DECIMAL_DIGITS = /^[0-9]+$/;
 
 /**
@@ -37,6 +41,14 @@ export function diceOf(domain: DiceDomain, instagramId: string) {
 				const byte = nextByte();
 				if (byte < accepted) return items[byte % items.length] as T;
 			}
+		},
+		/** Une fraction uniforme de [0, 1) sur 48 bits : six octets, gros-boutistes, sur 2⁴⁸. */
+		fraction(): number {
+			let value = 0;
+			for (let index = 0; index < FRACTION_BYTES; index++) {
+				value = value * BYTE_VALUES + nextByte();
+			}
+			return value / BYTE_VALUES ** FRACTION_BYTES;
 		},
 	};
 }
