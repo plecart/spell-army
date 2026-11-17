@@ -35,6 +35,12 @@ export function diceOf(domain: DiceDomain, instagramId: string) {
 	return {
 		/** Un élément de `items` (de 1 à 256 éléments), à chances égales. */
 		pick<T>(items: readonly T[]): T {
+			// Hors de 1 à 256, aucun octet ne serait accepté : la boucle ne finirait jamais.
+			if (items.length < 1 || items.length > BYTE_VALUES) {
+				throw new RangeError(
+					`le tirage demande de 1 à 256 éléments, reçu : ${items.length}`,
+				);
+			}
 			// Les octets de la dernière tranche incomplète se rejettent : le modulo reste uniforme.
 			const accepted = BYTE_VALUES - (BYTE_VALUES % items.length);
 			for (;;) {
