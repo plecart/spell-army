@@ -77,7 +77,7 @@ réponses SSE, alors que Claude Code négocie la spécification 2026 (« Vérifi
 - Versions au registre npm le 2026-11-17 : `@modelcontextprotocol/server` 2.4.0, `mcp-handler` 2.4.0
   (pair requis : `@modelcontextprotocol/server` ^2), `next` 16.4.6, `zod` 4.6.7.
 - `context7` était hors quota ce jour-là : la documentation a été lue à la source.
-
-## Non vérifié
-
-- Le branchement réel de Claude Code sur ce serveur : constaté à la halte humaine de la PR de #11.
+- Le branchement réel, le 2026-11-18 : Claude Code 2.1.295 s'est branché sur le serveur local
+  (`claude mcp list` : connecté) ; la lecture, la modification de `p` et les lignes d'audit ont été
+  vérifiées depuis une session de l'app de bureau, relevé de la session PR dans la base de dev.
+  C'est la confirmation, avec le vrai client, que `legacy: "reject"` tient.
