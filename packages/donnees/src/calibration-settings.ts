@@ -1,6 +1,5 @@
 import { getTableColumns } from "drizzle-orm";
-import type { NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
-import type { PgDatabase } from "drizzle-orm/pg-core";
+import type { Executor } from "./client.ts";
 import { calibrationSettings } from "./schema.ts";
 
 /** Réglages du calibrage (`docs/game-design.md` § 6) : la ligne de `calibration_settings` sans `id`. */
@@ -8,9 +7,6 @@ export type CalibrationSettings = Omit<
 	typeof calibrationSettings.$inferSelect,
 	"id"
 >;
-
-/** Le client que rend `createClient`, ou une transaction ouverte sur lui. */
-export type Executor = PgDatabase<NodePgQueryResultHKT>;
 
 // Colonnes lues et rendues : celles de `CalibrationSettings`.
 const { id: _id, ...settingsColumns } = getTableColumns(calibrationSettings);
