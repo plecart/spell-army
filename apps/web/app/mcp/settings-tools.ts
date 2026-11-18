@@ -83,7 +83,9 @@ const settingsUpdate = z
 	.refine(
 		(input) => Object.values(input).some((value) => value !== undefined),
 		"Aucun réglage à modifier : l'entrée doit donner au moins un réglage.",
-	);
+	)
+	// Le `refine` ne passe pas dans le schéma JSON : la métadonnée y publie la même exigence.
+	.meta({ minProperties: 1 });
 
 export const readSettingsTool: McpTool = {
 	name: "lire_reglages",

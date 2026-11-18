@@ -101,7 +101,10 @@ async function refuse(
 	return { content: [{ type: "text", text: message }], isError: true };
 }
 
-/** Écrit la ligne en erreur ; si elle ne s'écrit pas, lève `InternalError` avec `AUDIT_FAILED`. */
+/**
+ * Écrit la ligne en erreur ; si elle ne s'écrit pas, journalise la cause côté serveur et lève
+ * `InternalError` avec `AUDIT_FAILED`, sans la cause.
+ */
 async function auditError(
 	executor: Executor,
 	tool: string,
@@ -110,7 +113,12 @@ async function auditError(
 ): Promise<void> {
 	try {
 		await writeAuditEntry(executor, { tool, input, error: message });
-	} catch {
+	} catch (cause) {
+		// Le nom vient du client : `JSON.stringify` en échappe les sauts de ligne.
+		console.error(
+			`Audit impossible de l'appel de l'outil ${JSON.stringify(tool)} :`,
+			cause,
+		);
 		throw new ProtocolError(ProtocolErrorCode.InternalError, AUDIT_FAILED);
 	}
 }
