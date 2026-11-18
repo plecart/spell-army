@@ -5,6 +5,7 @@ import { configDefaults, defineConfig } from "vitest/config";
 // de ses tests est sélectionné. Un fichier absent de la liste tourne avec la base.
 const WITHOUT_DATABASE = [
 	"test/docker-unreachable.test.ts",
+	"test/exception-audit.test.ts",
 	"test/migrate-command.test.ts",
 	"test/version-node.test.ts",
 ];
