@@ -94,7 +94,7 @@ export async function callTool(
 	}
 	const parsed = tool.input.safeParse(input);
 	if (!parsed.success) {
-		return refuse(executor, name, input, z.prettifyError(parsed.error));
+		return refuse(executor, name, input, errorMessage(parsed.error));
 	}
 	try {
 		const validated = await executor.transaction(async (tx) => {
@@ -146,9 +146,14 @@ async function auditError(
 
 /**
  * Le message de la cause quand elle existe — l'erreur `pg` sous une erreur de requête Drizzle, dont
- * le message recopie la requête SQL —, sinon celui de l'erreur ; jamais une pile, jamais vide.
+ * le message recopie la requête SQL —, sinon celui de l'erreur ; jamais une pile, jamais vide. Une
+ * `ZodError`, d'une entrée invalide ou d'une sortie que son schéma refuse, rend le message lisible de
+ * `z.prettifyError`, et non son tableau d'issues en JSON.
  */
 function errorMessage(error: unknown): string {
+	if (error instanceof z.ZodError) {
+		return z.prettifyError(error);
+	}
 	const source =
 		error instanceof Error && error.cause instanceof Error
 			? error.cause

@@ -400,9 +400,9 @@ describe("point d'entrée du serveur MCP", () => {
 			/^unsupported Unicode escape sequence$/,
 		],
 		[
-			"une sortie que son schéma refuse",
+			"une sortie que son schéma refuse, au message lisible comme celui d'une entrée invalide",
 			"sortie_hors_schema",
-			/Unrecognized key: \\"inconnu\\"/,
+			/^✖ Unrecognized key: "inconnu"$/,
 		],
 	])(
 		"%s : son écriture est annulée, une ligne d'audit en erreur porte le message",
