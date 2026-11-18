@@ -1,13 +1,12 @@
 // Le montage commun des tests du serveur MCP : le client officiel branché sur un point d'entrée,
-// et la base migrée neuve d'un test.
+// et le journal d'audit d'une base.
 import {
 	Client,
 	type ClientOptions,
 	StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
-import { auditLog, createClient, type Executor } from "donnees";
-import { createMigratedDatabase } from "donnees/test/base-de-test";
-import { inject, onTestFinished } from "vitest";
+import { auditLog, type Executor } from "donnees";
+import { onTestFinished } from "vitest";
 
 // Jeton factice de 32 octets, le minimum admis.
 export const TOKEN = "t".repeat(32);
@@ -49,15 +48,6 @@ export function rewritingBodies(
 		request.method === "POST"
 			? serve(new Request(request, { body: rewrite(await request.text()) }))
 			: serve(request);
-}
-
-/** Une base migrée neuve, fermée à la fin du test. */
-export async function freshDatabase() {
-	const db = createClient(
-		await createMigratedDatabase(inject("testDatabaseUrl")),
-	);
-	onTestFinished(() => db.$client.end());
-	return db;
 }
 
 export function auditRows(db: Executor) {

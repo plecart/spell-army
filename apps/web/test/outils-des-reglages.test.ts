@@ -1,15 +1,10 @@
 import type { CallToolResult, Client } from "@modelcontextprotocol/client";
+import { freshDatabase } from "donnees/test/base-neuve";
 import { describe, expect, test } from "vitest";
 import { registry } from "../app/mcp/registry.ts";
 import { createMcpEndpoint } from "../app/mcp/server.ts";
 import { listTools } from "../app/mcp/tool.ts";
-import {
-	auditRows,
-	connectClient,
-	freshDatabase,
-	rewritingBodies,
-	TOKEN,
-} from "./montage.ts";
+import { auditRows, connectClient, rewritingBodies, TOKEN } from "./montage.ts";
 
 // Posés par la migration `0002_reglages_de_depart` (game design § 6, issue #11).
 const STARTING_SETTINGS = {

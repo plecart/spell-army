@@ -8,6 +8,7 @@ import {
 	readCalibrationSettings,
 	updateCalibrationSettings,
 } from "donnees";
+import { freshDatabase } from "donnees/test/base-neuve";
 import { describe, expect, test, vi } from "vitest";
 import { z } from "zod";
 import { createMcpEndpoint } from "../app/mcp/server.ts";
@@ -17,7 +18,6 @@ import {
 	auditRows,
 	connectClient,
 	ENDPOINT_URL,
-	freshDatabase,
 	rewritingBodies,
 	type Serve,
 	TOKEN,

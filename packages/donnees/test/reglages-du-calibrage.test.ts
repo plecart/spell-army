@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { describe, expect, inject, onTestFinished, test, vi } from "vitest";
+import { describe, expect, onTestFinished, test, vi } from "vitest";
 import {
 	auditLog,
 	type CalibrationSettings,
@@ -9,10 +9,8 @@ import {
 	readCalibrationSettings,
 	updateCalibrationSettings,
 } from "../src/index.ts";
-import {
-	createMigratedDatabase,
-	UNREACHABLE_DATABASE_URL,
-} from "./base-de-test.ts";
+import { UNREACHABLE_DATABASE_URL } from "./base-de-test.ts";
+import { freshDatabase } from "./base-neuve.ts";
 
 // Posées par la migration `0002_reglages_de_depart` : docs/game-design.md § 6, issue #11.
 const STARTING_SETTINGS: CalibrationSettings = {
@@ -25,15 +23,6 @@ const STARTING_SETTINGS: CalibrationSettings = {
 	averageRecruitSpeed: 7.3,
 	dayTwoBudgetRecruits: 10,
 };
-
-/** Client d'une base migrée neuve, fermé à la fin du test. */
-async function freshDatabase() {
-	const client = createClient(
-		await createMigratedDatabase(inject("testDatabaseUrl")),
-	);
-	onTestFinished(() => client.$client.end());
-	return client;
-}
 
 describe("réglages du calibrage", () => {
 	test("une base migrée neuve porte les réglages de départ", async () => {
