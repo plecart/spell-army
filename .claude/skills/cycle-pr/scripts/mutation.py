@@ -18,9 +18,17 @@ Usage : python mutation.py <racine du dépôt> <mutations.json>
     }
 
 - `targets` : ce que la commande reçoit en arguments — le **fichier de test visé**, pas la suite.
-- `reporter` : `junit` (pytest), `vitest` ou `playwright` ; défaut `junit`. Les commandes du
-  projet sont des cibles `make`, donc le lanceur se nomme ici au lieu d'être deviné.
-- `label` et `stack` : la ligne de « Commandes du projet » à lire ; défauts `test ciblé` / `Back`.
+- `reporter` : `junit` (pytest), `vitest` ou `playwright` ; défaut `junit`. Une commande du
+  projet ne nomme pas toujours son lanceur (`make test`, `pnpm -r test`), donc il se nomme ici
+  au lieu d'être deviné.
+- `label` : la ligne de « Commandes du projet » à lire, défaut `test ciblé`. La ligne doit
+  invoquer le lanceur directement (`pnpm vitest run <chemin>`, `uv run pytest <chemin>`) : les
+  options du rapport s'ajoutent à la commande.
+- `stack` : la pile, nommée par son titre en gras (`**Back (`back/`)** — …`), défaut `Back` ;
+  sans effet quand la section n'a pas de titre de pile — projet à une seule pile.
+- `timeout` : borne en secondes de chaque lancement, défaut 900. Une mutation qui fait boucler
+  du code synchrone fige le worker Vitest au-delà de son propre délai de test (mesuré le
+  2026-11-18 : plus de 300 s sur `dice.ts`) ; c'est alors cette borne qui l'arrête.
 - `old` s'écrit en LF : les fins de ligne du fichier muté lui sont appliquées à la lecture.
 
 Tout tient dans ce fichier, racine mise à part : un harnais paramétré par sa ligne de commande
@@ -58,6 +66,8 @@ COMMAND_LINE = re.compile(r"^- (?P<label>.+?)\s+:\s(?P<command>.+)$")
 # Un commentaire de fin de ligne, aligné sur au moins deux espaces — pas un `#` dans une
 # commande, qui serait tronquée.
 TRAILING_COMMENT = re.compile(r"\s{2,}#.*$")
+# Une commande écrite en code : `` `pnpm vitest run <chemin>` (Vitest) `` — seul le code compte.
+INLINE_CODE = re.compile(r"^`(?P<code>[^`]+)`")
 # Un gabarit à remplir par l'appelant : `<chemin|motif>`.
 PLACEHOLDER = re.compile(r"\s*<[^>]+>")
 COMMANDS_SECTION = "## Commandes du projet"
@@ -68,23 +78,27 @@ def project_command(config: Path, label: str, stack: str = "Back") -> str:
     """La commande que « Commandes du projet » associe à un libellé, dans une pile donnée.
 
     Les libellés se répètent d'une pile à l'autre — « test ciblé » existe pour le back, l'infra
-    et le front —, donc la pile fait partie de la clé. La recherche est bornée à la section :
-    un libellé homonyme ailleurs dans le fichier ne doit pas pouvoir répondre à sa place.
+    et le front —, donc la pile fait partie de la clé. Une ligne placée avant tout titre de pile
+    vaut pour le projet entier et répond quelle que soit la pile demandée : c'est la forme d'un
+    projet à une seule pile, qui n'a pas de titre. La recherche est bornée à la section : un
+    libellé homonyme ailleurs dans le fichier ne doit pas pouvoir répondre à sa place.
 
     Args:
         config: le `pipeline.config.md` à lire.
         label: le libellé exact de la ligne, sans ses espaces d'alignement.
-        stack: le nom de la pile, tel que son titre en gras le porte.
+        stack: le nom de la pile, tel que son titre en gras le porte ; sans effet sur une
+            ligne placée hors de toute pile.
 
     Returns:
-        La commande, commentaire retiré et gabarits `<…>` ôtés — l'appelant ajoute ses cibles.
+        La commande, commentaire retiré, backticks et annotation qui les suit ôtés, gabarits
+        `<…>` ôtés — l'appelant ajoute ses cibles.
 
     Raises:
         LookupError: aucune ligne pour ce couple, ou une ligne marquée `n/a` — l'étape est
             absente du projet, et la deviner vaudrait moins que s'arrêter.
     """
     inside = False
-    current = ""
+    current: str | None = None
     for line in config.read_text(encoding="utf-8").splitlines():
         if line.startswith("## "):
             inside = line.strip() == COMMANDS_SECTION
@@ -96,10 +110,11 @@ def project_command(config: Path, label: str, stack: str = "Back") -> str:
             current = heading.group("stack")
             continue
         found = COMMAND_LINE.match(line)
-        if not found or current != stack or found.group("label").strip() != label:
+        if not found or current not in (None, stack) or found.group("label").strip() != label:
             continue
         bare = TRAILING_COMMENT.sub("", found.group("command"))
-        command = PLACEHOLDER.sub("", bare).strip()
+        code = INLINE_CODE.match(bare)
+        command = PLACEHOLDER.sub("", code.group("code") if code else bare).strip()
         if command == UNAVAILABLE:
             raise LookupError(f"« {label} » vaut `n/a` pour la pile {stack} : étape absente")
         return command
@@ -112,8 +127,8 @@ def project_command(config: Path, label: str, stack: str = "Back") -> str:
 # l'outil muté lui-même a déjà compté comme preuve parce qu'un *autre* test échouait (complément
 # du 2026-10-04). D'où la lecture d'un rapport, et la recherche du nom attendu dedans.
 #
-# Chaque lanceur se nomme dans le fichier de mutations : les commandes du projet sont des cibles
-# `make`, donc « make test » ne contient aucun indice de son lanceur, et le renifler serait une
+# Chaque lanceur se nomme dans le fichier de mutations : une commande du projet ne contient pas
+# toujours d'indice de son lanceur — « make test », « pnpm -r test » —, et le renifler serait une
 # supposition de plus. Ajouter un lanceur = ajouter une entrée ici, rien d'autre.
 
 
