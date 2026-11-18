@@ -97,14 +97,14 @@ export async function callTool(
 		return refuse(executor, name, input, z.prettifyError(parsed.error));
 	}
 	try {
-		const output = await executor.transaction(async (tx) => {
+		const validated = await executor.transaction(async (tx) => {
 			const { output, before, after } = await tool.run(tx, parsed.data);
 			await writeAuditEntry(tx, { tool: name, input, before, after });
 			return tool.output.parse(output);
 		});
 		return {
-			content: [{ type: "text", text: JSON.stringify(output) }],
-			structuredContent: output,
+			content: [{ type: "text", text: JSON.stringify(validated) }],
+			structuredContent: validated,
 		};
 	} catch (error) {
 		return refuse(executor, name, input, errorMessage(error));
