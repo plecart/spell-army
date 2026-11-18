@@ -31,6 +31,11 @@ function storableText(text: string): string {
 /**
  * Une valeur JSON que `jsonb` admet : chaque chaîne, clés comprises, rendue stockable, et ce qui
  * dépasse `MAX_DEPTH` remplacé par `TRUNCATED`.
+ *
+ * Limite : deux clés distinctes d'un même objet qui ne diffèrent que par ce que `storableText`
+ * remplace deviennent la même clé, et la dernière écrase l'autre dans la ligne. L'une des deux porte
+ * U+0000 ou un surrogate isolé, qu'aucun nom de champ d'outil ne porte : le schéma strict refuse
+ * de toute façon l'appel.
  */
 function storableJson(value: unknown, depth = 0): unknown {
 	if (typeof value === "string") {

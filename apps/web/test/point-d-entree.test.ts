@@ -449,11 +449,12 @@ describe("point d'entrée du serveur MCP", () => {
 		["un outil connu", "regler_part", { part: 0.5 }],
 		["un outil inconnu", "inconnu", { x: 1 }],
 	])(
-		"sans table d'audit, %s : erreur interne au message court, sans la requête ni l'entrée, écriture annulée",
+		"sans table d'audit, %s : erreur interne au message court, sans la requête ni l'entrée, cause journalisée côté serveur, écriture annulée",
 		async (_, name, args) => {
 			const { db, serve } = await freshEndpoint();
 			const client = await connectClient(serve);
 			await db.$client.query("drop table audit_log");
+			const serverLog = vi.spyOn(console, "error").mockReturnValue();
 			const error = await client
 				.callTool({ name, arguments: args })
 				.catch((error: unknown) => error);
@@ -465,6 +466,14 @@ describe("point d'entrée du serveur MCP", () => {
 			});
 			expect(String(error)).not.toContain("insert into");
 			expect(String(error)).not.toContain(JSON.stringify(args));
+			expect(serverLog).toHaveBeenCalledExactlyOnceWith(
+				`Audit impossible de l'appel de l'outil "${name}" :`,
+				expect.objectContaining({
+					cause: expect.objectContaining({
+						message: 'relation "audit_log" does not exist',
+					}),
+				}),
+			);
 			expect((await readCalibrationSettings(db)).recruitShare).toBe(
 				STARTING_RECRUIT_SHARE,
 			);

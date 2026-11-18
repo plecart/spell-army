@@ -83,6 +83,13 @@ describe("outils des réglages du calibrage", () => {
 		]);
 	});
 
+	test("tools/list publie qu'au moins un réglage est requis par modifier_reglages", () => {
+		const update = listTools(registry).find(
+			({ name }) => name === "modifier_reglages",
+		);
+		expect(update?.inputSchema).toMatchObject({ minProperties: 1 });
+	});
+
 	test("lire_reglages rend les valeurs de départ d'une base migrée neuve", async () => {
 		const { client } = await connectToRegistry();
 		expect(await readSettings(client)).toEqual(STARTING_SETTINGS);
