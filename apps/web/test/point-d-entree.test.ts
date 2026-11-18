@@ -55,10 +55,23 @@ const DEEPEST = 2_000_000;
 const shareInput = z.strictObject({ part: z.number().min(0).max(1) });
 const noInput = z.strictObject({});
 
+// Ce que partagent les outils d'essai : un titre, des annotations et la part en sortie.
+const TRIAL = {
+	title: "Outil d'essai",
+	annotations: {
+		readOnlyHint: false,
+		destructiveHint: false,
+		idempotentHint: false,
+		openWorldHint: false,
+	},
+	output: z.strictObject({ part: z.number() }),
+};
+
 /** Outils d'essai, neufs à chaque test : `run` de `regler_part` est observé. */
 function trialTools() {
 	return {
 		setShare: {
+			...TRIAL,
 			name: "regler_part",
 			description: "Règle la part des recrues.",
 			input: shareInput,
@@ -67,11 +80,12 @@ function trialTools() {
 					const { before, after } = await updateCalibrationSettings(executor, {
 						recruitShare: part,
 					});
-					return { output: after, before, after };
+					return { output: { part: after.recruitShare }, before, after };
 				},
 			),
 		},
 		readShare: {
+			...TRIAL,
 			name: "lire_part",
 			description: "Lit la part des recrues.",
 			input: noInput,
@@ -82,6 +96,7 @@ function trialTools() {
 			}),
 		},
 		writeThenThrow: {
+			...TRIAL,
 			name: "ecrire_puis_lever",
 			description: "Écrit, puis lève.",
 			input: noInput,
@@ -91,6 +106,7 @@ function trialTools() {
 			},
 		},
 		refusedByDatabase: {
+			...TRIAL,
 			name: "refuse_par_la_base",
 			description: "Écrit une part hors bornes, que la base refuse.",
 			input: noInput,
@@ -99,6 +115,7 @@ function trialTools() {
 			}),
 		},
 		throwWithoutMessage: {
+			...TRIAL,
 			name: "lever_sans_message",
 			description: "Lève une erreur au message vide.",
 			input: noInput,
@@ -107,12 +124,26 @@ function trialTools() {
 			},
 		},
 		unauditableResult: {
+			...TRIAL,
 			name: "resultat_inauditable",
 			description: "Écrit, puis rend un après que `jsonb` refuse (U+0000).",
 			input: noInput,
 			run: async (executor: Executor) => {
 				await updateCalibrationSettings(executor, { recruitShare: 0.5 });
-				return { output: {}, after: { text: String.fromCharCode(0) } };
+				return {
+					output: { part: 0.5 },
+					after: { text: String.fromCharCode(0) },
+				};
+			},
+		},
+		outputOutsideSchema: {
+			...TRIAL,
+			name: "sortie_hors_schema",
+			description: "Écrit, puis rend une sortie que son schéma refuse.",
+			input: noInput,
+			run: async (executor: Executor) => {
+				await updateCalibrationSettings(executor, { recruitShare: 0.5 });
+				return { output: { part: 0.5, inconnu: 1 } };
 			},
 		},
 	} satisfies Record<string, McpTool>;
@@ -211,12 +242,19 @@ describe("point d'entrée du serveur MCP", () => {
 		},
 	);
 
-	test("la liste publie l'outil d'essai avec son schéma strict", async () => {
+	test("la liste publie l'outil d'essai avec son titre, ses annotations et ses schémas stricts", async () => {
 		const client = await connectClient((await freshEndpoint()).serve);
 		const { tools } = await client.listTools();
 		expect(tools.find((tool) => tool.name === "regler_part")).toEqual({
 			name: "regler_part",
+			title: "Outil d'essai",
 			description: "Règle la part des recrues.",
+			annotations: {
+				readOnlyHint: false,
+				destructiveHint: false,
+				idempotentHint: false,
+				openWorldHint: false,
+			},
 			inputSchema: {
 				$schema: "https://json-schema.org/draft/2020-12/schema",
 				type: "object",
@@ -224,12 +262,20 @@ describe("point d'entrée du serveur MCP", () => {
 				required: ["part"],
 				additionalProperties: false,
 			},
+			outputSchema: {
+				$schema: "https://json-schema.org/draft/2020-12/schema",
+				type: "object",
+				properties: { part: { type: "number" } },
+				required: ["part"],
+				additionalProperties: false,
+			},
 		});
 	});
 
-	test("un appel valide écrit une ligne d'audit en succès, avec l'entrée, la date, l'avant et l'après", async () => {
+	test("un appel valide rend sa sortie en structuredContent et en texte JSON, et écrit une ligne d'audit en succès, avec l'entrée, la date, l'avant et l'après", async () => {
 		const { db, serve } = await freshEndpoint();
 		const client = await connectClient(serve);
+		await client.listTools();
 		const result = await client.callTool({
 			name: "regler_part",
 			arguments: { part: 0.5 },
@@ -237,7 +283,8 @@ describe("point d'entrée du serveur MCP", () => {
 		const after = await readCalibrationSettings(db);
 		expect(after.recruitShare).toBe(0.5);
 		expect(result).toMatchObject({
-			content: [{ type: "text", text: JSON.stringify(after) }],
+			content: [{ type: "text", text: '{"part":0.5}' }],
+			structuredContent: { part: 0.5 },
 		});
 		expect(result.isError).toBeFalsy();
 		expect(await auditRows(db)).toEqual([
@@ -308,6 +355,7 @@ describe("point d'entrée du serveur MCP", () => {
 				content: [{ type: "text", text: rows[0]?.error }],
 				isError: true,
 			});
+			expect(result.structuredContent).toBeUndefined();
 			expect(tools.setShare.run).not.toHaveBeenCalled();
 			expect((await readCalibrationSettings(db)).recruitShare).toBe(
 				STARTING_RECRUIT_SHARE,
@@ -351,6 +399,11 @@ describe("point d'entrée du serveur MCP", () => {
 			"resultat_inauditable",
 			/^unsupported Unicode escape sequence$/,
 		],
+		[
+			"une sortie que son schéma refuse",
+			"sortie_hors_schema",
+			/Unrecognized key: \\"inconnu\\"/,
+		],
 	])(
 		"%s : son écriture est annulée, une ligne d'audit en erreur porte le message",
 		async (_, name, message) => {
@@ -366,6 +419,7 @@ describe("point d'entrée du serveur MCP", () => {
 				content: [{ type: "text", text: rows[0]?.error }],
 				isError: true,
 			});
+			expect(result.structuredContent).toBeUndefined();
 			expect((await readCalibrationSettings(db)).recruitShare).toBe(
 				STARTING_RECRUIT_SHARE,
 			);

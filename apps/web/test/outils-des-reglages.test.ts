@@ -30,7 +30,11 @@ const POSTGRES_INTEGER_MAX = 2_147_483_647;
 // chaîne, que `JSON.parse` lit `Infinity`.
 const INFINITE = "__infini__";
 
-/** Le client officiel, branché sur le point d'entrée du registre réel et une base migrée neuve. */
+/**
+ * Le client officiel, branché sur le point d'entrée du registre réel et une base migrée neuve. Il
+ * liste les outils d'abord : il valide alors le `structuredContent` de chaque appel contre le
+ * `outputSchema` publié.
+ */
 async function connectToRegistry() {
 	const db = await freshDatabase();
 	const endpoint = createMcpEndpoint({
@@ -43,16 +47,22 @@ async function connectToRegistry() {
 			body.replaceAll(`"${INFINITE}"`, "1e999"),
 		),
 	);
+	await client.listTools();
 	return { db, client };
 }
 
-/** La sortie d'un appel réussi, lue dans son texte JSON. */
-function outputOf({ content, isError }: CallToolResult): unknown {
+/** La sortie d'un appel réussi : son `structuredContent`, que son texte JSON répète. */
+function outputOf({
+	content,
+	structuredContent,
+	isError,
+}: CallToolResult): unknown {
 	const [block] = content;
 	if (isError || block?.type !== "text") {
 		throw new Error(`Appel en échec : ${JSON.stringify(content)}`);
 	}
-	return JSON.parse(block.text);
+	expect(structuredContent).toEqual(JSON.parse(block.text));
+	return structuredContent;
 }
 
 async function readSettings(client: Client) {
@@ -88,6 +98,45 @@ describe("outils des réglages du calibrage", () => {
 			({ name }) => name === "modifier_reglages",
 		);
 		expect(update?.inputSchema).toMatchObject({ minProperties: 1 });
+	});
+
+	test("tools/list publie le titre, les annotations et le schéma de sortie de chaque outil", () => {
+		const settingsSchema = expect.objectContaining({
+			type: "object",
+			required: Object.keys(STARTING_SETTINGS),
+			additionalProperties: false,
+		});
+		expect(
+			listTools(registry).map(({ name, title, annotations, outputSchema }) => ({
+				name,
+				title,
+				annotations,
+				outputSchema,
+			})),
+		).toEqual([
+			{
+				name: "lire_reglages",
+				title: "Lire les réglages du calibrage",
+				annotations: {
+					readOnlyHint: true,
+					destructiveHint: false,
+					idempotentHint: true,
+					openWorldHint: false,
+				},
+				outputSchema: settingsSchema,
+			},
+			{
+				name: "modifier_reglages",
+				title: "Modifier les réglages du calibrage",
+				annotations: {
+					readOnlyHint: false,
+					destructiveHint: true,
+					idempotentHint: true,
+					openWorldHint: false,
+				},
+				outputSchema: settingsSchema,
+			},
+		]);
 	});
 
 	test("lire_reglages rend les valeurs de départ d'une base migrée neuve", async () => {

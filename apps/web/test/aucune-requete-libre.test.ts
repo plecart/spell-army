@@ -83,8 +83,16 @@ function publishedFlaws(input: z.ZodObject): string[] {
 	const [tool] = listTools([
 		{
 			name: "temoin",
+			title: "Témoin",
 			description: "Témoin.",
+			annotations: {
+				readOnlyHint: true,
+				destructiveHint: false,
+				idempotentHint: true,
+				openWorldHint: false,
+			},
 			input,
+			output: z.strictObject({}),
 			run: async () => ({ output: {} }),
 		},
 	]);
