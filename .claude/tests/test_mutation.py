@@ -23,8 +23,10 @@ PILES_EN_GRAS = """## Commandes du projet
 """
 
 # Forme de ce dépôt : une seule pile, sans titre, commandes entre backticks, annotation après.
-PILE_UNIQUE = """## Commandes du projet
-- test         : `pnpm -r test` (Vitest)                  # suite complète
+PILE_UNIQUE = """## Stack
+- test ciblé   : ailleurs
+## Commandes du projet
+- test         : `pnpm -r test` (Vitest)                  # suite complète ; Docker pour `packages/donnees`
 - test ciblé   : `pnpm vitest run <chemin>`   # une seule cible
 - format:check : `pnpm biome format .`                  # vérifie sans écrire
 - test brut    : n/a                    # pas de résumeur
@@ -68,6 +70,11 @@ def test_une_ligne_de_commande_se_lit_dans_les_deux_formes(tmp_path, config, lab
     fichier = tmp_path / "pipeline.config.md"
     fichier.write_text(config, encoding="utf-8")
     assert project_command(fichier, label, stack) == attendu
+
+
+def test_la_config_de_ce_depot_donne_son_test_cible():
+    config = Path(__file__).parents[1] / "pipeline.config.md"
+    assert project_command(config, "test ciblé") == "pnpm vitest run"
 
 
 @pytest.mark.parametrize(
