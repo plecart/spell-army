@@ -24,8 +24,9 @@ Usage : python mutation.py <racine du dépôt> <mutations.json>
 - `label` : la ligne de « Commandes du projet » à lire, défaut `test ciblé`. La ligne doit
   invoquer le lanceur directement (`pnpm vitest run <chemin>`, `uv run pytest <chemin>`) : les
   options du rapport s'ajoutent à la commande.
-- `stack` : la pile, nommée par son titre en gras (`**Back (`back/`)** — …`), défaut `Back` ;
-  sans effet quand la section n'a pas de titre de pile — projet à une seule pile.
+- `stack` : la pile, nommée par son titre en gras (`**Back (`back/`)** — …`), défaut `Back`.
+  Une ligne placée avant tout titre de pile — seule forme d'un projet à une seule pile — répond
+  à défaut d'une ligne de la pile demandée.
 - `timeout` : borne en secondes de chaque lancement, défaut 900. Une mutation qui fait boucler
   du code synchrone fige le worker Vitest au-delà de son propre délai de test (mesuré le
   2026-11-18 : plus de 300 s sur `dice.ts`) ; c'est alors cette borne qui l'arrête.
@@ -79,15 +80,15 @@ def project_command(config: Path, label: str, stack: str = "Back") -> str:
 
     Les libellés se répètent d'une pile à l'autre — « test ciblé » existe pour le back, l'infra
     et le front —, donc la pile fait partie de la clé. Une ligne placée avant tout titre de pile
-    vaut pour le projet entier et répond quelle que soit la pile demandée : c'est la forme d'un
-    projet à une seule pile, qui n'a pas de titre. La recherche est bornée à la section : un
-    libellé homonyme ailleurs dans le fichier ne doit pas pouvoir répondre à sa place.
+    vaut pour le projet entier — c'est la forme d'un projet à une seule pile, qui n'a pas de
+    titre — et répond à défaut d'une ligne de la pile demandée, qui l'emporte toujours. La
+    recherche est bornée à la section : un libellé homonyme ailleurs dans le fichier ne doit pas
+    pouvoir répondre à sa place.
 
     Args:
         config: le `pipeline.config.md` à lire.
         label: le libellé exact de la ligne, sans ses espaces d'alignement.
-        stack: le nom de la pile, tel que son titre en gras le porte ; sans effet sur une
-            ligne placée hors de toute pile.
+        stack: le nom de la pile, tel que son titre en gras le porte.
 
     Returns:
         La commande, commentaire retiré, backticks et annotation qui les suit ôtés, gabarits
@@ -99,6 +100,7 @@ def project_command(config: Path, label: str, stack: str = "Back") -> str:
     """
     inside = False
     current: str | None = None
+    found: dict[str | None, str] = {}
     for line in config.read_text(encoding="utf-8").splitlines():
         if line.startswith("## "):
             inside = line.strip() == COMMANDS_SECTION
@@ -109,16 +111,19 @@ def project_command(config: Path, label: str, stack: str = "Back") -> str:
         if heading:
             current = heading.group("stack")
             continue
-        found = COMMAND_LINE.match(line)
-        if not found or current not in (None, stack) or found.group("label").strip() != label:
-            continue
-        bare = TRAILING_COMMENT.sub("", found.group("command"))
-        code = INLINE_CODE.match(bare)
-        command = PLACEHOLDER.sub("", code.group("code") if code else bare).strip()
-        if command == UNAVAILABLE:
-            raise LookupError(f"« {label} » vaut `n/a` pour la pile {stack} : étape absente")
-        return command
-    raise LookupError(f"aucune commande « {label} » pour la pile {stack} dans {config}")
+        entry = COMMAND_LINE.match(line)
+        if entry and entry.group("label").strip() == label:
+            found.setdefault(current, entry.group("command"))
+    raw = found.get(stack, found.get(None))
+    if raw is None:
+        raise LookupError(f"aucune commande « {label} » pour la pile {stack} dans {config}")
+    # Le code d'abord : un `#` entre backticks fait partie de la commande, pas d'un commentaire.
+    code = INLINE_CODE.match(raw)
+    command = PLACEHOLDER.sub("", code.group("code") if code else TRAILING_COMMENT.sub("", raw))
+    command = command.strip()
+    if command == UNAVAILABLE:
+        raise LookupError(f"« {label} » vaut `n/a` pour la pile {stack} : étape absente")
+    return command
 
 
 # --- Les rapporteurs : demander un rapport structuré, puis le lire ----------------------------
