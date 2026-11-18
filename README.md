@@ -25,18 +25,21 @@ terminal.
 
 1. **Migrer la base** de `DATABASE_URL` : `pnpm --filter donnees run migrate`. Les migrations posent
    aussi les réglages de départ du calibrage.
-2. **Créer le jeton** : `openssl rand -base64 32`, 44 caractères, au-delà des 32 octets requis. Le
-   ranger dans KeePassXC, puis l'écrire soi-même à la ligne `MCP_TOKEN=` du `.env` de la racine
-   (gabarit : `.env.example`) : le seul `.env` du dépôt, que le serveur charge par
-   `apps/web/next.config.ts`.
+2. **Créer le jeton**, dans un terminal ouvert hors de l'app Claude, Git Bash depuis le menu
+   Démarrer par exemple : le panneau Terminal de l'app est lisible par Claude.
+   `openssl rand -base64 32` donne 44 caractères, au-delà des 32 octets requis. Le ranger dans
+   KeePassXC, puis l'écrire soi-même à la ligne `MCP_TOKEN=` du `.env` de la racine (gabarit :
+   `.env.example`) : le seul `.env` du dépôt, que le serveur charge par `apps/web/next.config.ts`.
 3. **Lancer le serveur** : `pnpm --filter web dev`. Il n'écoute que sur ce poste,
    `http://127.0.0.1:3000` par défaut, à l'adresse qu'il affiche.
 4. **Brancher Claude Code**, depuis Git Bash à la racine du clone principal, jamais en le demandant à
    Claude : Claude verrait le jeton. `read -rs` le lit sans l'afficher ni l'écrire dans l'historique
    du shell ; `claude mcp add` l'enregistre à la portée locale, celle par défaut, dans
-   `~/.claude.json`, hors du dépôt. La portée locale rattache le serveur au dossier où la commande est
-   lancée : les sessions d'agents ouvertes dans un worktree n'ont pas besoin de modifier les réglages.
-   Jamais `--scope project`, qui l'écrirait dans le `.mcp.json` de la racine, fait pour être commité.
+   `~/.claude.json`, hors du dépôt. La portée locale vaut pour ce dossier et pour les worktrees du
+   dépôt : toute session Claude Code du projet, sessions d'agents comprises, voit donc le serveur tant
+   qu'il tourne. Mesuré le 2026-11-18 avec Claude Code 2.1.295 : `claude mcp list` le liste depuis
+   un worktree du dépôt, et pas depuis un dossier hors du dépôt. Jamais `--scope project`, qui
+   l'écrirait dans le `.mcp.json` de la racine, fait pour être commité.
 
    ```bash
    read -rsp "Jeton MCP : " JETON_MCP; echo
@@ -44,4 +47,15 @@ terminal.
    unset JETON_MCP
    ```
 
-5. **Vérifier** : `/mcp` dans Claude Code doit lister `wizard-army` connecté, avec ses deux outils.
+   Pour qu'une session Claude ne lise pas le jeton, refuser dans `~/.claude/settings.json`, sous
+   `permissions.deny`, la lecture de `~/.claude.json` et de ses copies sous `~/.claude/backups/`, et
+   la commande `claude mcp get`. Lu dans le binaire de Claude Code 2.1.295 : `claude mcp get`
+   affiche les en-têtes en clair, `claude mcp add` les masque (`[REDACTED]`), `claude mcp list` ne
+   les affiche pas.
+
+5. **Vérifier** par `claude mcp list`, qui doit montrer `wizard-army` connecté ; jamais par
+   `claude mcp get`, qui afficherait le jeton. Puis, dans une nouvelle session, en CLI ou dans
+   l'onglet Code de l'app de bureau, `/mcp` doit lister `wizard-army` connecté, avec ses deux
+   outils : une session déjà ouverte ne voit pas un serveur ajouté après son démarrage. Si le
+   serveur était éteint au démarrage de la session, « Reconnect » dans `/mcp` une fois le serveur
+   lancé.
