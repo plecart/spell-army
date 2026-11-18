@@ -11,3 +11,13 @@ allowBuilds:
   esbuild: false
   protobufjs: false
   ssh2: false
+
+# Avis que `pnpm audit` ignore. GHSA-fc5q-39xc-vjpf : picomatch <= 4.0.7, ReDoS sur un
+# extglob fourni par l'attaquant, sans version corrigée. picomatch ne sert qu'à l'outillage de dev
+# et de test (tous ses chemins passent par vitest), et n'y lit que les motifs de notre
+# configuration. Exception décidée par le mainteneur le 2026-11-18. Réexamen : le test
+# `packages/donnees/test/exception-audit.test.ts` rougit quand le verrou ne porte plus de
+# picomatch <= 4.0.7 ; retirer alors l'exception et ce test.
+audit:
+  ignore:
+    - GHSA-fc5q-39xc-vjpf

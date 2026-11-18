@@ -121,7 +121,8 @@ jobs:
       # Avant les portes de code : un avis de sécurité sur une dépendance n'a pas à attendre
       # que la suite passe pour être signalé. Seuil `high` : un avis high ou critical bloque ;
       # moderate et low ne bloquent pas, le journal n'en donne que le compte (`pnpm audit` sans
-      # seuil les détaille).
+      # seuil les détaille). Les avis listés dans `audit.ignore` de `pnpm-workspace.yaml`, chacun
+      # daté et motivé en commentaire, ne bloquent pas non plus.
       - name: Audit
         run: pnpm audit --audit-level=high
 

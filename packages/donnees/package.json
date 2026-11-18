@@ -20,6 +20,7 @@
 		"@testcontainers/postgresql": "^12.2.1",
 		"@types/pg": "^8.23.1",
 		"drizzle-kit": "^0.31.11",
-		"testcontainers": "^12.2.1"
+		"testcontainers": "^12.2.1",
+		"yaml": "^2.9.1"
 	}
 }
