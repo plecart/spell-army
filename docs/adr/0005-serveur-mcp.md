@@ -19,7 +19,7 @@ critères d'acceptation).
 | Bibliothèque | `@modelcontextprotocol/server` 2.x, le SDK TypeScript officiel (spécification MCP du 2026-07-28), avec Zod 4. | Accepté le 2026-11-17 |
 | Transport | `createMcpHandler(fabrique, { responseMode: "json", legacy: "reject", maxSubscriptions: 0 })`, fourni par le SDK : un gestionnaire web standard `(Request) => Promise<Response>`, créé une fois et monté dans la route `apps/web/app/api/mcp/route.ts`. La fabrique tourne à chaque requête : rien n'est gardé d'une requête à l'autre. Seule la spécification 2026-07-28 est servie. | Accepté le 2026-11-17 |
 | Sans SSE | Quatre voies mènent le gestionnaire à répondre en SSE, chacune fermée. Un échange qui émet un message avant son résultat : `responseMode: "json"` répond toujours d'un seul corps JSON. Le repli sans état de la génération 2025, qui répond en flux SSE d'un message : `legacy: "reject"` le refuse par l'erreur `-32022`. Un flux `subscriptions/listen` : `maxSubscriptions: 0` le refuse avant de l'ouvrir, et le serveur n'annonce aucun `listChanged`, donc aucun client n'en ouvre d'office. GET et DELETE, opérations de session de 2025 : `405`. Le test « sans SSE » de `apps/web/test/point-d-entree.test.ts` passe par chacune, et par un échange nominal. | Accepté le 2026-11-17 |
-| Serveur bas niveau | La fabrique rend un `Server` bas niveau dont l'application écrit `tools/list` et `tools/call`, pas un `McpServer`. Avec `McpServer.registerTool`, une entrée qui échoue au schéma est rejetée par le SDK avant le gestionnaire : la ligne d'audit en erreur ne s'écrirait pas. Le SDK marque `Server` `@deprecated` au profit de `McpServer` pour l'API de haut niveau, et le garde pour les cas avancés : celui-ci en est un. L'enrobage commun de `apps/web/app/mcp/` valide l'entrée (schéma Zod strict), appelle le service et écrit l'audit ; `tools/list` publie le schéma JSON tiré du même schéma Zod. | Accepté le 2026-11-17 |
+| Serveur bas niveau | La fabrique rend un `Server` bas niveau dont l'application écrit `tools/list` et `tools/call`, pas un `McpServer`. Avec `McpServer.registerTool`, une entrée qui échoue au schéma est rejetée par le SDK avant le gestionnaire : la ligne d'audit en erreur ne s'écrirait pas. Le SDK marque `Server` `@deprecated` au profit de `McpServer` pour l'API de haut niveau, et le garde pour les cas avancés : celui-ci en est un. L'enrobage commun de `apps/web/app/mcp/` valide l'entrée (schéma Zod strict), appelle le service et écrit l'audit ; `tools/list` publie, pour chaque outil, son titre, ses annotations et les schémas JSON tirés de ses schémas Zod d'entrée et de sortie. | Accepté le 2026-11-17 |
 | Authentification | Contrôlée dans la route, avant le SDK : en-tête `Authorization: Bearer`, empreintes SHA-256 comparées par `crypto.timingSafeEqual` (ADR 0004). Le SDK ne lit ni ne vérifie aucun jeton. | Accepté le 2026-11-17 |
 
 **Écartés.** `mcp-handler` 2.x (Vercel Labs) : une surcouche du même SDK v2 (traces OpenTelemetry,
@@ -35,6 +35,11 @@ réponses SSE, alors que Claude Code négocie la spécification 2026 (« Vérifi
   d'entrée, un de sortie, et l'appel d'un service. L'enrobage lui donne la validation de l'entrée et
   de la sortie, la transaction, l'audit, et la sortie structurée : `structuredContent`, répété en
   texte JSON.
+- `destructiveHint` suit la définition de la spécification MCP : un outil dont la mise à jour n'est
+  pas purement additive le porte, comme `modifier_reglages`, qui écrase une valeur. Il ne désigne pas
+  les outils « destructeurs » de l'ADR 0004 (« Durcissement MCP »), qui demandent une confirmation
+  (#14) : `modifier_reglages` n'en demande pas, puisque l'audit garde l'ancienne valeur (#11,
+  « Décisions »).
 - Seul un client qui négocie la spécification 2026-07-28 se branche ; un client qui ouvre en 2025
   reçoit l'erreur `-32022`, qui nomme la version servie. Claude Code ouvre en 2026 sous un drapeau
   distant actif par défaut. S'il revenait au handshake de 2025 — drapeau coupé, ou

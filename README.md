@@ -47,11 +47,20 @@ terminal.
    unset JETON_MCP
    ```
 
-   Pour qu'une session Claude ne lise pas le jeton, refuser dans `~/.claude/settings.json`, sous
-   `permissions.deny`, la lecture de `~/.claude.json` et de ses copies sous `~/.claude/backups/`, et
-   la commande `claude mcp get`. Lu dans le binaire de Claude Code 2.1.295 : `claude mcp get`
-   affiche les en-têtes en clair, `claude mcp add` les masque (`[REDACTED]`), `claude mcp list` ne
-   les affiche pas.
+   Pour qu'une session Claude ne lise pas le jeton, refuser dans `~/.claude/settings.json` la
+   lecture de `~/.claude.json` et de ses copies sous `~/.claude/backups/`, et la commande
+   `claude mcp get` (syntaxe des règles : https://code.claude.com/docs/en/permissions, lue le
+   2026-11-18) :
+
+   ```json
+   "permissions": {
+     "deny": ["Read(~/.claude.json)", "Read(~/.claude/backups/**)", "Bash(claude mcp get *)"]
+   }
+   ```
+
+   Lu dans le binaire de Claude Code 2.1.295 : `claude mcp get` affiche les en-têtes en clair,
+   `claude mcp add` les masque (`[REDACTED]`), `claude mcp list` ne les affiche pas. Ces règles
+   ferment les lectures habituelles, pas un script qui ouvrirait le fichier.
 
 5. **Vérifier** par `claude mcp list`, qui doit montrer `wizard-army` connecté ; jamais par
    `claude mcp get`, qui afficherait le jeton. Puis, dans une nouvelle session, en CLI ou dans
