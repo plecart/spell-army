@@ -132,7 +132,7 @@ function trialTools() {
 				await updateCalibrationSettings(executor, { recruitShare: 0.5 });
 				return {
 					output: { part: 0.5 },
-					after: { text: String.fromCharCode(0) },
+					after: { text: NUL },
 				};
 			},
 		},
