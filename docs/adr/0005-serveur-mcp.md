@@ -30,8 +30,11 @@ réponses SSE, alors que Claude Code négocie la spécification 2026 (« Vérifi
 
 ## Conséquences
 
-- Un outil s'ajoute au registre de `apps/web/app/mcp/` : un nom, une description, un schéma Zod
-  strict et l'appel d'un service. L'enrobage lui donne la validation, la transaction et l'audit.
+- Un outil s'ajoute au registre de `apps/web/app/mcp/` : un nom, un titre, une description, ses
+  annotations (les quatre indices de la spécification, tous explicites), un schéma Zod strict
+  d'entrée, un de sortie, et l'appel d'un service. L'enrobage lui donne la validation de l'entrée et
+  de la sortie, la transaction, l'audit, et la sortie structurée : `structuredContent`, répété en
+  texte JSON.
 - Seul un client qui négocie la spécification 2026-07-28 se branche ; un client qui ouvre en 2025
   reçoit l'erreur `-32022`, qui nomme la version servie. Claude Code ouvre en 2026 sous un drapeau
   distant actif par défaut. S'il revenait au handshake de 2025 — drapeau coupé, ou

@@ -3,6 +3,7 @@ import {
 	ProtocolError,
 	ProtocolErrorCode,
 	type Tool,
+	type ToolAnnotations,
 } from "@modelcontextprotocol/server";
 import type { Executor } from "donnees";
 import { z } from "zod";
@@ -18,9 +19,18 @@ export interface ToolOutcome {
 /** Un outil du serveur MCP (ADR 0005, « Conséquences »). */
 export interface McpTool<Input extends z.ZodObject = z.ZodObject> {
 	name: string;
+	/** Le nom d'affichage. */
+	title: string;
 	description: string;
+	/**
+	 * Les quatre indices, tous explicites : pour la spécification MCP, un `destructiveHint` ou un
+	 * `openWorldHint` absent vaut `true`.
+	 */
+	annotations: Required<Omit<ToolAnnotations, "title">>;
 	/** Schéma d'entrée strict, `z.strictObject(…)` : un champ inconnu est refusé. */
 	input: Input;
+	/** Schéma de sortie strict, `z.strictObject(…)` : la sortie y passe avant d'être rendue. */
+	output: z.ZodObject;
 	run(executor: Executor, input: z.output<Input>): Promise<ToolOutcome>;
 }
 
@@ -34,15 +44,21 @@ const UNNAMED_ERROR = "Erreur sans message";
 const AUDIT_FAILED = "Audit impossible : l'appel n'a pas été enregistré.";
 
 /**
- * `tools/list` : chaque outil, avec le schéma JSON tiré de son schéma Zod. Celui d'un `ZodObject`
- * est un schéma `object`, que le type de Zod ne sait pas dire en valeurs JSON : d'où la conversion.
+ * `tools/list` : chaque outil, avec les schémas JSON tirés de ses schémas Zod. Celui d'un
+ * `ZodObject` est un schéma `object`, que le type de Zod ne sait pas dire en valeurs JSON : d'où la
+ * conversion.
  */
 export function listTools(tools: readonly McpTool[]): Tool[] {
-	return tools.map(({ name, description, input }) => ({
-		name,
-		description,
-		inputSchema: z.toJSONSchema(input) as Tool["inputSchema"],
-	}));
+	return tools.map(
+		({ name, title, description, annotations, input, output }) => ({
+			name,
+			title,
+			description,
+			annotations,
+			inputSchema: z.toJSONSchema(input) as Tool["inputSchema"],
+			outputSchema: z.toJSONSchema(output) as Tool["outputSchema"],
+		}),
+	);
 }
 
 /**
@@ -50,9 +66,11 @@ export function listTools(tools: readonly McpTool[]): Tool[] {
  *
  * - Outil inconnu : ligne en erreur, puis erreur de protocole `InvalidParams`, comme `McpServer`.
  * - Entrée invalide : ligne en erreur, outil jamais appelé, résultat `isError`.
- * - Entrée valide : l'outil et sa ligne en succès dans une même transaction. Si l'outil ou
- *   l'écriture de sa ligne échoue, elle s'annule, la ligne en erreur s'écrit hors d'elle et le
- *   résultat est `isError`.
+ * - Entrée valide : l'outil, sa ligne en succès et la validation de sa sortie par son schéma dans
+ *   une même transaction. Le résultat porte la sortie validée en `structuredContent` et la répète en
+ *   texte JSON, comme la spécification le demande. Si l'une des trois étapes échoue, la transaction
+ *   s'annule, la ligne en erreur s'écrit hors d'elle et le résultat est `isError`, sans
+ *   `structuredContent`.
  *
  * L'entrée auditée est l'entrée brute, `{}` quand `args` manque. Si la ligne en erreur ne peut pas
  * s'écrire, une erreur de protocole `InternalError` au message court remonte : rien n'a été validé.
@@ -82,9 +100,12 @@ export async function callTool(
 		const output = await executor.transaction(async (tx) => {
 			const { output, before, after } = await tool.run(tx, parsed.data);
 			await writeAuditEntry(tx, { tool: name, input, before, after });
-			return output;
+			return tool.output.parse(output);
 		});
-		return { content: [{ type: "text", text: JSON.stringify(output) }] };
+		return {
+			content: [{ type: "text", text: JSON.stringify(output) }],
+			structuredContent: output,
+		};
 	} catch (error) {
 		return refuse(executor, name, input, errorMessage(error));
 	}

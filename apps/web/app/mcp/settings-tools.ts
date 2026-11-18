@@ -60,25 +60,30 @@ function averageRecruitStat(name: string) {
 		);
 }
 
-const settingsUpdate = z
-	.strictObject({
-		p: fraction.describe(
-			"Part des recrues de référence comptée dans le budget du prochain monstre, en fraction de 0 à 1 : 0,7 pour 70 %. Le calibrage la baisse après des défaites ; ce réglage la relève.",
-		),
-		baisse_p: fraction.describe(
-			"Baisse de p à chaque paire de défaites de suite, en fraction de 0 à 1 : 0,1 pour 10 points.",
-		),
-		fenetre_jours: positiveInteger.describe(
-			"Nombre de jours dont la médiane des recrues donne les recrues de référence : un entier, au moins 1.",
-		),
-		recrue_moyenne_vie: averageRecruitStat("Vie"),
-		recrue_moyenne_force: averageRecruitStat("Force"),
-		recrue_moyenne_magie: averageRecruitStat("Magie"),
-		recrue_moyenne_vitesse: averageRecruitStat("Vitesse"),
-		budget_jour_2: positiveInteger.describe(
-			"Budget du monstre du jour 2, en nombre de recrues moyennes : un entier, au moins 1.",
-		),
-	})
+/**
+ * Les huit réglages et leurs bornes, que la base de données impose aussi : la sortie des deux outils,
+ * d'où dérive l'entrée de `modifier_reglages`.
+ */
+const settings = z.strictObject({
+	p: fraction.describe(
+		"Part des recrues de référence comptée dans le budget du prochain monstre, en fraction de 0 à 1 : 0,7 pour 70 %. Le calibrage la baisse après des défaites ; ce réglage la relève.",
+	),
+	baisse_p: fraction.describe(
+		"Baisse de p à chaque paire de défaites de suite, en fraction de 0 à 1 : 0,1 pour 10 points.",
+	),
+	fenetre_jours: positiveInteger.describe(
+		"Nombre de jours dont la médiane des recrues donne les recrues de référence : un entier, au moins 1.",
+	),
+	recrue_moyenne_vie: averageRecruitStat("Vie"),
+	recrue_moyenne_force: averageRecruitStat("Force"),
+	recrue_moyenne_magie: averageRecruitStat("Magie"),
+	recrue_moyenne_vitesse: averageRecruitStat("Vitesse"),
+	budget_jour_2: positiveInteger.describe(
+		"Budget du monstre du jour 2, en nombre de recrues moyennes : un entier, au moins 1.",
+	),
+});
+
+const settingsUpdate = settings
 	.partial()
 	.refine(
 		(input) => Object.values(input).some((value) => value !== undefined),
@@ -89,19 +94,42 @@ const settingsUpdate = z
 
 export const readSettingsTool: McpTool = {
 	name: "lire_reglages",
+	title: "Lire les réglages du calibrage",
 	description:
 		"Lit les réglages du calibrage, qui dimensionnent le prochain monstre : budget = stats réelles de l'armée + p × recrues de référence × recrue moyenne. Rend les huit réglages, sous les noms qu'attend modifier_reglages.",
+	annotations: {
+		readOnlyHint: true,
+		destructiveHint: false,
+		idempotentHint: true,
+		openWorldHint: false,
+	},
 	input: z.strictObject({}),
+	output: settings,
 	run: async (executor) => ({
 		output: toToolSettings(await readCalibrationSettings(executor)),
 	}),
 };
 
+/**
+ * Les indices suivent leurs définitions MCP. `destructiveHint` : la mise à jour n'est pas
+ * additive, elle écrase la valeur en place. Ce n'est pas l'outil « destructeur » de l'issue #14,
+ * qui demande une confirmation en deux temps : le journal d'audit garde l'ancienne valeur, d'où
+ * « non destructeur au sens de #14 » dans l'issue #11. `idempotentHint` : N appels identiques
+ * laissent le même état ; le journal trace chaque appel, par construction.
+ */
 export const updateSettingsTool: McpTool<typeof settingsUpdate> = {
 	name: "modifier_reglages",
+	title: "Modifier les réglages du calibrage",
 	description:
 		"Modifie un ou plusieurs réglages du calibrage : seuls les réglages donnés changent, au moins un est requis. Rend les réglages après la modification ; le journal d'audit garde les valeurs d'avant et d'après.",
+	annotations: {
+		readOnlyHint: false,
+		destructiveHint: true,
+		idempotentHint: true,
+		openWorldHint: false,
+	},
 	input: settingsUpdate,
+	output: settings,
 	run: async (executor, input) => {
 		const { before, after } = await updateCalibrationSettings(
 			executor,
