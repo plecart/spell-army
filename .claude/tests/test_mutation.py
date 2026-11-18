@@ -32,6 +32,14 @@ PILE_UNIQUE = """## Commandes du projet
 - test ciblé   : ailleurs
 """
 
+# Forme mixte : une ligne du projet entier avant les piles, qu'une ligne de pile doit emporter.
+MIXTE = """## Commandes du projet
+- test ciblé   : make test-cible
+- lint         : `ruff check --select E,W  #tag`   # le # entre backticks reste
+**Back (`back/`)** — vérifiées le 2026-10-01
+- test ciblé   : uv run pytest <chemin>
+"""
+
 
 @pytest.mark.parametrize(
     ("config", "label", "stack", "attendu"),
@@ -41,8 +49,20 @@ PILE_UNIQUE = """## Commandes du projet
         (PILE_UNIQUE, "test ciblé", "Back", "pnpm vitest run"),
         (PILE_UNIQUE, "test", "Back", "pnpm -r test"),
         (PILE_UNIQUE, "format:check", "Back", "pnpm biome format ."),
+        (MIXTE, "test ciblé", "Back", "uv run pytest"),
+        (MIXTE, "test ciblé", "Front", "make test-cible"),
+        (MIXTE, "lint", "Back", "ruff check --select E,W  #tag"),
     ],
-    ids=["gras-back", "gras-front", "unique-gabarit", "unique-annotation", "unique-deux-points"],
+    ids=[
+        "gras-back",
+        "gras-front",
+        "unique-gabarit",
+        "unique-annotation",
+        "unique-deux-points",
+        "mixte-la-pile-l-emporte",
+        "mixte-repli-sur-le-projet",
+        "mixte-diese-entre-backticks",
+    ],
 )
 def test_une_ligne_de_commande_se_lit_dans_les_deux_formes(tmp_path, config, label, stack, attendu):
     fichier = tmp_path / "pipeline.config.md"
