@@ -6,7 +6,8 @@
 		".": "./src/index.ts",
 		"./test/base-de-test": "./test/base-de-test.ts",
 		"./test/base-neuve": "./test/base-neuve.ts",
-		"./test/global-setup": "./test/global-setup.ts"
+		"./test/global-setup": "./test/global-setup.ts",
+		"./test/vitest-config": "./test/vitest-config.ts"
 	},
 	"scripts": {
 		"migrate": "node --env-file-if-exists=../../.env src/migrate-command.ts",
