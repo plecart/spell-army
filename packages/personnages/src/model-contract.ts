@@ -56,6 +56,11 @@ const UTF8 = new TextDecoder("utf-8", { fatal: true });
 // 49 877 780 caractères de cible et de message (mesuré le 2026-11-20, Node 24.3).
 const MAX_LISTED = 10;
 
+// Les caractères qu'un nom tiré du fichier garde dans un écart, au plus. Sans cette borne, un GLB
+// de 2 999 168 octets dont un matériau porte un nom de 2 999 000 caractères rend un écart de
+// 5 998 153 caractères de cible et de message (mesuré le 2026-11-20, Node 24.3).
+const MAX_NAME_LENGTH = 64;
+
 const index = z.number().int().nonnegative();
 const real = z.number();
 const vector3 = z.tuple([real, real, real]);
@@ -275,9 +280,19 @@ function lineage(nodes: GltfNode[], name: string): GltfNode[] {
 	return chain;
 }
 
-/** Le nom d'un élément du glTF, ou son index s'il n'en a pas. */
-const nameOf = (item: { name?: string | undefined }, at: number) =>
-	item.name ?? `#${at}`;
+// Les `MAX_NAME_LENGTH` premiers caractères d'un nom qui en a davantage : comptés en points de code
+// (`u`), pour ne pas couper un caractère hors du plan de base, retours à la ligne compris (`s`).
+const NAME_HEAD = new RegExp(`^.{${MAX_NAME_LENGTH}}(?=.)`, "su");
+
+/**
+ * Le nom d'un élément du glTF, ou son index s'il n'en a pas ; au-delà de `MAX_NAME_LENGTH`
+ * caractères, ses premiers suivis de « … ».
+ */
+function nameOf(item: { name?: string | undefined }, at: number): string {
+	const name = item.name ?? `#${at}`;
+	const head = NAME_HEAD.exec(name)?.[0];
+	return head === undefined ? name : `${head}…`;
+}
 
 /** Un écart sans sa règle, que la règle appose. */
 type Finding = Omit<Deviation, "regle">;
@@ -460,7 +475,8 @@ function listDeviations(regle: RuleId, deviations: Deviation[]): Deviation[] {
 /**
  * Les écarts d'un fichier GLB au contrat du fichier 3D (direction artistique § 7) ; une liste vide
  * veut dire conforme. Une règle rend au plus ses dix premiers écarts, suivis, au-delà, d'un écart
- * de la même règle, sans cible, qui dit combien d'autres ne sont pas listés.
+ * de la même règle, sans cible, qui dit combien d'autres ne sont pas listés. Un nom tiré du
+ * fichier y entre réduit, au-delà de 64 caractères, à ses 64 premiers suivis de « … ».
  *
  * 1. `taille` : 3 000 000 octets au plus, vérifié avant toute lecture ; au-delà, seul cet écart.
  * 2. `lisible` : en-tête GLB 2.0, premier morceau en JSON UTF-8, champs lus du bon type, renvois

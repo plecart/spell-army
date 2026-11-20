@@ -490,3 +490,59 @@ test.each(ONE_PER_ELEMENT)(
 		]);
 	},
 );
+
+// Les chemins par lesquels un texte du fichier entre dans un écart sont cinq. Quatre recopient un
+// nom, dans la cible et le message : ceux de cette table. Le cinquième est l'erreur de
+// `JSON.parse` dans l'écart « lisible », dont V8 recopie au plus 20 caractères du texte (mesuré
+// le 2026-11-20, Node 24.3, sur des textes de 1 à 100 000 caractères) : test suivant. Le reste de
+// la cause de « lisible » — en-tête, UTF-8, problèmes Zod, renvois rompus — ne recopie ni clé ni
+// texte du fichier, seulement des types, des nombres et les chemins du schéma (mesuré le même
+// jour) ; les autres règles, des nombres et les noms d'ancres du contrat.
+const NAME_PATHS: [RuleId, string, (name: string) => Uint8Array][] = [
+	[
+		"pieces-rigides",
+		"nœud lié à un squelette",
+		(name) => file({ nodes: [...NODES, { name, skin: 0 }] }),
+	],
+	[
+		"pieces-rigides",
+		"maillage à cibles de déformation",
+		(name) => file({ meshes: [PIECE, { ...MORPHING_TUNIQUE, name }] }),
+	],
+	[
+		"materiaux",
+		"matériau",
+		(name) => file({ materials: [...MATERIALS, { name }] }),
+	],
+	[
+		"budget",
+		"maillage en lignes",
+		(name) => file({ meshes: [PIECE, { ...LINES_TUNIQUE, name }] }),
+	],
+];
+
+// Un nom de `length` caractères : un retour à la ligne, puis des mages hors du plan de base, de
+// deux unités UTF-16 chacun — ce que compterait mal une borne en unités, ou arrêtée à la ligne.
+const nameOfLength = (length: number) => `\n${"🧙".repeat(length - 1)}`;
+
+test.each(NAME_PATHS)(
+	"« %s », %s : un nom de 64 caractères gardé entier, de 65 réduit aux 64 premiers suivis de « … »",
+	(regle, _, withName) => {
+		const kept = nameOfLength(64);
+		expect(checkModel(withName(kept))).toEqual([
+			{ regle, cible: kept, message: expect.stringContaining(`« ${kept} »`) },
+		]);
+		const cut = `${kept}…`;
+		expect(checkModel(withName(nameOfLength(65)))).toEqual([
+			{ regle, cible: cut, message: expect.stringContaining(`« ${cut} »`) },
+		]);
+	},
+);
+
+test("un JSON mal formé de 1 000 caractères : l'écart « lisible » n'en recopie pas 65 de suite", () => {
+	const text = "x".repeat(1_000);
+	const [deviation, ...others] = checkModel(glbOf(encode(text)));
+	expect(others).toEqual([]);
+	expect(deviation?.regle).toBe("lisible");
+	expect(deviation?.message.includes(text.slice(0, 65))).toBe(false);
+});
