@@ -1,5 +1,4 @@
-import { sql } from "drizzle-orm";
-import { describe, expect, onTestFinished, test, vi } from "vitest";
+import { describe, expect, onTestFinished, test } from "vitest";
 import {
 	auditLog,
 	type CalibrationSettings,
@@ -10,7 +9,7 @@ import {
 	updateCalibrationSettings,
 } from "../src/index.ts";
 import { UNREACHABLE_DATABASE_URL } from "./base-de-test.ts";
-import { freshDatabase } from "./base-neuve.ts";
+import { freshDatabase, waitForOneLockWaiter } from "./base-neuve.ts";
 
 // Posées par la migration `0002_reglages_de_depart` : docs/game-design.md § 6, issue #11.
 const STARTING_SETTINGS: CalibrationSettings = {
@@ -169,13 +168,7 @@ describe("réglages du calibrage", () => {
 		await db.transaction(async (tx) => {
 			await updateCalibrationSettings(tx, { recruitShare: 0.6 });
 			concurrent = updateCalibrationSettings(db, { recruitShare: 0.5 });
-			await vi.waitFor(async () => {
-				const { rows } = await db.execute(
-					sql`select count(*)::int as waiting from pg_stat_activity
-						where datname = current_database() and wait_event_type = 'Lock'`,
-				);
-				expect(rows).toEqual([{ waiting: 1 }]);
-			});
+			await waitForOneLockWaiter(db);
 		});
 		expect((await concurrent)?.before.recruitShare).toBe(0.6);
 	});

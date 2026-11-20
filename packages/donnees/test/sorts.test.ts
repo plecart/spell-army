@@ -12,7 +12,7 @@ import {
 	updateSpell,
 } from "../src/index.ts";
 import { UNREACHABLE_DATABASE_URL } from "./base-de-test.ts";
-import { freshDatabase } from "./base-neuve.ts";
+import { freshDatabase, waitForOneLockWaiter } from "./base-neuve.ts";
 
 // Un sort hors de la réserve de départ, de clé propre : `donnees` ne lit pas le modèle de `combat`.
 const NEW_SPELL: NewSpell = {
@@ -82,6 +82,8 @@ describe("sorts", () => {
 			{ weight: Number.POSITIVE_INFINITY },
 			"spells_weight_check",
 		],
+		["un nom vide", { name: "" }, "spells_name_check"],
+		["un nom blanc", { name: " \t\n" }, "spells_name_check"],
 		["une description vide", { description: "" }, "spells_description_check"],
 		[
 			"une description blanche",
@@ -127,6 +129,35 @@ describe("sorts", () => {
 			"Aucun sort de numéro 999.",
 		);
 		expect(await listSpells(db)).toEqual(before);
+	});
+
+	test("dans la transaction de l'appelant, une modification refusée la laisse utilisable", async () => {
+		const db = await freshDatabase();
+		const added = await insertSpell(db, NEW_SPELL);
+		const listed = await db.transaction(async (tx) => {
+			await expect(
+				updateSpell(tx, added.number, {
+					image: { bytes: ABC, type: "image/gif" },
+				}),
+			).rejects.toMatchObject({
+				cause: { constraint: "spells_image_type_check" },
+			});
+			return listSpells(tx);
+		});
+		expect(listed).toContainEqual(added);
+	});
+
+	test("une modification concurrente attend la précédente et lit son après pour avant", async () => {
+		const db = await freshDatabase();
+		const { number } = await insertSpell(db, NEW_SPELL);
+		let concurrent: ReturnType<typeof updateSpell> | undefined;
+		const first = await db.transaction(async (tx) => {
+			const first = await updateSpell(tx, number, { weight: 2 });
+			concurrent = updateSpell(db, number, { weight: 3 });
+			await waitForOneLockWaiter(db);
+			return first;
+		});
+		expect((await concurrent)?.before).toEqual(first.after);
 	});
 
 	test.each<[string, SpellPatch]>([

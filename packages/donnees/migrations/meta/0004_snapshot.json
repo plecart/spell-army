@@ -277,6 +277,10 @@
           "name": "spells_weight_check",
           "value": "\"spells\".\"weight\" >= 0 and \"spells\".\"weight\" < 'Infinity'::double precision"
         },
+        "spells_name_check": {
+          "name": "spells_name_check",
+          "value": "\"spells\".\"name\" ~ '[^[:space:]]'"
+        },
         "spells_description_check": {
           "name": "spells_description_check",
           "value": "\"spells\".\"description\" ~ '[^[:space:]]'"
