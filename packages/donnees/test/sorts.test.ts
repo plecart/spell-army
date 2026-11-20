@@ -26,7 +26,7 @@ const NEW_SPELL: NewSpell = {
 	description: "Dégâts d'essai.",
 };
 
-// « abc » et son empreinte SHA-256, vecteur d'essai de FIPS 180-2, annexe B.1.
+// « abc » et son empreinte SHA-256, que `createHash` de `node:crypto` rend à l'identique.
 const ABC = new TextEncoder().encode("abc");
 const ABC_SHA256 =
 	"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
@@ -66,6 +66,28 @@ describe("sorts", () => {
 		).rejects.toMatchObject({
 			cause: { code: "23505", constraint: "spells_key_unique" },
 		});
+	});
+
+	// La limite que porte le `ponytail:` d'`insertSpell` : un ajout concurrent échoue, il n'écrase pas.
+	test("deux ajouts simultanés : le second attend le premier, puis échoue sur la clé primaire sans rien écrire", async () => {
+		const db = await freshDatabase();
+		// L'échec du second, capté dès l'appel : il peut arriver avant que la transaction rende la main.
+		let concurrentError: Promise<unknown> | undefined;
+		const first = await db.transaction(async (tx) => {
+			const first = await insertSpell(tx, NEW_SPELL);
+			concurrentError = insertSpell(db, { ...NEW_SPELL, key: "essai-2" }).then(
+				() => undefined,
+				(error: unknown) => error,
+			);
+			await waitForOneLockWaiter(db);
+			return first;
+		});
+		expect(await concurrentError).toMatchObject({
+			cause: { code: "23505", constraint: "spells_pkey" },
+		});
+		expect((await listSpells(db)).slice(STARTING_NUMBERS.length)).toEqual([
+			first,
+		]);
 	});
 
 	test("findSpellByKey nomme le sort d'une clé, et rien pour une clé absente", async () => {
