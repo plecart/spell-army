@@ -22,6 +22,20 @@
       "when": 1794933403293,
       "tag": "0002_reglages_de_depart",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795193959503,
+      "tag": "0003_sorts",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795194085522,
+      "tag": "0004_reserve_de_depart",
+      "breakpoints": true
     }
   ]
 }
