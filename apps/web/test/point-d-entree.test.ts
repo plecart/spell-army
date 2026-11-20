@@ -126,13 +126,14 @@ function trialTools() {
 		unauditableResult: {
 			...TRIAL,
 			name: "resultat_inauditable",
-			description: "Écrit, puis rend un après que `jsonb` refuse (U+0000).",
+			description:
+				"Écrit, puis rend un après que JSON ne sait pas écrire (un BigInt).",
 			input: noInput,
 			run: async (executor: Executor) => {
 				await updateCalibrationSettings(executor, { recruitShare: 0.5 });
 				return {
 					output: { part: 0.5 },
-					after: { text: NUL },
+					after: { nombre: 1n },
 				};
 			},
 		},
@@ -397,7 +398,7 @@ describe("point d'entrée du serveur MCP", () => {
 		[
 			"un résultat que l'audit en succès ne peut pas écrire",
 			"resultat_inauditable",
-			/^unsupported Unicode escape sequence$/,
+			/^Do not know how to serialize a BigInt$/,
 		],
 		[
 			"une sortie que son schéma refuse, au message lisible comme celui d'une entrée invalide",

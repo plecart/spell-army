@@ -349,8 +349,8 @@ describe("ajouter_sort", () => {
 		]);
 	});
 
-	test("un nom de 100 caractères et une description de 500 sont acceptés", async () => {
-		const { client } = await connectToRegistry();
+	test("un nom de 100 caractères et une description de 500 sont acceptés, et l'audit les garde tels quels", async () => {
+		const { db, client } = await connectToRegistry();
 		const longest = {
 			...NEW_SPELL,
 			nom: "n".repeat(100),
@@ -361,6 +361,14 @@ describe("ajouter_sort", () => {
 			arguments: longest,
 		});
 		expect(outputOf(result)).toMatchObject(longest);
+		expect(
+			(await auditRows(db)).filter(({ tool }) => tool === "ajouter_sort"),
+		).toEqual([
+			expect.objectContaining({
+				input: longest,
+				after: expect.objectContaining(longest),
+			}),
+		]);
 	});
 
 	test("un sort de poids 0 est accepté", async () => {
@@ -611,42 +619,42 @@ describe("modifier_sort", () => {
 	);
 
 	// Le dénombrement des refus d'une image (issue #12, « Image ») : type, fin, dimensions, taille et
-	// encodage, puis le schéma strict, qui refuse l'entrée avant que l'outil ne la lise.
+	// encodage, puis le schéma strict, qui refuse l'entrée avant que l'outil ne la lise. Des octets
+	// partent en base64 ; un texte part tel quel, et l'audit en garde les octets UTF-8.
 	const NOT_AN_IMAGE = "l'image doit être un fichier PNG, JPEG ou WebP complet";
 	const TOO_SMALL = "l'image doit faire au moins 1 200 × 900 px";
-	test.each<[string, string, Record<string, unknown>, string]>([
-		["un GIF", base64(gif(1200, 900)), {}, NOT_AN_IMAGE],
+	test.each<[string, Uint8Array | string, Record<string, unknown>, string]>([
+		["un GIF", gif(1200, 900), {}, NOT_AN_IMAGE],
 		[
 			"des octets quelconques",
-			base64(new TextEncoder().encode("Ceci n'est pas une image.")),
+			new TextEncoder().encode("Ceci n'est pas une image."),
 			{},
 			NOT_AN_IMAGE,
 		],
-		[
-			"un PNG tronqué",
-			base64(png(1200, 900).subarray(0, 56)),
-			{},
-			NOT_AN_IMAGE,
-		],
-		["un PNG de 1 199 × 900", base64(png(1199, 900)), {}, TOO_SMALL],
-		["un PNG de 1 200 × 899", base64(png(1200, 899)), {}, TOO_SMALL],
+		["un PNG tronqué", png(1200, 900).subarray(0, 56), {}, NOT_AN_IMAGE],
+		["un PNG de 1 199 × 900", png(1199, 900), {}, TOO_SMALL],
+		["un PNG de 1 200 × 899", png(1200, 899), {}, TOO_SMALL],
 		[
 			"un PNG de 3 000 001 octets",
-			base64(png(1200, 900, 3_000_001)),
+			png(1200, 900, 3_000_001),
 			{},
 			"l'image doit faire au plus 3 000 000 octets",
 		],
 		["un texte qui n'est pas du base64", "pas du base64 !", {}, "base64"],
 		[
 			"un PNG valide avec un champ inconnu",
-			base64(png(1200, 900)),
+			png(1200, 900),
 			{ inconnu: 1 },
 			'Unrecognized key: "inconnu"',
 		],
 	])(
 		"%s : refusé, rien d'écrit, l'audit garde la taille et l'empreinte de l'image, jamais son texte",
-		async (_, image, extra, message) => {
+		async (_, sent, extra, message) => {
 			const { db, client } = await connectToRegistry();
+			const [image, audited] =
+				typeof sent === "string"
+					? [sent, new TextEncoder().encode(sent)]
+					: [base64(sent), sent];
 			const args = { numero: 1, image, ...extra };
 			const result = await client.callTool({
 				name: "modifier_sort",
@@ -663,7 +671,7 @@ describe("modifier_sort", () => {
 				expect.objectContaining({
 					input: {
 						...args,
-						image: fingerprint(Buffer.from(image, "base64")),
+						image: fingerprint(audited),
 					},
 					succeeded: false,
 				}),
