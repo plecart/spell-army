@@ -37,10 +37,12 @@ type TextPath = [
  * long. Le dernier test recompte les colonnes.
  */
 const TEXT_PATHS: TextPath[] = [
+	// Sous une clé qui n'est pas un champ d'octets : `image` ou `contenu` serait remplacé quelle que
+	// soit sa longueur.
 	[
 		"une valeur de l'entrée",
-		(text) => ({ tool: "essai", input: { contenu: text } }),
-		(stored) => ({ input: { contenu: stored } }),
+		(text) => ({ tool: "essai", input: { texte: text } }),
+		(stored) => ({ input: { texte: stored } }),
 		fingerprintOf,
 	],
 	[
