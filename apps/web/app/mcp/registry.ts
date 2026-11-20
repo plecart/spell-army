@@ -1,3 +1,4 @@
+import { depositModelTool, setClassModelTool } from "./model-tools.ts";
 import { readSettingsTool, updateSettingsTool } from "./settings-tools.ts";
 import {
 	addSpellTool,
@@ -13,4 +14,6 @@ export const registry: readonly McpTool[] = [
 	listSpellsTool,
 	addSpellTool,
 	updateSpellTool,
+	depositModelTool,
+	setClassModelTool,
 ];

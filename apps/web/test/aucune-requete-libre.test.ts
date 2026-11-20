@@ -108,6 +108,8 @@ describe("aucun paramètre de requête libre", () => {
 			"lister_sorts",
 			"ajouter_sort",
 			"modifier_sort",
+			"deposer_fichier_3d",
+			"regler_modele_classe",
 		]);
 		expect(
 			tools.flatMap(({ name, inputSchema }) =>
