@@ -49,10 +49,12 @@ const JSON_CHUNK = 0x4e4f534a; // « JSON »
 const JSON_START = 20;
 const UTF8 = new TextDecoder("utf-8", { fatal: true });
 
-// Problèmes du JSON que nomme l'écart « lisible », au plus : un par renvoi rompu, et 2 200 032
-// octets de nœuds `{"mesh":0}` en portent 200 000, soit 13 488 986 caractères de message sans
-// cette borne (mesuré le 2026-11-20, Node 24.3).
-const MAX_LISTED_ISSUES = 10;
+// Ce qui se liste au plus avant d'être compté : les problèmes du JSON que nomme l'écart
+// « lisible », les écarts d'une règle. Sans cette borne, 2 200 032 octets de nœuds `{"mesh":0}`
+// portent 200 000 renvois rompus, soit 13 488 986 caractères de message ; un GLB de 900 156
+// octets, ses cinq ancres et 300 000 matériaux sans nom, 300 000 écarts « materiaux », soit
+// 49 877 780 caractères de cible et de message (mesuré le 2026-11-20, Node 24.3).
+const MAX_LISTED = 10;
 
 const index = z.number().int().nonnegative();
 const real = z.number();
@@ -175,12 +177,12 @@ const gltfSchema = gltfShape.superRefine((gltf, ctx) => {
 	}
 });
 
-/** Les `MAX_LISTED_ISSUES` premiers problèmes d'une validation, suivis de leur nombre au-delà. */
+/** Les `MAX_LISTED` premiers problèmes d'une validation, suivis de leur nombre au-delà. */
 function listIssues({ issues }: z.ZodError): string {
 	const listed = z.prettifyError({
-		issues: issues.slice(0, MAX_LISTED_ISSUES),
+		issues: issues.slice(0, MAX_LISTED),
 	});
-	return issues.length > MAX_LISTED_ISSUES
+	return issues.length > MAX_LISTED
 		? `${listed}\n… ${issues.length} problèmes en tout`
 		: listed;
 }
@@ -441,9 +443,24 @@ const GLTF_RULES: Rule<Gltf>[] = [
  */
 export const MODEL_RULES = [SIZE_RULE, READABLE_RULE, ...GLTF_RULES];
 
+/** Les `MAX_LISTED` premiers écarts d'une règle, puis un écart sans cible qui compte le reste. */
+function listDeviations(regle: RuleId, deviations: Deviation[]): Deviation[] {
+	const unlisted = deviations.length - MAX_LISTED;
+	return unlisted > 0
+		? [
+				...deviations.slice(0, MAX_LISTED),
+				{
+					regle,
+					message: `Et ${unlisted} autre(s) écart(s) de la règle « ${regle} », non listé(s) : corrigez les ${MAX_LISTED} premiers, puis vérifiez de nouveau le fichier.`,
+				},
+			]
+		: deviations;
+}
+
 /**
  * Les écarts d'un fichier GLB au contrat du fichier 3D (direction artistique § 7) ; une liste vide
- * veut dire conforme.
+ * veut dire conforme. Une règle rend au plus ses dix premiers écarts, suivis, au-delà, d'un écart
+ * de la même règle, sans cible, qui dit combien d'autres ne sont pas listés.
  *
  * 1. `taille` : 3 000 000 octets au plus, vérifié avant toute lecture ; au-delà, seul cet écart.
  * 2. `lisible` : en-tête GLB 2.0, premier morceau en JSON UTF-8, champs lus du bon type, renvois
@@ -471,5 +488,7 @@ export function checkModel(bytes: Uint8Array): Deviation[] {
 	if (tooLarge.length > 0) return tooLarge;
 	const gltf = READABLE_RULE.read(bytes);
 	if (Array.isArray(gltf)) return gltf;
-	return GLTF_RULES.flatMap((rule) => rule.check(gltf));
+	return GLTF_RULES.flatMap((rule) =>
+		listDeviations(rule.regle, rule.check(gltf)),
+	);
 }
