@@ -1,6 +1,6 @@
 // Schéma Drizzle de la base, lu par `drizzle-kit generate` (`drizzle.config.ts`). Chaque domaine y
 // ajoute ses tables.
-import { sql } from "drizzle-orm";
+import { type SQL, sql } from "drizzle-orm";
 import {
 	boolean,
 	check,
@@ -117,6 +117,50 @@ export const spells = pgTable(
 		),
 	],
 );
+
+/**
+ * Les fichiers 3D (direction artistique § 7) : un GLB par classe ou par monstre, désigné par son
+ * nom, l'un des deux exactement (`model_files_owner_check`). `size` et `sha256` sont calculés par
+ * la base, depuis les octets. `model-files.ts` écrit la table ; le contrat du fichier se vérifie
+ * chez l'appelant.
+ */
+export const modelFiles = pgTable(
+	"model_files",
+	{
+		id: integer().primaryKey().generatedAlwaysAsIdentity(),
+		class: text(),
+		monster: text(),
+		content: bytea().notNull(),
+		size: integer()
+			.notNull()
+			.generatedAlwaysAs((): SQL => sql`octet_length(${modelFiles.content})`),
+		sha256: text()
+			.notNull()
+			.generatedAlwaysAs(
+				(): SQL => sql`encode(sha256(${modelFiles.content}), 'hex')`,
+			),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		check(
+			"model_files_owner_check",
+			sql`(${table.class} is null) <> (${table.monster} is null)`,
+		),
+	],
+);
+
+/**
+ * Le modèle par défaut de chaque classe (direction artistique § 5, « Valeurs par défaut ») : au
+ * plus un par classe, un fichier de `model_files` de cette classe, que `model-files.ts` vérifie.
+ */
+export const classDefaultModels = pgTable("class_default_models", {
+	class: text().primaryKey(),
+	modelFileId: integer("model_file_id")
+		.notNull()
+		.references(() => modelFiles.id),
+});
 
 /**
  * Journal d'audit des appels d'outils du serveur MCP : l'outil, l'entrée reçue (les octets d'une
