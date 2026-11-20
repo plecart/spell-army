@@ -460,10 +460,11 @@ test.each<[number, string, boolean]>([
 const numbered = (count: number, fields: object = {}) =>
 	Array.from({ length: count }, (_, at) => ({ ...fields, name: `e${at}` }));
 
-// Les règles qui rendent un écart par élément du fichier sont quatre : « lisible », bornée dans
-// son unique écart (test des renvois rompus ci-dessus), et les trois de cette table, chacune avec
-// le personnage conforme augmenté de `count` éléments en écart. « ancres » et « ancre-unique »
-// rendent au plus un écart par ancre, cinq ; les quatre autres règles, un au plus.
+// Toute règle de `GLTF_RULES` passe par `listDeviations`, dans `checkModel`, qui borne ses écarts.
+// Cette table l'éprouve sur les règles qui rendent un écart par élément du fichier (« materiaux »,
+// « pieces-rigides », « budget »), chacune avec le personnage conforme augmenté de `count`
+// éléments en écart ; « lisible » est bornée à l'intérieur de son unique écart (test des renvois
+// rompus ci-dessus).
 const ONE_PER_ELEMENT: [RuleId, (count: number) => Uint8Array][] = [
 	[
 		"materiaux",
@@ -496,13 +497,13 @@ test.each(ONE_PER_ELEMENT)(
 	},
 );
 
-// Les chemins par lesquels un texte du fichier entre dans un écart sont cinq. Quatre recopient un
-// nom, dans la cible et le message : ceux de cette table. Le cinquième est l'erreur de
-// `JSON.parse` dans l'écart « lisible », dont V8 recopie au plus 20 caractères du texte (mesuré
-// le 2026-11-20, Node 24.3, sur des textes de 1 à 100 000 caractères) : test suivant. Le reste de
-// la cause de « lisible » — en-tête, UTF-8, problèmes Zod, renvois rompus — ne recopie ni clé ni
-// texte du fichier, seulement des types, des nombres et les chemins du schéma (mesuré le même
-// jour) ; les autres règles, des nombres et les noms d'ancres du contrat.
+// Chaque nom tiré du fichier passe par `nameOf`, qui le borne. Cette table l'éprouve sur les règles
+// qui recopient un nom, dans la cible et le message. L'erreur de `JSON.parse` dans l'écart
+// « lisible » est bornée par V8, qui recopie au plus 20 caractères du texte (mesuré le 2026-11-20,
+// Node 24.3, sur des textes de 1 à 100 000 caractères) : test suivant. Le reste de la cause de
+// « lisible » — en-tête, UTF-8, problèmes Zod, renvois rompus — ne recopie ni clé ni texte du
+// fichier, seulement des types, des nombres et les chemins du schéma (mesuré le même jour) ; les
+// autres règles, des nombres et les noms d'ancres du contrat.
 const NAME_PATHS: [RuleId, string, (name: string) => Uint8Array][] = [
 	[
 		"pieces-rigides",
