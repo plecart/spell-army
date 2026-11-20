@@ -102,9 +102,9 @@ export const spells = pgTable(
 			"spells_weight_check",
 			sql`${table.weight} >= 0 and ${table.weight} < 'Infinity'::double precision`,
 		),
-		check(
-			"spells_description_check",
-			sql`${table.description} ~ '[^[:space:]]'`,
+		// Un texte non blanc : au moins un caractère hors des blancs.
+		...[table.name, table.description].map((column) =>
+			check(`spells_${column.name}_check`, sql`${column} ~ '[^[:space:]]'`),
 		),
 		// Les octets et leur type, ensemble ou pas du tout.
 		check(
