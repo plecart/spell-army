@@ -55,9 +55,10 @@ function readVariables<const Name extends string>(
  * rend ce que l'outil rend. `file` se résout contre `INIT_CWD`, le dossier d'où pnpm a été lancé, à
  * défaut contre le dossier courant. `fetch` remplace celui du transport, pour les tests.
  *
- * Lève une erreur au message français. Avant tout envoi : un fichier non conforme, dont elle liste
- * les écarts ; une variable absente, qu'elle nomme sans jamais en écrire la valeur. Après : un jeton
- * refusé, ou le refus de l'outil, dont elle rend le message.
+ * Lève une erreur, à afficher telle quelle. Avant tout envoi : un fichier qui ne se lit pas, avec le
+ * message de Node ; un fichier non conforme, dont elle liste les écarts ; une variable absente,
+ * qu'elle nomme sans jamais en écrire la valeur. Après : un jeton refusé ; le refus de l'outil, dont
+ * elle rend le message, celui de Zod pour une entrée que le schéma refuse.
  */
 export async function depositModel(
 	{ file, classe, monstre }: DepositArgs,
