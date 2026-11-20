@@ -49,6 +49,11 @@ const JSON_CHUNK = 0x4e4f534a; // « JSON »
 const JSON_START = 20;
 const UTF8 = new TextDecoder("utf-8", { fatal: true });
 
+// Problèmes du JSON que nomme l'écart « lisible », au plus : un par renvoi rompu, et 2 200 032
+// octets de nœuds `{"mesh":0}` en portent 200 000, soit 13 488 986 caractères de message sans
+// cette borne (mesuré le 2026-11-20, Node 24.3).
+const MAX_LISTED_ISSUES = 10;
+
 const index = z.number().int().nonnegative();
 const real = z.number();
 const vector3 = z.tuple([real, real, real]);
@@ -170,6 +175,16 @@ const gltfSchema = gltfShape.superRefine((gltf, ctx) => {
 	}
 });
 
+/** Les `MAX_LISTED_ISSUES` premiers problèmes d'une validation, suivis de leur nombre au-delà. */
+function listIssues({ issues }: z.ZodError): string {
+	const listed = z.prettifyError({
+		issues: issues.slice(0, MAX_LISTED_ISSUES),
+	});
+	return issues.length > MAX_LISTED_ISSUES
+		? `${listed}\n… ${issues.length} problèmes en tout`
+		: listed;
+}
+
 /** Le JSON d'un GLB 2.0, ou ce qui empêche de le lire. */
 function readGltf(bytes: Uint8Array): Gltf | string {
 	if (bytes.length < JSON_START) {
@@ -200,7 +215,7 @@ function readGltf(bytes: Uint8Array): Gltf | string {
 		return `le morceau JSON ne se lit pas (${error})`;
 	}
 	const parsed = gltfSchema.safeParse(json);
-	return parsed.success ? parsed.data : z.prettifyError(parsed.error);
+	return parsed.success ? parsed.data : listIssues(parsed.error);
 }
 
 type Vector3 = [number, number, number];
@@ -432,7 +447,7 @@ export const MODEL_RULES = [SIZE_RULE, READABLE_RULE, ...GLTF_RULES];
  * 1. `taille` : 3 000 000 octets au plus, vérifié avant toute lecture ; au-delà, seul cet écart.
  * 2. `lisible` : en-tête GLB 2.0, premier morceau en JSON UTF-8, champs lus du bon type, renvois
  *    vers des nœuds, maillages et accesseurs qui existent, nœuds en arbres disjoints ; sinon, seul
- *    cet écart, qui en dit la cause.
+ *    cet écart, qui en dit la cause — dix problèmes du JSON au plus, suivis de leur nombre au-delà.
  * 3. `ancres` : un nœud nommé `tete`, `chapeau`, `main_gauche`, `main_droite` et `sol` ; un écart
  *    par ancre absente. Une ancre peut être vide, d'autres ancres (`dos`) sont admises.
  * 4. `ancre-unique` : un seul nœud par nom d'ancre.
