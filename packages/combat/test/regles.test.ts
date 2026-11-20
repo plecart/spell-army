@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+	type Effect,
 	effectCategory,
 	type Form,
 	type Linear,
@@ -291,5 +292,45 @@ describe("validité d'un sort", () => {
 		],
 	])("%s : accepté", (_, change) => {
 		expect(validateSpell({ ...SWORD, ...change })).toEqual([]);
+	});
+});
+
+// Une part nulle aux deux bouts de la jauge ne fait rien. Comptée présente, elle ferait d'un soin un
+// vol de vie, et un jumeau de Soin (n° 11) passerait l'unicité (game design § 2, « Unicité »).
+describe("une part d'effet nulle", () => {
+	const ZERO_DAMAGE =
+		"le coefficient de dégâts vaut 0 aux deux bouts de la jauge : omettre la part de dégâts";
+	const ZERO_HEAL =
+		"le coefficient de soin vaut 0 aux deux bouts de la jauge : omettre la part de soin";
+
+	test.each<[string, Partial<Effect>, string[]]>([
+		[
+			"dégâts nuls et soin 1",
+			{ damage: linear(0), heal: linear(1) },
+			[ZERO_DAMAGE],
+		],
+		[
+			"soin nul et dégâts 1",
+			{ damage: linear(1), heal: linear(0) },
+			[ZERO_HEAL],
+		],
+		["dégâts nuls seuls", { damage: linear(0) }, [ZERO_DAMAGE]],
+		["soin nul seul", { heal: linear(0) }, [ZERO_HEAL]],
+		[
+			"dégâts nuls et soin 1,2, sans second refus pour le mixte",
+			{ damage: linear(0), heal: linear(1.2) },
+			[ZERO_DAMAGE],
+		],
+	])("aux deux bouts de la jauge, %s : refusé", (_, parts, errors) => {
+		const effect: Effect = { base: "armyStat", ...parts };
+		expect(validateSpell({ ...SWORD, form: WOUNDS, effect })).toEqual(errors);
+	});
+
+	test.each<[string, Linear]>([
+		["dégâts 0 + 1 × jauge", linear(0, 1)],
+		["dégâts 1 − 1 × jauge", linear(1, -1)],
+	])("à un seul bout de la jauge, %s : accepté", (_, damage) => {
+		const effect: Effect = { base: "armyStat", damage };
+		expect(validateSpell({ ...SWORD, form: WOUNDS, effect })).toEqual([]);
 	});
 });

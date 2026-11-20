@@ -1,7 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { type GenerateRun, schemaDriftFailure } from "../src/schema-drift.ts";
 
-// Ce que `drizzle-kit generate` 0.31.11 écrit sur un schéma sans changement (mesuré le 2026-11-20).
+// Extrait de ce que `drizzle-kit generate` 0.31.11 écrit sur un schéma sans changement (mesuré le
+// 2026-11-20).
 const FINISHED: GenerateRun = {
 	status: 0,
 	timedOut: false,

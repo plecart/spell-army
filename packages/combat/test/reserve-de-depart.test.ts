@@ -8,7 +8,7 @@ import {
 } from "../src/index.ts";
 
 // L'annexe B du game design, lue à la source : le test confronte la réserve au document, jamais
-// la réserve à elle-même. Une ligne du tableau commence par `| <numéro> | <nom> |`.
+// la réserve à elle-même. Une ligne du tableau : `| # | Sort | Recette | Forme | Effet |`.
 const ANNEX_B = annexBRows(
 	readFileSync(
 		new URL("../../../docs/game-design.md", import.meta.url),
@@ -16,13 +16,160 @@ const ANNEX_B = annexBRows(
 	),
 );
 
-function annexBRows(gameDesign: string): [number, string][] {
+interface AnnexRow {
+	number: number;
+	name: string;
+	recipe: string;
+	form: string;
+	effect: string;
+}
+
+function annexBRows(gameDesign: string): AnnexRow[] {
 	const annex = gameDesign
 		.split(/^## /m)
 		.find((section) => section.startsWith("Annexe B"));
-	return [...(annex ?? "").matchAll(/^\| (\d+) \| ([^|]+) \|/gm)].map(
-		([, number, name]) => [Number(number), (name as string).trim()],
+	return [
+		...(annex ?? "").matchAll(
+			/^\| (\d+) \| ([^|]+) \| ([^|]+) \| ([^|]+) \| ([^|]+) \|/gm,
+		),
+	].map(([, number, name = "", recipe = "", form = "", effect = ""]) => ({
+		number: Number(number),
+		name,
+		recipe,
+		form,
+		effect,
+	}));
+}
+
+// Le vocabulaire de l'annexe B, dans celui du modèle d'un sort. Un mot absent de ce vocabulaire ne
+// rencontre aucune valeur du sort : le test rougit.
+const STATS: Record<string, string> = {
+	Vie: "life",
+	Force: "strength",
+	Magie: "magic",
+	Vitesse: "speed",
+};
+const FORMS: Record<string, object> = {
+	sûr: { kind: "safe" },
+	coûteux: { kind: "costly" },
+	inversé: { kind: "inverted" },
+	"selon la Vie du monstre": { kind: "conditional", gauge: "monsterLifeLost" },
+	"selon les blessures de l'armée": {
+		kind: "conditional",
+		gauge: "armyWounds",
+	},
+	"selon la part de golems": {
+		kind: "conditional",
+		gauge: "classShare",
+		characterClass: "golem",
+	},
+	"selon la part de la classe du lanceur": {
+		kind: "conditional",
+		gauge: "casterClassShare",
+	},
+};
+const PARTS: Record<string, string> = { dégâts: "damage", soin: "heal" };
+const BASES: Record<string, string> = {
+	"de la Vie maximale": "armyMaxLife",
+	"du dernier coup": "monsterLastHit",
+};
+// La pente de « ×a → ×b » est b − a, calculée en binaire : 0,4 − 1,4 y vaut -0,9999999999999999.
+const DIGITS = 9;
+
+/** Le sort qu'écrit une ligne de l'annexe B ; la description, phrase de la carte, n'y est pas. */
+function annexSpell({ number, name, recipe, form, effect }: AnnexRow) {
+	const [, parts = "", loss] = /^(.*?)(?: ; (.*))?$/.exec(effect) ?? [];
+	return {
+		number,
+		name,
+		recipe: annexRecipe(recipe),
+		form: annexForm(form, loss),
+		effect: { base: annexBase(effect), ...annexParts(parts) },
+		weight: 1,
+		description: expect.any(String),
+	};
+}
+
+/**
+ * « 60 % Force + 40 % Vie », « meilleure stat », ou « dernier coup reçu (efficacité sur la Vie) »,
+ * dont l'efficacité, donc la recette (game design § 2, « Recette »), est 100 % Vie.
+ */
+function annexRecipe(recipe: string) {
+	if (recipe === "meilleure stat") return { kind: "bestStat" };
+	const shares = recipe.replace(
+		/^dernier coup reçu \(efficacité sur la (\p{L}+)\)$/u,
+		"100 % $1",
 	);
+	return {
+		kind: "shares",
+		shares: Object.fromEntries(
+			[...shares.matchAll(/(\d+) % (\p{L}+)/gu)].map(([, share, stat = ""]) => [
+				STATS[stat] ?? stat,
+				Number(share),
+			]),
+		),
+	};
+}
+
+/** Un mot de `FORMS` ; la part perdue d'un coûteux suit le « ; » de l'effet. */
+function annexForm(form: string, loss: string | undefined) {
+	return {
+		...FORMS[form],
+		...(loss !== undefined && { armyLossShare: annexNumbers(loss, 1)[0] }),
+	};
+}
+
+/** La Vie maximale de l'armée, le dernier coup du monstre ou, sans mention, la stat de l'armée. */
+function annexBase(effect: string) {
+	const base = Object.entries(BASES).find(([words]) => effect.includes(words));
+	return base?.[1] ?? "armyStat";
+}
+
+/** Les parts de l'effet, « dégâts » ou « soin », liées par « + ». */
+function annexParts(parts: string) {
+	return Object.fromEntries(
+		[...parts.matchAll(/(dégâts|soin) (.+?)(?= \+ (?:dégâts|soin)|$)/g)].map(
+			([, part = "", amount = ""]) => [
+				PARTS[part] ?? part,
+				annexLinear(amount),
+			],
+		),
+	);
+}
+
+/**
+ * Le coefficient d'une part, selon son écriture : « ×a » ou « N % … », a ou N / 100 partout ;
+ * « ×a (…) → ×b (…) », a à jauge 0 et b à jauge 1 ; « ×(a + b × …) », a + b × jauge.
+ */
+function annexLinear(amount: string) {
+	const ends = amount.includes("→");
+	const slope = amount.includes("×(");
+	const [a = Number.NaN, b = Number.NaN] = annexNumbers(
+		amount,
+		ends || slope ? 2 : 1,
+	);
+	const perGauge = ends ? b - a : slope ? b : 0;
+	return {
+		constant: expect.closeTo(a, DIGITS),
+		perGauge: expect.closeTo(perGauge, DIGITS),
+	};
+}
+
+/**
+ * Les nombres d'un texte de l'annexe, « 1,15 » pour 1,15 et « 10 % » pour 0,1. Il en faut
+ * `count` : un nombre de plus, sans valeur du sort à lui confronter, rougit le test.
+ */
+function annexNumbers(text: string, count: number): number[] {
+	const numbers = [...text.matchAll(/(\d+(?:,\d+)?)( %)?/g)].map(
+		([, digits = "", percent]) =>
+			Number(digits.replace(",", ".")) / (percent ? 100 : 1),
+	);
+	if (numbers.length !== count) {
+		throw new Error(
+			`${count} nombre(s) attendu(s) dans « ${text} », lu(s) : ${numbers.join(", ")}`,
+		);
+	}
+	return numbers;
 }
 
 test("l'annexe B et la réserve de départ comptent chacune 24 sorts", () => {
@@ -36,13 +183,9 @@ test("les numéros vont de 1 à 24 dans l'ordre", () => {
 });
 
 test.each(ANNEX_B)(
-	"le sort n° %i s'appelle « %s », comme à l'annexe B, et pèse 1",
-	(number, name) => {
-		expect(STARTING_POOL[number - 1]).toMatchObject({
-			number,
-			name,
-			weight: 1,
-		});
+	"le sort n° $number, « $name », a la recette, la forme et l'effet de l'annexe B, et pèse 1",
+	(row) => {
+		expect(STARTING_POOL[row.number - 1]).toEqual(annexSpell(row));
 	},
 );
 
