@@ -72,6 +72,8 @@ describe("route /api/mcp", () => {
 			"lister_sorts",
 			"ajouter_sort",
 			"modifier_sort",
+			"deposer_fichier_3d",
+			"regler_modele_classe",
 		]);
 	});
 });

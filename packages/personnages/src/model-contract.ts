@@ -26,7 +26,8 @@ export interface Deviation {
 	message: string;
 }
 
-const MAX_BYTES = 3_000_000;
+/** La taille admise d'un fichier 3D, en octets (règle `taille`). */
+export const MAX_MODEL_BYTES = 3_000_000;
 const MAX_TRIANGLES = 30_000;
 const ORIGIN_TOLERANCE = 0.0001;
 const TRIANGLES_MODE = 4;
@@ -318,8 +319,8 @@ function rule<Input>(
 }
 
 const SIZE_RULE = rule("taille", (bytes: Uint8Array) =>
-	when(bytes.length > MAX_BYTES, {
-		message: `Le fichier pèse ${bytes.length} octets, plus que les ${MAX_BYTES} admis : allégez le modèle avant de le déposer.`,
+	when(bytes.length > MAX_MODEL_BYTES, {
+		message: `Le fichier pèse ${bytes.length} octets, plus que les ${MAX_MODEL_BYTES} admis : allégez le modèle avant de le déposer.`,
 	}),
 );
 
@@ -507,4 +508,25 @@ export function checkModel(bytes: Uint8Array): Deviation[] {
 	return GLTF_RULES.flatMap((rule) =>
 		listDeviations(rule.regle, rule.check(gltf)),
 	);
+}
+
+// Une suite de caractères de contrôle ou de séparateurs de ligne ou de paragraphe, qu'un nom tiré du
+// fichier, ou la cause d'un JSON illisible, peut porter dans un écart.
+const CONTROL_RUN = /[\p{Cc}\p{Zl}\p{Zp}]+/gu;
+
+/**
+ * Les écarts d'un fichier, en texte pour le designer : une phrase d'en-tête, puis une ligne par
+ * écart, « - règle (cible) : message », sans parenthèses quand l'écart n'a pas de cible. Chaque
+ * suite de caractères de contrôle y devient une espace, pour qu'un écart tienne sur sa ligne.
+ */
+export function describeDeviations(deviations: readonly Deviation[]): string {
+	return [
+		"Le fichier ne respecte pas le contrat du fichier 3D (direction artistique § 7) :",
+		...deviations.map(({ regle, cible, message }) =>
+			`- ${regle}${cible === undefined ? "" : ` (${cible})`} : ${message}`.replace(
+				CONTROL_RUN,
+				" ",
+			),
+		),
+	].join("\n");
 }

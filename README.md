@@ -21,7 +21,9 @@ Installation, tests, lint, format, typecheck, audit, build, migration et dérive
 Le serveur MCP (`docs/adr/0005-serveur-mcp.md`) sert sur `/api/mcp` les outils de pilotage :
 `lire_reglages` et `modifier_reglages` pour le calibrage ; `lister_sorts`, `ajouter_sort` et
 `modifier_sort` pour la réserve de sorts, dont l'image se donne en base64 à `modifier_sort` (PNG,
-JPEG ou WebP, au moins 1 200 × 900 px, au plus 3 000 000 octets). Le jeton n'entre dans aucun
+JPEG ou WebP, au moins 1 200 × 900 px, au plus 3 000 000 octets) ; `deposer_fichier_3d` et
+`regler_modele_classe` pour les fichiers 3D des classes et des monstres et le modèle par défaut de
+chaque classe. Le jeton n'entre dans aucun
 fichier suivi par git, aucune issue, aucune conversation avec Claude : chaque étape qui le touche
 se fait dans son propre terminal.
 
@@ -66,7 +68,7 @@ se fait dans son propre terminal.
 
 5. **Vérifier** par `claude mcp list`, qui doit montrer `wizard-army` connecté ; jamais par
    `claude mcp get`, qui afficherait le jeton. Puis, dans une nouvelle session, en CLI ou dans
-   l'onglet Code de l'app de bureau, `/mcp` doit lister `wizard-army` connecté, avec ses deux
-   outils : une session déjà ouverte ne voit pas un serveur ajouté après son démarrage. Si le
+   l'onglet Code de l'app de bureau, `/mcp` doit lister `wizard-army` connecté, avec ses outils :
+   une session déjà ouverte ne voit pas un serveur ajouté après son démarrage. Si le
    serveur était éteint au démarrage de la session, « Reconnect » dans `/mcp` une fois le serveur
    lancé.

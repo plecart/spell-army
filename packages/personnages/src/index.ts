@@ -11,6 +11,8 @@ export {
 export {
 	checkModel,
 	type Deviation,
+	describeDeviations,
+	MAX_MODEL_BYTES,
 	MODEL_RULES,
 	type RuleId,
 } from "./model-contract.ts";

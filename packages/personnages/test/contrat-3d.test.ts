@@ -1,5 +1,10 @@
 import { expect, test } from "vitest";
-import { checkModel, MODEL_RULES, type RuleId } from "../src/index.ts";
+import {
+	checkModel,
+	describeDeviations,
+	MODEL_RULES,
+	type RuleId,
+} from "../src/index.ts";
 import { BIN_CHUNK, glb, glbOf, withWord } from "./glb.ts";
 
 type JsonNode = { name: string; [field: string]: unknown };
@@ -538,6 +543,25 @@ test.each(NAME_PATHS)(
 		]);
 	},
 );
+
+test("describeDeviations écrit chaque écart sur une ligne, la cible entre parenthèses quand il en a une ; un caractère de contrôle tiré du fichier y devient une espace", () => {
+	expect(
+		describeDeviations([
+			{
+				regle: "materiaux",
+				cible: "robe\nrouge",
+				message: "Le matériau « robe\r\nrouge » n'est pas de la liste.",
+			},
+			{ regle: "sans-texture", message: "Une\ttexture." },
+		]),
+	).toBe(
+		[
+			"Le fichier ne respecte pas le contrat du fichier 3D (direction artistique § 7) :",
+			"- materiaux (robe rouge) : Le matériau « robe rouge » n'est pas de la liste.",
+			"- sans-texture : Une texture.",
+		].join("\n"),
+	);
+});
 
 test("un JSON mal formé de 1 000 caractères : l'écart « lisible » n'en recopie pas 65 de suite", () => {
 	const text = "x".repeat(1_000);
