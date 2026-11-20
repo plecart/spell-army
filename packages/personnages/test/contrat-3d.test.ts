@@ -292,13 +292,15 @@ test.each<[string, RuleId[], JsonNode[]]>([
 		],
 	],
 	[
-		"ramené à l'origine par la matrice de son parent",
+		// Colonnes : X va sur Y, Y sur −X, Z reste, puis la translation (0 ; −1 ; 0) ; (1 ; 0 ; 0)
+		// devient (0 ; 1 ; 0), puis l'origine. Lue transposée, la rotation l'enverrait en (0 ; −2 ; 0).
+		"ramené à l'origine par la rotation et la translation de la matrice de son parent",
 		[],
 		[
-			...nodesWith({ sol: { translation: [0, 1, 0] } }),
+			...nodesWith({ sol: { translation: [1, 0, 0] } }),
 			{
 				name: "racine",
-				matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, -1, 0, 1],
+				matrix: [0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 1],
 				children: [0],
 			},
 		],
@@ -405,3 +407,21 @@ test.each<[string, Uint8Array, string]>([
 		{ regle: "lisible", message: expect.stringContaining(cause) },
 	]);
 });
+
+// Chaque nœud renvoie à un maillage absent : un problème par nœud, du nœud 0 au nœud `count` − 1.
+test.each<[number, string, boolean]>([
+	[10, "les dix, sans leur nombre", false],
+	[11, "les dix premiers, suivis de leur nombre", true],
+])(
+	"un fichier aux %i renvois rompus : l'écart « lisible » en nomme %s",
+	(count, _, counted) => {
+		const nodes = Array.from({ length: count }, () => ({ mesh: 0 }));
+		const [deviation, ...others] = checkModel(glb({ nodes }));
+		expect(others).toEqual([]);
+		expect(deviation?.regle).toBe("lisible");
+		const message = deviation?.message ?? "";
+		expect(message.match(/✖/g)).toHaveLength(10);
+		expect(message.includes("nodes[10].mesh")).toBe(false);
+		expect(message.includes(`${count} problèmes en tout`)).toBe(counted);
+	},
+);
