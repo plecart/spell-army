@@ -92,7 +92,8 @@ describe("la commande deposer-3d", () => {
 		expect(requests).toEqual([]);
 	});
 
-	// Le dénombrement des variables que lit la commande : chacune absente, puis vide, puis les deux.
+	// Le dénombrement des variables que la commande exige, hors `INIT_CWD` qui a son repli : chacune
+	// absente, puis vide, puis les deux.
 	test.each<[string, Record<string, string>, string]>([
 		["MCP_URL absente", { MCP_TOKEN: TOKEN }, "MCP_URL"],
 		["MCP_URL vide", { MCP_URL: "", MCP_TOKEN: TOKEN }, "MCP_URL"],
