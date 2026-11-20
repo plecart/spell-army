@@ -33,9 +33,14 @@ const TRUNCATED = "[imbrication tronquée]";
 // est remplacé par la taille de ses octets et leur empreinte SHA-256 (octets décodés s'il est en
 // base64, sinon UTF-8) ».
 const MAX_AUDITED_LENGTH = 65_536;
-// Le champ des outils qui porte une image (`modifier_sort`) : sa valeur est remplacée par son
-// empreinte quelle que soit sa longueur, et que l'image soit admise ou non.
-const IMAGE_FIELD = "image";
+// Les champs d'octets, ceux que les outils déclarent en base64 : `image` (`modifier_sort`) et
+// `contenu` (`deposer_fichier_3d`). Un champ de ce nom, pour tout outil, est remplacé par son
+// empreinte quelle que soit sa longueur, et que ses octets soient admis ou non : une image si petite
+// soit-elle (issue #12, « Image »), un fichier 3D que la borne de longueur garderait entier jusqu'à
+// 49 152 octets (issue #15, « Ligne d'audit » : « Après un dépôt, la ligne ne contient pas le
+// contenu »). Un champ d'octets s'ajoute ici ; `test/audit-sans-octets.test.ts` recompte ceux que
+// publie le registre.
+const BYTE_FIELDS: ReadonlySet<string> = new Set(["image", "contenu"]);
 // Dans un texte : une suite de caractères du base64, remplissage compris.
 const BASE64_RUN = /[A-Za-z0-9+/]+={0,2}/g;
 const BASE64 = z.base64();
@@ -54,8 +59,9 @@ function fingerprintText(bytes: Uint8Array): string {
 }
 
 /**
- * Les octets d'une chaîne : décodés quand c'est du base64 au sens du schéma de `modifier_sort` —
- * l'empreinte d'une image acceptée est alors celle que la base calcule —, sinon ses octets UTF-8.
+ * Les octets d'une chaîne : décodés quand c'est du base64 au sens du schéma d'un champ d'octets —
+ * l'empreinte d'une image ou d'un fichier 3D accepté est alors celle que la base calcule —, sinon
+ * ses octets UTF-8.
  */
 function textBytes(text: string): Uint8Array {
 	return BASE64.safeParse(text).success
@@ -122,21 +128,22 @@ function storableText(text: string): string {
 /**
  * Une valeur JSON que `jsonb` admet, sans octets reçus : une valeur qui porte des octets
  * (`bytesOf`) est remplacée par leur empreinte, `{ taille, sha256 }`, quand ils sont à remplacer
- * (`isBlob`) ou qu'elle est celle d'un champ `IMAGE_FIELD` ; chaque autre chaîne, clés comprises,
- * rendue stockable (`storableText`), et ce qui dépasse `MAX_DEPTH` remplacé par `TRUNCATED`.
+ * (`isBlob`) ou qu'elle est celle d'un champ de `BYTE_FIELDS` ; chaque autre chaîne, clés
+ * comprises, rendue stockable (`storableText`), et ce qui dépasse `MAX_DEPTH` remplacé par
+ * `TRUNCATED`.
  *
- * Limites : hors d'un champ `IMAGE_FIELD`, une image d'un format que la réserve n'admet pas, ou
+ * Limites : hors d'un champ de `BYTE_FIELDS`, une image d'un format que la réserve n'admet pas, ou
  * écrite autrement qu'en base64 ou en suite d'octets, reste en clair dans une chaîne d'au plus
  * `MAX_AUDITED_LENGTH` caractères ou une suite d'au plus autant d'éléments. Deux clés distinctes
  * d'un même objet qui ne diffèrent que par ce que `storableText` remplace deviennent la même clé, et
  * la dernière écrase l'autre dans la ligne : aucun nom de champ d'outil n'en porte, et le schéma
  * strict refuse de toute façon l'appel.
  */
-function storableJson(value: unknown, depth = 0, imageField = false): unknown {
+function storableJson(value: unknown, depth = 0, byteField = false): unknown {
 	const bytes = bytesOf(value);
 	if (
 		bytes &&
-		(imageField ||
+		(byteField ||
 			isBlob(typeof value === "string" ? value.length : bytes.length, bytes))
 	) {
 		return fingerprint(bytes);
@@ -151,12 +158,12 @@ function storableJson(value: unknown, depth = 0, imageField = false): unknown {
 		return TRUNCATED;
 	}
 	if (Array.isArray(value)) {
-		return value.map((item) => storableJson(item, depth + 1, imageField));
+		return value.map((item) => storableJson(item, depth + 1, byteField));
 	}
 	return Object.fromEntries(
 		Object.entries(value).map(([key, item]) => [
 			storableText(key),
-			storableJson(item, depth + 1, key === IMAGE_FIELD),
+			storableJson(item, depth + 1, BYTE_FIELDS.has(key)),
 		]),
 	);
 }
@@ -168,10 +175,11 @@ const asJson = (value: unknown): unknown =>
 /**
  * Écrit la ligne d'audit d'un appel d'outil, sur le client ou dans une transaction.
  *
- * Aucune ligne ne garde d'octets reçus, une image surtout (issue #12, « Image »), entrée refusée
- * comprise : leur taille et leur empreinte à la place, ou celles du texte entier qui les porte s'il
- * dépasse `MAX_AUDITED_LENGTH`. Chaque voie par laquelle une valeur reçue entre dans une ligne passe
- * ici, pour tout outil, outil inconnu compris :
+ * Aucune ligne ne garde d'octets reçus, une image (issue #12, « Image ») ou un fichier 3D (issue
+ * #15, « Ligne d'audit ») surtout, entrée refusée comprise : leur taille et leur empreinte à la
+ * place, ou celles du texte entier qui les porte s'il dépasse `MAX_AUDITED_LENGTH`. Chaque voie
+ * par laquelle une valeur reçue entre dans une ligne passe ici, pour tout outil, outil inconnu
+ * compris :
  * - `tool` : le nom d'un outil inconnu ;
  * - `input` : l'entrée, que l'appel réussisse, que le schéma ou l'outil la refuse ou que l'outil
  *   soit inconnu, chacune de ses valeurs et de ses clés à toute profondeur ;
@@ -190,8 +198,8 @@ const asJson = (value: unknown): unknown =>
  * une chaîne.
  *
  * `test/audit-sans-octets.test.ts` éprouve chaque voie : une valeur sous chaque forme d'octets, un
- * texte en base64, un texte à la borne sur chacune des huit voies d'un texte, dont il recompte le
- * nombre sur les colonnes d'`audit_log`.
+ * texte en base64, chaque champ d'octets que publie le registre, un texte à la borne sur chacune des
+ * huit voies d'un texte, dont il recompte le nombre sur les colonnes d'`audit_log`.
  */
 export async function writeAuditEntry(
 	executor: Executor,

@@ -4,16 +4,17 @@ import { freshDatabase } from "donnees/test/base-neuve";
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
 import { registry } from "../app/mcp/registry.ts";
-import { callTool, type McpTool } from "../app/mcp/tool.ts";
+import { callTool, listTools, type McpTool } from "../app/mcp/tool.ts";
 import { png } from "./images.ts";
 import { auditRows } from "./montage.ts";
 
 // Le dénombrement de `writeAuditEntry` (`app/mcp/audit.ts`) : chaque voie par laquelle des octets
-// reçus entrent dans une ligne d'audit — une valeur sous chaque forme, un texte en base64 — et
-// chaque colonne qu'ils atteignent, puis chaque voie d'un texte reçu. Aucune ligne ne garde les
-// octets : chaque colonne atteinte garde leur empreinte (issue #12, « Image »), sauf un message de
-// plus de 65 536 caractères, remplacé en entier par la sienne comme tout texte de cette longueur
-// (issue #15, « Ligne d'audit »). Les cas sont écrits en littéraux, sans rien lire d'`audit.ts`.
+// reçus entrent dans une ligne d'audit — une valeur sous chaque forme, un champ d'octets, un texte
+// en base64 — et chaque colonne qu'ils atteignent, puis chaque voie d'un texte reçu. Aucune ligne
+// ne garde les octets : chaque colonne atteinte garde leur empreinte (issue #12, « Image » ; issue
+// #15, « Ligne d'audit »), sauf un message de plus de 65 536 caractères, remplacé en entier par la
+// sienne comme tout texte de cette longueur (issue #15, « Ligne d'audit »). Les cas sont écrits en
+// littéraux, ou lus du registre, sans rien lire d'`audit.ts`.
 
 // Un PNG de 57 octets, que la réserve admet : une image plus courte que toute borne de longueur.
 const SMALL_IMAGE = png(1200, 900);
@@ -88,6 +89,18 @@ const echoTool: McpTool<typeof echoInput> = {
 };
 
 const TOOLS: readonly McpTool[] = [...registry, echoTool];
+
+// Les champs d'octets que publie le registre, avec leur outil : chaque champ d'entrée dont le schéma
+// JSON porte `contentEncoding: "base64"`, ce qu'écrit Zod pour `z.base64()` (4.6.7, mesuré le
+// 2026-11-20).
+const PUBLISHED_BYTE_FIELDS = listTools(registry).flatMap(
+	({ name, inputSchema }) =>
+		Object.entries(inputSchema.properties ?? {})
+			.filter(([, schema]) =>
+				JSON.stringify(schema).includes('"contentEncoding":"base64"'),
+			)
+			.map(([field]) => [field, name] as const),
+);
 
 type Column = "tool" | "input" | "error" | "before" | "after";
 type Row = Record<Column, unknown>;
@@ -313,15 +326,26 @@ describe("l'audit ne garde jamais des octets reçus, seulement leur taille et le
 		},
 	);
 
-	// Les deux seuls chemins dont la clé est `image` : une image de 57 octets coupée en deux chaînes
-	// base64 courtes, rangées dans un tableau, garde la marque du champ : chaque morceau est remplacé
-	// par sa propre taille et sa propre empreinte.
+	// Le dénombrement des champs d'octets, que les cas suivants lisent du registre.
+	test("le registre publie deux champs d'octets : l'image d'un sort, le contenu d'un fichier 3D", () => {
+		expect(PUBLISHED_BYTE_FIELDS).toEqual([
+			["image", "modifier_sort"],
+			["contenu", "deposer_fichier_3d"],
+		]);
+	});
+
+	// Chaque champ d'octets que publie le registre, et un champ de ce nom hors du schéma de son
+	// outil : une image de 57 octets coupée en deux chaînes base64 courtes, qui ne sont ni une image
+	// ni au-delà de la borne de longueur, rangées dans un tableau, garde la marque du champ : chaque
+	// morceau est remplacé par sa propre taille et sa propre empreinte.
 	test.each([
-		["le champ image de modifier_sort", "modifier_sort", { numero: 1 }],
-		["un champ image donné à ajouter_sort", "ajouter_sort", {}],
+		...PUBLISHED_BYTE_FIELDS.map(
+			([field, tool]) => [`le champ ${field} de ${tool}`, tool, field] as const,
+		),
+		["un champ image donné à ajouter_sort", "ajouter_sort", "image"] as const,
 	])(
 		"une image de 57 octets en deux morceaux base64 sous %s : chaque morceau est remplacé par son empreinte",
-		async (_, tool, args) => {
+		async (_, tool, field) => {
 			const half = SMALL_IMAGE.length >> 1;
 			const chunks = [
 				SMALL_IMAGE.subarray(0, half),
@@ -329,7 +353,7 @@ describe("l'audit ne garde jamais des octets reçus, seulement leur taille et le
 			];
 			const row = await auditedWithoutBytes(
 				tool,
-				{ ...args, image: chunks.map(base64) },
+				{ [field]: chunks.map(base64) },
 				SMALL_IMAGE,
 			);
 			for (const chunk of chunks) {

@@ -18,6 +18,11 @@ const nonBlank = expect.stringMatching(/\S/);
 const base64 = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64");
 const sha256 = (bytes: Uint8Array) =>
 	createHash("sha256").update(bytes).digest("hex");
+/** Ce que l'audit garde d'octets reçus : leur taille et leur empreinte SHA-256. */
+const fingerprint = (bytes: Uint8Array) => ({
+	taille: bytes.length,
+	sha256: sha256(bytes),
+});
 
 /** Les fichiers rangés et les modèles par défaut, lus en base. */
 async function stored(db: Executor) {
@@ -149,19 +154,33 @@ describe("outils des fichiers 3D : tools/list", () => {
 });
 
 describe("deposer_fichier_3d", () => {
-	test("un fichier conforme d'une classe est rangé : il rend son identifiant, sa taille et son empreinte, que l'audit garde en après", async () => {
+	// Un GLB minimal, loin de la borne de longueur de l'audit : seul son champ le fait remplacer
+	// (issue #15, « Ligne d'audit »).
+	test("un petit fichier conforme d'une classe est rangé : il rend son identifiant, sa taille et son empreinte ; l'audit garde l'empreinte du contenu, jamais le contenu, et l'après", async () => {
 		const { db, client } = await connectToRegistry();
 		const bytes = glb(CONFORMING);
-		const args = { classe: "magicien", contenu: base64(bytes) };
+		const contenu = base64(bytes);
 		const output = {
 			identifiant: 1,
 			taille: bytes.length,
 			empreinte: sha256(bytes),
 		};
-		expect(outputOf(await deposit(client, args))).toEqual(output);
-		expect(await auditOf(db, "deposer_fichier_3d")).toEqual([
+		expect(
+			outputOf(await deposit(client, { classe: "magicien", contenu })),
+		).toEqual(output);
+		expect(
+			await db
+				.select({ id: modelFiles.id, sha256: modelFiles.sha256 })
+				.from(modelFiles),
+		).toEqual([{ id: 1, sha256: output.empreinte }]);
+		const rows = await auditOf(db, "deposer_fichier_3d");
+		expect(JSON.stringify(rows)).not.toContain(contenu);
+		expect(rows).toEqual([
 			expect.objectContaining({
-				input: args,
+				input: {
+					classe: "magicien",
+					contenu: { taille: output.taille, sha256: output.empreinte },
+				},
 				succeeded: true,
 				before: null,
 				after: {
@@ -186,15 +205,18 @@ describe("deposer_fichier_3d", () => {
 
 	test("un fichier non conforme est refusé avec ses écarts, un par ligne : seule la ligne d'audit en erreur s'écrit", async () => {
 		const { db, client } = await connectToRegistry();
-		const args = { classe: "magicien", contenu: base64(glb(NON_CONFORMING)) };
-		const result = await deposit(client, args);
+		const bytes = glb(NON_CONFORMING);
+		const result = await deposit(client, {
+			classe: "magicien",
+			contenu: base64(bytes),
+		});
 		expect(result).toMatchObject({
 			content: [{ type: "text", text: DEVIATIONS }],
 			isError: true,
 		});
 		expect(await auditOf(db, "deposer_fichier_3d")).toEqual([
 			expect.objectContaining({
-				input: args,
+				input: { classe: "magicien", contenu: fingerprint(bytes) },
 				succeeded: false,
 				error: DEVIATIONS,
 			}),
@@ -251,8 +273,16 @@ describe("deposer_fichier_3d", () => {
 
 	// Le dénombrement des refus du schéma, un cas par ligne : le propriétaire (aucun, deux, une
 	// classe inconnue ou sous son nom du code, un nom de monstre blanc ou trop long), le contenu
-	// (absent, pas du base64 ; trop long, plus haut), un champ inconnu.
-	const CONTENT = base64(glb(CONFORMING));
+	// (absent, pas du base64 ; trop long, plus haut), un champ inconnu. La ligne garde l'entrée
+	// reçue, son contenu en taille et empreinte de ses octets : ceux du GLB, décodés du base64, ou
+	// ceux d'un texte qui n'en est pas, en UTF-8.
+	const CONTENT_BYTES = glb(CONFORMING);
+	const CONTENT = base64(CONTENT_BYTES);
+	const NOT_BASE64 = "pas du base64 !";
+	const AUDITED_CONTENT: Record<string, unknown> = {
+		[CONTENT]: fingerprint(CONTENT_BYTES),
+		[NOT_BASE64]: fingerprint(new TextEncoder().encode(NOT_BASE64)),
+	};
 	test.each<[string, Record<string, unknown>, string]>([
 		[
 			"ni classe ni monstre",
@@ -291,7 +321,7 @@ describe("deposer_fichier_3d", () => {
 		],
 		[
 			"un contenu qui n'est pas du base64",
-			{ classe: "magicien", contenu: "pas du base64 !" },
+			{ classe: "magicien", contenu: NOT_BASE64 },
 			"base64",
 		],
 		[
@@ -305,8 +335,13 @@ describe("deposer_fichier_3d", () => {
 			const { db, client } = await connectToRegistry();
 			const result = await deposit(client, args);
 			const rows = await auditOf(db, "deposer_fichier_3d");
+			const { contenu, ...rest } = args;
+			const input =
+				contenu === undefined
+					? args
+					: { ...rest, contenu: AUDITED_CONTENT[contenu as string] };
 			expect(rows).toEqual([
-				expect.objectContaining({ input: args, succeeded: false }),
+				expect.objectContaining({ input, succeeded: false }),
 			]);
 			expect(rows[0]?.error).toContain(message);
 			expect(result).toMatchObject({
