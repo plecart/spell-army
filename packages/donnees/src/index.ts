@@ -12,6 +12,7 @@ export {
 	listSpells,
 	type NewSpell,
 	readDrawablePool,
+	readSpell,
 	type SpellImage,
 	type SpellPatch,
 	type SpellRecord,

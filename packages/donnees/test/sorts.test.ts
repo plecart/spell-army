@@ -7,6 +7,7 @@ import {
 	listSpells,
 	type NewSpell,
 	readDrawablePool,
+	readSpell,
 	type SpellPatch,
 	spells,
 	updateSpell,
@@ -46,6 +47,15 @@ describe("sorts", () => {
 	test("après la réserve de départ, un sort ajouté prend le numéro 25", async () => {
 		const db = await freshDatabase();
 		expect((await insertSpell(db, NEW_SPELL)).number).toBe(25);
+	});
+
+	test("readSpell rend le sort d'un numéro, et lève une erreur qui nomme un numéro inconnu", async () => {
+		const db = await freshDatabase();
+		const added = await insertSpell(db, NEW_SPELL);
+		expect(await readSpell(db, added.number)).toEqual(added);
+		await expect(readSpell(db, 999)).rejects.toThrow(
+			"Aucun sort de numéro 999.",
+		);
 	});
 
 	test("une clé déjà présente est refusée par l'index unique", async () => {

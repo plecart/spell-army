@@ -3,7 +3,7 @@ import { auditLog, type Executor } from "donnees";
 /** Un appel d'outil à auditer : réussi sans `error`, échoué avec. */
 export interface AuditEntry {
 	tool: string;
-	/** L'entrée brute reçue, avant toute validation. */
+	/** L'entrée reçue, avant toute validation : brute, ou passée par l'`auditInput` de l'outil. */
 	input: unknown;
 	error?: string;
 	before?: unknown;

@@ -85,6 +85,20 @@ export async function listSpells(executor: Executor): Promise<SpellRecord[]> {
 	return rows.map(toRecord);
 }
 
+/** Le sort de numéro `number` ; une erreur qui nomme le numéro quand aucun sort ne le porte. */
+export async function readSpell(
+	executor: Executor,
+	number: number,
+): Promise<SpellRecord> {
+	return recordNumbered(
+		number,
+		await executor
+			.select(recordColumns)
+			.from(spells)
+			.where(eq(spells.number, number)),
+	);
+}
+
 /**
  * Le numéro et le nom du sort de clé `key` (`spellKey` de `combat`), ou `undefined` : de quoi
  * nommer le sort existant quand un ajout le doublerait.

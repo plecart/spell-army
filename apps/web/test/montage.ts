@@ -1,12 +1,16 @@
-// Le montage commun des tests du serveur MCP : le client officiel branché sur un point d'entrée,
-// et le journal d'audit d'une base.
+// Le montage commun des tests du serveur MCP : le client officiel branché sur un point d'entrée ou
+// sur le registre réel, et le journal d'audit d'une base.
 import {
+	type CallToolResult,
 	Client,
 	type ClientOptions,
 	StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { auditLog, type Executor } from "donnees";
-import { onTestFinished } from "vitest";
+import { freshDatabase } from "donnees/test/base-neuve";
+import { expect, onTestFinished } from "vitest";
+import { registry } from "../app/mcp/registry.ts";
+import { createMcpEndpoint } from "../app/mcp/server.ts";
 
 // Jeton factice de 32 octets, le minimum admis.
 export const TOKEN = "t".repeat(32);
@@ -52,4 +56,43 @@ export function rewritingBodies(
 
 export function auditRows(db: Executor) {
 	return db.select().from(auditLog);
+}
+
+// `JSON.stringify` écrit un nombre infini `null` : le corps brut porte `1e999` à la place de cette
+// chaîne, que `JSON.parse` lit `Infinity`.
+export const INFINITE = "__infini__";
+
+/**
+ * Le client officiel, branché sur le point d'entrée du registre réel et une base migrée neuve. Il
+ * liste les outils d'abord : il valide alors le `structuredContent` de chaque appel contre le
+ * `outputSchema` publié.
+ */
+export async function connectToRegistry() {
+	const db = await freshDatabase();
+	const endpoint = createMcpEndpoint({
+		token: () => TOKEN,
+		database: () => db,
+		tools: registry,
+	});
+	const client = await connectClient(
+		rewritingBodies(endpoint, (body) =>
+			body.replaceAll(`"${INFINITE}"`, "1e999"),
+		),
+	);
+	await client.listTools();
+	return { db, client };
+}
+
+/** La sortie d'un appel réussi : son `structuredContent`, que son texte JSON répète. */
+export function outputOf({
+	content,
+	structuredContent,
+	isError,
+}: CallToolResult): unknown {
+	const [block] = content;
+	if (isError || block?.type !== "text") {
+		throw new Error(`Appel en échec : ${JSON.stringify(content)}`);
+	}
+	expect(structuredContent).toEqual(JSON.parse(block.text));
+	return structuredContent;
 }
