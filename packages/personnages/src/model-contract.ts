@@ -360,7 +360,8 @@ const GLTF_RULES: Rule<Gltf>[] = [
 			[0, 0, 0],
 		);
 		return when(
-			position.some((value) => Math.abs(value) > ORIGIN_TOLERANCE),
+			// En négation : une position NaN, qu'aucune comparaison ne vérifie, est un écart.
+			position.some((value) => !(Math.abs(value) <= ORIGIN_TOLERANCE)),
 			{
 				cible: "sol",
 				message: `L'ancre « sol » est en (${position.map((value) => Number(value.toFixed(6))).join(" ; ")}) dans la scène (Y vers le haut), parents compris : placez-la à l'origine, à ${ORIGIN_TOLERANCE} près.`,
@@ -458,8 +459,9 @@ export const MODEL_RULES = [SIZE_RULE, READABLE_RULE, ...GLTF_RULES];
  * 8. `materiaux` : chaque matériau nommé `corps`, `secondaire`, `peau`, `poils`, `coiffe`,
  *    `accessoire` ou `fixe` ; les sept ne sont pas exigés.
  * 9. `sans-texture` : ni texture ni image.
- * 10. `budget` : 30 000 triangles au plus, chaque instance d'un maillage comptée ; toute primitive
- *     en triangles (mode 4), sinon un écart par maillage.
+ * 10. `budget` : 30 000 triangles au plus, comptés sur les seules primitives en triangles
+ *     (mode 4), chaque instance d'un maillage comptée ; toute primitive en triangles, sinon un
+ *     écart par maillage.
  *
  * Les règles 5 et 6 lisent le premier nœud du nom ; un nom en double est l'écart de la règle 4. Une
  * pièce posée sous la racine, comme le corps, est admise.
