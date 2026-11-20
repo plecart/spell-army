@@ -1,5 +1,4 @@
 import { execFile } from "node:child_process";
-import { createHash } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -18,14 +17,12 @@ import {
 	type Serve,
 	TOKEN,
 } from "./montage.ts";
+import { sha256 } from "./octets.ts";
 
 const ENV = { MCP_URL: ENDPOINT_URL, MCP_TOKEN: TOKEN };
 const ENTRY_POINT = fileURLToPath(
 	new URL("../scripts/deposer-3d.ts", import.meta.url),
 );
-
-const sha256 = (bytes: Uint8Array) =>
-	createHash("sha256").update(bytes).digest("hex");
 
 /** Un dossier temporaire, effacé à la fin du test, où chaque JSON de `files` est écrit en GLB. */
 async function folderWith(files: Record<string, unknown>): Promise<string> {

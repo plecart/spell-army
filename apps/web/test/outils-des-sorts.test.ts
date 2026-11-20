@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type { Client } from "@modelcontextprotocol/client";
 import {
 	type CharacterClass,
@@ -32,6 +31,7 @@ import {
 	outputOf,
 	publishedTools,
 } from "./montage.ts";
+import { base64, fingerprint, sha256 } from "./octets.ts";
 
 // Le vocabulaire des outils, en littéraux : l'oracle de la traduction du modèle de `combat`, tenu à
 // part des tables de `spell-vocabulary.ts` (les classes, dans `classes.ts`). Les noms viennent du
@@ -138,15 +138,6 @@ const NEW_SPELL = {
 
 const SPELL_TOOLS = ["lister_sorts", "ajouter_sort", "modifier_sort"];
 const nonBlank = expect.stringMatching(/\S/);
-
-const sha256 = (bytes: Uint8Array) =>
-	createHash("sha256").update(bytes).digest("hex");
-const base64 = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64");
-/** Ce que l'audit garde d'une image : sa taille et son empreinte, pas ses octets. */
-const fingerprint = (bytes: Uint8Array) => ({
-	taille: bytes.length,
-	sha256: sha256(bytes),
-});
 
 async function listSpellsThroughTool(client: Client) {
 	const { sorts } = outputOf(

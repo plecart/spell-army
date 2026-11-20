@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type { Client } from "@modelcontextprotocol/client";
 import { classDefaultModels, type Executor, modelFiles } from "donnees";
 import { glb } from "personnages/test/glb";
@@ -11,18 +10,10 @@ import {
 	outputOf,
 	publishedTools,
 } from "./montage.ts";
+import { base64, fingerprint, sha256 } from "./octets.ts";
 
 const MODEL_TOOLS = ["deposer_fichier_3d", "regler_modele_classe"];
 const nonBlank = expect.stringMatching(/\S/);
-
-const base64 = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64");
-const sha256 = (bytes: Uint8Array) =>
-	createHash("sha256").update(bytes).digest("hex");
-/** Ce que l'audit garde d'octets reçus : leur taille et leur empreinte SHA-256. */
-const fingerprint = (bytes: Uint8Array) => ({
-	taille: bytes.length,
-	sha256: sha256(bytes),
-});
 
 /** Les fichiers rangés et les modèles par défaut, lus en base. */
 async function stored(db: Executor) {
@@ -183,12 +174,7 @@ describe("deposer_fichier_3d", () => {
 				},
 				succeeded: true,
 				before: null,
-				after: {
-					identifiant: 1,
-					classe: "magicien",
-					taille: bytes.length,
-					empreinte: sha256(bytes),
-				},
+				after: { ...output, classe: "magicien" },
 			}),
 		]);
 	});
