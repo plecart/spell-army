@@ -5,6 +5,7 @@
 	"scripts": {
 		"dev": "next dev --hostname 127.0.0.1",
 		"build": "next build",
+		"deposer-3d": "node --env-file-if-exists=../../.env scripts/deposer-3d.ts",
 		"test": "vitest run",
 		"typecheck": "next typegen && tsc"
 	},
