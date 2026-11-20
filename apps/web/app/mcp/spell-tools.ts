@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { spellKey, validateSpell } from "combat";
 import {
 	findSpellByKey,
@@ -54,14 +53,6 @@ const modification = z
 	)
 	// Le `refine` ne passe pas dans le schéma JSON : outre le numéro, un des trois champs au moins.
 	.meta({ minProperties: 2 });
-
-/** Ce que l'audit garde d'une image : sa taille et son empreinte SHA-256, jamais ses octets. */
-function fingerprint(bytes: Uint8Array) {
-	return {
-		taille: bytes.length,
-		sha256: createHash("sha256").update(bytes).digest("hex"),
-	};
-}
 
 /** Refuse l'appel par les messages de `errors`, un par ligne, s'il y en a. */
 function refuseIfAny(errors: string[]): void {
@@ -156,11 +147,6 @@ export const updateSpellTool: McpTool<typeof modification> = {
 	},
 	input: modification,
 	output: toolSpellSchema,
-	// Un texte qui n'est pas du base64 s'y décode quand même, à la façon permissive de `Buffer`.
-	auditInput: (input) =>
-		typeof input.image === "string"
-			? { ...input, image: fingerprint(Buffer.from(input.image, "base64")) }
-			: input,
 	run: async (executor, { numero, poids, description, image }) => {
 		const current = spellOf(await readSpell(executor, numero));
 		refuseIfAny(
