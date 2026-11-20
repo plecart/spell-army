@@ -2,10 +2,10 @@
 // dépose un fichier 3D par le serveur MCP (README, « Déposer un fichier 3D »). Sortie 0 avec
 // l'identifiant du fichier rangé, 1 avec la raison du refus.
 import { parseArgs } from "node:util";
+import { DEPOSIT_COMMAND } from "../app/mcp/deposit-command.ts";
 import { depositModel } from "./deposit-model.ts";
 
-const USAGE =
-	"Usage : pnpm --filter web deposer-3d <fichier.glb> --classe <classe>, ou --monstre <nom>";
+const USAGE = `Usage : ${DEPOSIT_COMMAND}`;
 
 try {
 	const { values, positionals } = parseArgs({

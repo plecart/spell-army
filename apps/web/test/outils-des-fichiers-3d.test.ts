@@ -3,6 +3,7 @@ import type { Client } from "@modelcontextprotocol/client";
 import { classDefaultModels, type Executor, modelFiles } from "donnees";
 import { glb } from "personnages/test/glb";
 import { describe, expect, test } from "vitest";
+import { CLASS } from "./classes.ts";
 import { CONFORMING, DEVIATIONS, NON_CONFORMING } from "./fichiers-3d.ts";
 import {
 	auditRows,
@@ -112,6 +113,9 @@ describe("outils des fichiers 3D : tools/list", () => {
 		expect(tool?.description).toContain(
 			"pnpm --filter web deposer-3d <fichier.glb> --classe <classe>",
 		);
+		expect(tool?.description).toContain(
+			"<classe> parmi magicien, golem, guerrier, nain, vampire, druide, paysan, fee",
+		);
 		expect(tool?.description).toContain("--monstre <nom>");
 		expect(tool?.description).toContain(
 			"Ne passe jamais le contenu dans l'appel",
@@ -127,14 +131,14 @@ describe("outils des fichiers 3D : tools/list", () => {
 			properties: {
 				classe: {
 					enum: [
-						"wizard",
+						"magicien",
 						"golem",
-						"warrior",
-						"dwarf",
+						"guerrier",
+						"nain",
 						"vampire",
-						"druid",
-						"peasant",
-						"fairy",
+						"druide",
+						"paysan",
+						"fee",
 					],
 				},
 				monstre: { maxLength: 64 },
@@ -148,7 +152,7 @@ describe("deposer_fichier_3d", () => {
 	test("un fichier conforme d'une classe est rangé : il rend son identifiant, sa taille et son empreinte, que l'audit garde en après", async () => {
 		const { db, client } = await connectToRegistry();
 		const bytes = glb(CONFORMING);
-		const args = { classe: "wizard", contenu: base64(bytes) };
+		const args = { classe: "magicien", contenu: base64(bytes) };
 		const output = {
 			identifiant: 1,
 			taille: bytes.length,
@@ -162,7 +166,7 @@ describe("deposer_fichier_3d", () => {
 				before: null,
 				after: {
 					identifiant: 1,
-					classe: "wizard",
+					classe: "magicien",
 					taille: bytes.length,
 					empreinte: sha256(bytes),
 				},
@@ -182,7 +186,7 @@ describe("deposer_fichier_3d", () => {
 
 	test("un fichier non conforme est refusé avec ses écarts, un par ligne : seule la ligne d'audit en erreur s'écrit", async () => {
 		const { db, client } = await connectToRegistry();
-		const args = { classe: "wizard", contenu: base64(glb(NON_CONFORMING)) };
+		const args = { classe: "magicien", contenu: base64(glb(NON_CONFORMING)) };
 		const result = await deposit(client, args);
 		expect(result).toMatchObject({
 			content: [{ type: "text", text: DEVIATIONS }],
@@ -202,7 +206,7 @@ describe("deposer_fichier_3d", () => {
 		const { db, client } = await connectToRegistry();
 		const bytes = glb(CONFORMING, 3_000_001);
 		const result = await deposit(client, {
-			classe: "wizard",
+			classe: "magicien",
 			contenu: base64(bytes),
 		});
 		expect(result).toMatchObject({
@@ -218,7 +222,7 @@ describe("deposer_fichier_3d", () => {
 		expect(await auditOf(db, "deposer_fichier_3d")).toEqual([
 			expect.objectContaining({
 				input: {
-					classe: "wizard",
+					classe: "magicien",
 					contenu: { taille: 3_000_001, sha256: sha256(bytes) },
 				},
 				succeeded: false,
@@ -232,22 +236,22 @@ describe("deposer_fichier_3d", () => {
 		const bytes = glb(CONFORMING, 3_000_000);
 		const contenu = base64(bytes);
 		expect(
-			outputOf(await deposit(client, { classe: "wizard", contenu })),
+			outputOf(await deposit(client, { classe: "magicien", contenu })),
 		).toEqual({ identifiant: 1, taille: 3_000_000, empreinte: sha256(bytes) });
-		outputOf(await setDefault(client, "wizard", 1));
+		outputOf(await setDefault(client, "magicien", 1));
 		const rows = await auditRows(db);
 		expect(JSON.stringify(rows)).not.toContain(contenu.slice(0, 100));
 		expect(
 			rows.find(({ tool }) => tool === "deposer_fichier_3d")?.input,
 		).toEqual({
-			classe: "wizard",
+			classe: "magicien",
 			contenu: { taille: 3_000_000, sha256: sha256(bytes) },
 		});
 	});
 
 	// Le dénombrement des refus du schéma, un cas par ligne : le propriétaire (aucun, deux, une
-	// classe inconnue, un nom de monstre blanc ou trop long), le contenu (absent, pas du base64 ; trop
-	// long, plus haut), un champ inconnu.
+	// classe inconnue ou sous son nom du code, un nom de monstre blanc ou trop long), le contenu
+	// (absent, pas du base64 ; trop long, plus haut), un champ inconnu.
 	const CONTENT = base64(glb(CONFORMING));
 	test.each<[string, Record<string, unknown>, string]>([
 		[
@@ -257,12 +261,17 @@ describe("deposer_fichier_3d", () => {
 		],
 		[
 			"une classe et un monstre",
-			{ classe: "wizard", monstre: "limace", contenu: CONTENT },
+			{ classe: "magicien", monstre: "limace", contenu: CONTENT },
 			"L'entrée doit donner la classe ou le monstre, l'un des deux exactement.",
 		],
 		[
 			"une classe inconnue",
 			{ classe: "dragon", contenu: CONTENT },
+			"Invalid option",
+		],
+		[
+			"une classe sous son nom du code, wizard",
+			{ classe: "wizard", contenu: CONTENT },
 			"Invalid option",
 		],
 		[
@@ -277,17 +286,17 @@ describe("deposer_fichier_3d", () => {
 		],
 		[
 			"sans contenu",
-			{ classe: "wizard" },
+			{ classe: "magicien" },
 			"expected string, received undefined",
 		],
 		[
 			"un contenu qui n'est pas du base64",
-			{ classe: "wizard", contenu: "pas du base64 !" },
+			{ classe: "magicien", contenu: "pas du base64 !" },
 			"base64",
 		],
 		[
 			"un champ inconnu",
-			{ classe: "wizard", contenu: CONTENT, nom: "x" },
+			{ classe: "magicien", contenu: CONTENT, nom: "x" },
 			'Unrecognized key: "nom"',
 		],
 	])(
@@ -312,28 +321,28 @@ describe("deposer_fichier_3d", () => {
 describe("regler_modele_classe", () => {
 	test("règle le modèle par défaut d'une classe, puis le remplace ; l'audit garde l'avant et l'après", async () => {
 		const { db, client } = await connectToRegistry();
-		const first = await depositFor(client, { classe: "wizard" });
-		const second = await depositFor(client, { classe: "wizard" });
-		expect(outputOf(await setDefault(client, "wizard", first))).toEqual({
-			classe: "wizard",
+		const first = await depositFor(client, { classe: "magicien" });
+		const second = await depositFor(client, { classe: "magicien" });
+		expect(outputOf(await setDefault(client, "magicien", first))).toEqual({
+			classe: "magicien",
 			fichier: first,
 		});
-		expect(outputOf(await setDefault(client, "wizard", second))).toEqual({
-			classe: "wizard",
+		expect(outputOf(await setDefault(client, "magicien", second))).toEqual({
+			classe: "magicien",
 			fichier: second,
 		});
 		expect(await auditOf(db, "regler_modele_classe")).toEqual([
 			expect.objectContaining({
-				input: { classe: "wizard", fichier: first },
+				input: { classe: "magicien", fichier: first },
 				succeeded: true,
-				before: { classe: "wizard", fichier: null },
-				after: { classe: "wizard", fichier: first },
+				before: { classe: "magicien", fichier: null },
+				after: { classe: "magicien", fichier: first },
 			}),
 			expect.objectContaining({
-				input: { classe: "wizard", fichier: second },
+				input: { classe: "magicien", fichier: second },
 				succeeded: true,
-				before: { classe: "wizard", fichier: first },
-				after: { classe: "wizard", fichier: second },
+				before: { classe: "magicien", fichier: first },
+				after: { classe: "magicien", fichier: second },
 			}),
 		]);
 		expect((await stored(db)).defaults).toEqual([
@@ -353,23 +362,23 @@ describe("regler_modele_classe", () => {
 		[
 			"un fichier d'une autre classe",
 			3,
-			"Le fichier 3D 3 est celui de la classe golem, pas de la classe wizard.",
+			"Le fichier 3D 3 est celui d'une autre classe.",
 		],
 	])(
 		"%s : refusé, une ligne d'audit en erreur, le modèle par défaut inchangé",
 		async (_, fichier, message) => {
 			const { db, client } = await connectToRegistry();
-			await depositFor(client, { classe: "wizard" });
+			await depositFor(client, { classe: "magicien" });
 			await depositFor(client, { monstre: "limace" });
 			await depositFor(client, { classe: "golem" });
-			outputOf(await setDefault(client, "wizard", 1));
-			const result = await setDefault(client, "wizard", fichier);
+			outputOf(await setDefault(client, "magicien", 1));
+			const result = await setDefault(client, "magicien", fichier);
 			expect(result).toMatchObject({
 				content: [{ type: "text", text: message }],
 				isError: true,
 			});
 			expect((await auditOf(db, "regler_modele_classe")).at(-1)).toMatchObject({
-				input: { classe: "wizard", fichier },
+				input: { classe: "magicien", fichier },
 				succeeded: false,
 				error: message,
 			});
@@ -378,4 +387,37 @@ describe("regler_modele_classe", () => {
 			]);
 		},
 	);
+
+	test("une classe sous son nom du code, wizard : refusé, rien d'écrit", async () => {
+		const { db, client } = await connectToRegistry();
+		const fichier = await depositFor(client, { classe: "magicien" });
+		const result = await setDefault(client, "wizard", fichier);
+		expect(result).toMatchObject({
+			content: [
+				{ type: "text", text: expect.stringContaining("Invalid option") },
+			],
+			isError: true,
+		});
+		expect((await stored(db)).defaults).toEqual([]);
+	});
+
+	test("chaque classe se dépose et se règle sous son nom français ; la base la range sous sa clé", async () => {
+		const { db, client } = await connectToRegistry();
+		for (const name of Object.values(CLASS)) {
+			const fichier = await depositFor(client, { classe: name });
+			expect(outputOf(await setDefault(client, name, fichier))).toEqual({
+				classe: name,
+				fichier,
+			});
+		}
+		const files = await db
+			.select({ id: modelFiles.id, class: modelFiles.class })
+			.from(modelFiles)
+			.orderBy(modelFiles.id);
+		expect(files.map((file) => file.class)).toEqual(Object.keys(CLASS));
+		const { defaults } = await stored(db);
+		expect(
+			new Map(defaults.map((row) => [row.class, row.modelFileId])),
+		).toEqual(new Map(files.map((file) => [file.class, file.id])));
+	});
 });

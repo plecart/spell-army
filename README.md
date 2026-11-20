@@ -80,20 +80,20 @@ elle-même à `deposer_fichier_3d`. Prérequis :
 
 - le dépôt cloné, et `pnpm install` lancé à sa racine ;
 - dans le `.env` de la racine (gabarit : `.env.example`), `MCP_URL`, l'adresse du serveur MCP
-  visé (`http://127.0.0.1:3000/api/mcp` pour le serveur local, lancé à l'étape 3), et `MCP_TOKEN`,
-  son jeton. Le jeton s'écrit à la main, hors de Claude, comme à l'étape 2 ; pour le serveur local,
-  c'est déjà le sien.
+  visé, local (`http://127.0.0.1:3000/api/mcp`, lancé à l'étape 3) ou déployé, et `MCP_TOKEN`, le
+  jeton de ce serveur. Le jeton s'écrit à la main, hors de Claude, comme à l'étape 2. Le serveur
+  local lit le même `MCP_TOKEN` : viser le serveur déployé change aussi le jeton qu'il attend.
 
 Puis, depuis le clone, le chemin du fichier se lisant depuis le dossier où la commande est lancée :
 
 ```bash
-pnpm --filter web deposer-3d chemin/du/magicien.glb --classe wizard
+pnpm --filter web deposer-3d chemin/du/magicien.glb --classe magicien
 pnpm --filter web deposer-3d chemin/de/la/limace.glb --monstre limace
 ```
 
 La commande vérifie d'abord le fichier contre le contrat du fichier 3D (direction artistique § 7) :
 un fichier non conforme est arrêté avec ses écarts, un par ligne, sans rien envoyer. Sinon, elle
 l'envoie et affiche l'identifiant du fichier rangé, que `regler_modele_classe` prend pour en faire
-le modèle par défaut de sa classe. Les classes portent leur nom du code : `wizard`, `golem`,
-`warrior`, `dwarf`, `vampire`, `druid`, `peasant`, `fairy`. Sortie 0 sur un dépôt, 1 sur un refus,
-dont elle affiche la raison.
+le modèle par défaut de sa classe. Les classes portent leur nom d'outil, comme dans `ajouter_sort` :
+`magicien`, `golem`, `guerrier`, `nain`, `vampire`, `druide`, `paysan`, `fee`. Sortie 0 sur un
+dépôt, 1 sur un refus, dont elle affiche la raison.

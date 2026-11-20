@@ -50,9 +50,7 @@ async function assertFileOfClass(
 		);
 	}
 	if (file.class !== characterClass) {
-		throw new Error(
-			`Le fichier 3D ${fileId} est celui de la classe ${file.class}, pas de la classe ${characterClass}.`,
-		);
+		throw new Error(`Le fichier 3D ${fileId} est celui d'une autre classe.`);
 	}
 }
 

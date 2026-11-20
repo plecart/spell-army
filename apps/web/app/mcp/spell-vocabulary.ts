@@ -1,7 +1,6 @@
 // Le vocabulaire des outils des sorts : un sort du modèle de `combat` dans les noms français des
 // outils, ses schémas Zod, et sa traduction dans les deux sens.
 import {
-	type CharacterClass,
 	DEFAULT_WEIGHT,
 	type Effect,
 	type EffectBase,
@@ -16,12 +15,11 @@ import {
 } from "combat";
 import type { SpellRecord } from "donnees";
 import { z } from "zod";
+import { CLASS_OF, CLASSES, inverse } from "./vocabulary.ts";
 
-// Les noms des outils, en français comme ceux des réglages (`settings-tools.ts`, décision du
-// mainteneur du 2026-11-17), et sans accents comme eux : une table de correspondance par vocabulaire
-// fermé du modèle de `combat`, que son type exige complète, lue dans un sens par les sorties et,
-// inversée, par les entrées. Les noms viennent du game design (§ 1, « Classe » ; § 2, « Formes »,
-// « Effets ») et de l'issue #12 (« Décisions », « Modèle d'un sort »).
+// Les tables du vocabulaire fermé de `combat`, sur le modèle de `vocabulary.ts`, qui porte celle des
+// classes. Les noms viennent du game design (§ 2, « Formes », « Effets ») et de l'issue #12
+// (« Décisions », « Modèle d'un sort »).
 const STATS = {
 	life: "vie",
 	strength: "force",
@@ -44,16 +42,6 @@ const GAUGES = {
 	classShare: "part_d_une_classe",
 	casterClassShare: "part_de_la_classe_du_lanceur",
 } as const satisfies Record<Gauge, string>;
-const CLASSES = {
-	wizard: "magicien",
-	golem: "golem",
-	warrior: "guerrier",
-	dwarf: "nain",
-	vampire: "vampire",
-	druid: "druide",
-	peasant: "paysan",
-	fairy: "fee",
-} as const satisfies Record<CharacterClass, string>;
 const BASES = {
 	armyStat: "stat_de_l_armee",
 	armyMaxLife: "vie_maximale_de_l_armee",
@@ -65,23 +53,9 @@ const CATEGORIES = {
 	lifesteal: "vol_de_vie",
 } as const satisfies Record<EffectCategory, string>;
 
-type Inverse<Names extends Record<string, string>> = {
-	[Key in keyof Names as Names[Key]]: Key;
-};
-
-/** La table inverse de `names` : pour chaque nom d'outil, le nom du modèle. */
-function inverse<const Names extends Record<string, string>>(
-	names: Names,
-): Inverse<Names> {
-	return Object.fromEntries(
-		Object.entries(names).map(([key, name]) => [name, key]),
-	) as Inverse<Names>;
-}
-
 const STAT_OF = inverse(STATS);
 const FORM_OF = inverse(FORMS);
 const GAUGE_OF = inverse(GAUGES);
-const CLASS_OF = inverse(CLASSES);
 const BASE_OF = inverse(BASES);
 
 // Les longueurs d'un nom et d'une description : bornées, comme toute chaîne d'une entrée d'outil

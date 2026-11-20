@@ -3,24 +3,19 @@ import {
 	setClassDefaultModel,
 	storeModelFile,
 } from "donnees";
-import {
-	CLASS_KEYS,
-	checkModel,
-	describeDeviations,
-	MAX_MODEL_BYTES,
-} from "personnages";
+import { checkModel, describeDeviations, MAX_MODEL_BYTES } from "personnages";
 import { z } from "zod";
 import { boundedBase64 } from "./bounds.ts";
+import { DEPOSIT_COMMAND } from "./deposit-command.ts";
 import type { McpTool } from "./tool.ts";
+import { CLASS_OF, CLASSES } from "./vocabulary.ts";
 
-// La commande qui dépose un fichier depuis le poste du mainteneur (issue #15, « Décisions »,
-// « Dépôt d'un fichier 3D ») : le contenu ne passe jamais par le modèle.
-const COMMAND = "pnpm --filter web deposer-3d <fichier.glb> --classe <classe>";
 const MAX_MONSTER_NAME_LENGTH = 64;
 const ONE_OWNER =
 	"L'entrée doit donner la classe ou le monstre, l'un des deux exactement.";
 
-const characterClass = z.enum(CLASS_KEYS);
+// La classe sous son nom d'outil ; la base la range sous sa clé de `personnages` (`CLASS_OF`).
+const characterClass = z.enum(CLASSES);
 
 const deposit = z
 	.strictObject({
@@ -64,7 +59,7 @@ const setting = z.strictObject({
 export const depositModelTool: McpTool<typeof deposit> = {
 	name: "deposer_fichier_3d",
 	title: "Déposer un fichier 3D",
-	description: `Range le fichier GLB d'une classe ou d'un monstre s'il respecte le contrat du fichier 3D (direction artistique § 7), et rend son identifiant, sa taille et son empreinte SHA-256 ; regler_modele_classe en fait le modèle par défaut d'une classe. Un fichier non conforme est refusé, ses écarts listés un par ligne. Ne passe jamais le contenu dans l'appel : donne au mainteneur la commande ${COMMAND}, ou --monstre <nom> pour un monstre, à lancer dans son clone du dépôt ; elle vérifie le fichier sur son poste, puis l'envoie elle-même à cet outil.`,
+	description: `Range le fichier GLB d'une classe ou d'un monstre s'il respecte le contrat du fichier 3D (direction artistique § 7), et rend son identifiant, sa taille et son empreinte SHA-256 ; regler_modele_classe en fait le modèle par défaut d'une classe. Un fichier non conforme est refusé, ses écarts listés un par ligne. Ne passe jamais le contenu dans l'appel : donne au mainteneur la commande ${DEPOSIT_COMMAND}. Elle se lance dans son clone du dépôt, vérifie le fichier sur son poste, puis l'envoie elle-même à cet outil.`,
 	annotations: {
 		readOnlyHint: false,
 		destructiveHint: false,
@@ -85,7 +80,7 @@ export const depositModelTool: McpTool<typeof deposit> = {
 		}
 		// Le `refine` du schéma garantit l'un des deux exactement.
 		const target = (
-			classe === undefined ? { monster: monstre } : { class: classe }
+			classe === undefined ? { monster: monstre } : { class: CLASS_OF[classe] }
 		) as ModelTarget;
 		const { id, size, sha256 } = await storeModelFile(executor, {
 			target,
@@ -118,7 +113,7 @@ export const setClassModelTool: McpTool<typeof setting> = {
 	run: async (executor, { classe, fichier }) => {
 		const { before, after } = await setClassDefaultModel(
 			executor,
-			classe,
+			CLASS_OF[classe],
 			fichier,
 		);
 		const output = { classe, fichier: after };
