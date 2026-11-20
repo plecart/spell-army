@@ -42,12 +42,13 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - audit        : `pnpm audit --audit-level=high`            # audit des dépendances, porte de CI
 - build        : `pnpm -r --if-present run build`   # paquets qui ont un script `build` : `apps/web` (`next build`)
 - migration    : `pnpm --filter donnees run migrate`   # applique les migrations à la base de `DATABASE_URL` (shell ou `.env` racine)
+- dérive du schéma : `pnpm --filter donnees run drift`   # sort en 1 quand `drizzle-kit generate` produirait une migration ; laisse alors dans `packages/donnees/migrations` ce qu'il a écrit
 - run local    : `pnpm --filter web dev`   # Next.js en développement, sur 127.0.0.1 seulement ; lit le `.env` racine, sans écraser une variable déjà posée
 
 ## Qualité
 - seuil de couverture : aucun
 - règles sensibles à la plateforme : poste Windows, CI Linux — casse des chemins et fins de ligne, vérifiées en CI
-- gates bloquants en CI : audit, lint, format:check, typecheck, test
+- gates bloquants en CI : audit, lint, format:check, typecheck, dérive du schéma, test
 - services requis en CI : Docker, fourni par `ubuntu-latest`, pour la base de test (Postgres 18 jetable que le harnais de `packages/donnees` démarre lui-même, pour sa suite et celle de `apps/web`)
 
 ## Périmètre
