@@ -8,5 +8,11 @@ export {
 	type StatKey,
 	type Stats,
 } from "./character.ts";
+export {
+	checkModel,
+	type Deviation,
+	MODEL_RULES,
+	type RuleId,
+} from "./model-contract.ts";
 export { drawSpell, type SpellEntry } from "./spell.ts";
 export { VERDICT_LEVELS, type VerdictLevel, verdictOf } from "./verdict.ts";
