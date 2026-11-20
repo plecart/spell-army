@@ -264,6 +264,24 @@ test.each<[string, Uint8Array, RuleId, string | undefined]>([
 		"materiaux",
 		"#7",
 	],
+	[
+		"29 999 triangles et une primitive en lignes de 6 sommets, hors du compte des triangles",
+		file({
+			meshes: [
+				PIECE,
+				{
+					...TUNIQUE,
+					primitives: [
+						...TUNIQUE.primitives,
+						{ mode: 1, attributes: { POSITION: 3 } },
+					],
+				},
+			],
+			accessors: [...triangles(29_999), { count: 6 }],
+		}),
+		"budget",
+		"tunique",
+	],
 ])("%s : l'écart de sa règle", (_, bytes, regle, cible) => {
 	expect(checkModel(bytes)).toEqual([{ regle, cible, message: MESSAGE }]);
 });
@@ -303,6 +321,16 @@ test.each<[string, RuleId[], JsonNode[]]>([
 				matrix: [0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 1],
 				children: [0],
 			},
+		],
+	],
+	[
+		// L'échelle porte 1e308 à 1e309, hors des doubles : Infinity, que la rotation identité du
+		// parent multiplie par 0, d'où une position NaN.
+		"poussé hors des nombres finis par l'échelle de son parent",
+		["sol-origine"],
+		[
+			...nodesWith({ sol: { translation: [1e308, 0, 0] } }),
+			{ name: "racine", scale: [10, 1, 1], children: [0] },
 		],
 	],
 	[
