@@ -4,6 +4,7 @@ import {
 	type CallToolResult,
 	Client,
 	type ClientOptions,
+	type FetchLike,
 	StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { auditLog, type Executor } from "donnees";
@@ -22,6 +23,12 @@ const NEGOTIATING: ClientOptions = { versionNegotiation: { mode: "auto" } };
 
 export type Serve = (request: Request) => Promise<Response>;
 
+/** Le `fetch` d'un client branché sur `serve`, sans réseau. */
+export const fetchFrom =
+	(serve: Serve): FetchLike =>
+	(url, init) =>
+		serve(new Request(url, init));
+
 /** Le `Client` officiel, branché sur `serve` par l'option `fetch` de son transport. */
 export async function connectClient(
 	serve: Serve,
@@ -29,7 +36,7 @@ export async function connectClient(
 	options: ClientOptions = NEGOTIATING,
 ) {
 	const transport = new StreamableHTTPClientTransport(new URL(ENDPOINT_URL), {
-		fetch: (url, init) => serve(new Request(url, init)),
+		fetch: fetchFrom(serve),
 		requestInit: { headers },
 	});
 	const client = new Client(
@@ -63,18 +70,24 @@ export function auditRows(db: Executor) {
 // chaîne, que `JSON.parse` lit `Infinity`.
 export const INFINITE = "__infini__";
 
-/**
- * Le client officiel, branché sur le point d'entrée du registre réel et une base migrée neuve. Il
- * liste les outils d'abord : il valide alors le `structuredContent` de chaque appel contre le
- * `outputSchema` publié.
- */
-export async function connectToRegistry() {
+/** Le point d'entrée du registre réel, sur une base migrée neuve, et cette base. */
+export async function registryEndpoint() {
 	const db = await freshDatabase();
 	const endpoint = createMcpEndpoint({
 		token: () => TOKEN,
 		database: () => db,
 		tools: registry,
 	});
+	return { db, endpoint };
+}
+
+/**
+ * Le client officiel, branché sur le point d'entrée du registre réel et une base migrée neuve. Il
+ * liste les outils d'abord : il valide alors le `structuredContent` de chaque appel contre le
+ * `outputSchema` publié.
+ */
+export async function connectToRegistry() {
+	const { db, endpoint } = await registryEndpoint();
 	const client = await connectClient(
 		rewritingBodies(endpoint, (body) =>
 			body.replaceAll(`"${INFINITE}"`, "1e999"),

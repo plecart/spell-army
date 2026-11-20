@@ -3,6 +3,7 @@ import type { Client } from "@modelcontextprotocol/client";
 import { classDefaultModels, type Executor, modelFiles } from "donnees";
 import { glb } from "personnages/test/glb";
 import { describe, expect, test } from "vitest";
+import { CONFORMING, DEVIATIONS, NON_CONFORMING } from "./fichiers-3d.ts";
 import {
 	auditRows,
 	connectToRegistry,
@@ -12,31 +13,6 @@ import {
 
 const MODEL_TOOLS = ["deposer_fichier_3d", "regler_modele_classe"];
 const nonBlank = expect.stringMatching(/\S/);
-
-// Le plus petit fichier conforme : les cinq ancres, vides, `chapeau` sous `tete`, `sol` à l'origine.
-const CONFORMING = {
-	asset: { version: "2.0" },
-	nodes: [
-		{ name: "tete", children: [1] },
-		{ name: "chapeau" },
-		{ name: "main_gauche" },
-		{ name: "main_droite" },
-		{ name: "sol" },
-	],
-};
-// Deux écarts : l'ancre `main_droite` renommée, une texture.
-const NON_CONFORMING = {
-	...CONFORMING,
-	nodes: CONFORMING.nodes.map((node) =>
-		node.name === "main_droite" ? { name: "main" } : node,
-	),
-	textures: [{}],
-};
-const DEVIATIONS = [
-	"Le fichier ne respecte pas le contrat du fichier 3D (direction artistique § 7) :",
-	"- ancres (main_droite) : L'ancre « main_droite » manque : ajoutez un nœud nommé « main_droite », vide si rien n'y pend.",
-	"- sans-texture : Le fichier porte 1 texture(s) et 0 image(s) : retirez-les, les couleurs sont unies.",
-].join("\n");
 
 const base64 = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64");
 const sha256 = (bytes: Uint8Array) =>
@@ -269,8 +245,9 @@ describe("deposer_fichier_3d", () => {
 		});
 	});
 
-	// Le dénombrement des refus du schéma : le propriétaire (aucun, deux, une classe inconnue, un nom
-	// de monstre blanc ou trop long), le contenu, un champ inconnu.
+	// Le dénombrement des refus du schéma, un cas par ligne : le propriétaire (aucun, deux, une
+	// classe inconnue, un nom de monstre blanc ou trop long), le contenu (absent, pas du base64 ; trop
+	// long, plus haut), un champ inconnu.
 	const CONTENT = base64(glb(CONFORMING));
 	test.each<[string, Record<string, unknown>, string]>([
 		[
@@ -297,6 +274,11 @@ describe("deposer_fichier_3d", () => {
 			"un nom de monstre de 65 caractères",
 			{ monstre: "m".repeat(65), contenu: CONTENT },
 			"<=64 characters",
+		],
+		[
+			"sans contenu",
+			{ classe: "wizard" },
+			"expected string, received undefined",
 		],
 		[
 			"un contenu qui n'est pas du base64",
