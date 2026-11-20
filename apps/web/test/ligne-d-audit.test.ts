@@ -1,20 +1,14 @@
-import { createHash } from "node:crypto";
 import { freshDatabase } from "donnees/test/base-neuve";
 import { describe, expect, test } from "vitest";
 import { type AuditEntry, writeAuditEntry } from "../app/mcp/audit.ts";
 import { auditRows } from "./montage.ts";
+import { fingerprint } from "./octets.ts";
 
 /**
  * Ce que la ligne garde d'un texte trop long qui n'est pas du base64 : la taille de ses octets
  * UTF-8 et leur empreinte.
  */
-const fingerprintOf = (text: string) => {
-	const bytes = Buffer.from(text, "utf8");
-	return {
-		taille: bytes.length,
-		sha256: createHash("sha256").update(bytes).digest("hex"),
-	};
-};
+const fingerprintOf = (text: string) => fingerprint(Buffer.from(text, "utf8"));
 
 /** La même empreinte là où seul un texte tient — clé, outil, message : son JSON. */
 const fingerprintText = (text: string) => JSON.stringify(fingerprintOf(text));

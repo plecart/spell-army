@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { auditLog } from "donnees";
 import { freshDatabase } from "donnees/test/base-neuve";
 import { describe, expect, test } from "vitest";
@@ -7,6 +6,7 @@ import { registry } from "../app/mcp/registry.ts";
 import { callTool, listTools, type McpTool } from "../app/mcp/tool.ts";
 import { png } from "./images.ts";
 import { auditRows } from "./montage.ts";
+import { base64, fingerprint, sha256 } from "./octets.ts";
 
 // Le dénombrement de `writeAuditEntry` (`app/mcp/audit.ts`) : chaque voie par laquelle des octets
 // reçus entrent dans une ligne d'audit — une valeur sous chaque forme, un champ d'octets, un texte
@@ -26,15 +26,6 @@ const BYTES: [string, Uint8Array][] = [
 	["une image de 57 octets", SMALL_IMAGE],
 	["65 537 octets qui ne sont pas une image", LONG_BYTES],
 ];
-
-const sha256 = (bytes: Uint8Array) =>
-	createHash("sha256").update(bytes).digest("hex");
-const base64 = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64");
-/** Ce que l'audit garde d'octets : leur taille et leur empreinte. */
-const fingerprint = (bytes: Uint8Array) => ({
-	taille: bytes.length,
-	sha256: sha256(bytes),
-});
 
 /** `value` et chacune des valeurs qu'il contient, à toute profondeur. */
 function nested(value: unknown): unknown[] {
