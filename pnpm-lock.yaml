@@ -49,6 +49,8 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0
 
+  packages/combat: {}
+
   packages/donnees:
     dependencies:
       drizzle-orm:
