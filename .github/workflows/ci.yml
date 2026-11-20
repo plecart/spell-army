@@ -1,6 +1,6 @@
 # CI du dépôt : les portes bloquantes de `.claude/pipeline.config.md` (« Qualité ») — audit, lint,
-# format:check, typecheck, test — plus le build, chacune lancée par sa commande de « Commandes du
-# projet ». Généré depuis le modèle du boilerplate selon `init-projet` (étape 7).
+# format:check, typecheck, dérive du schéma, test — plus le build, chacune lancée par sa commande
+# de « Commandes du projet ». Généré depuis le modèle du boilerplate selon `init-projet` (étape 7).
 #
 # Le garde `if:`, `concurrency` et le pas « Fusion explicite du trunk » se conservent : `cycle-pr`
 # en dépend (Étapes 5 et 7). Tout job ajouté qui tourne sur une PR extrait la tête comme le job
@@ -138,6 +138,12 @@ jobs:
       - name: Typecheck
         if: *portes-de-code
         run: pnpm -r typecheck
+
+      # Rouge quand `schema.ts` a dérivé des migrations, c'est-à-dire quand `drizzle-kit generate`
+      # en produirait une : `packages/donnees/src/drift-command.ts`.
+      - name: Dérive du schéma
+        if: *portes-de-code
+        run: pnpm --filter donnees run drift
 
       - name: Build
         if: *portes-de-code

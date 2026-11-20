@@ -13,8 +13,8 @@ Monorepo pnpm, un paquet par domaine sous `packages/` (`docs/adr/0001-architectu
 
 ## Commandes
 
-Installation, tests, lint, format, typecheck, audit, build et migration : `.claude/pipeline.config.md`,
-section « Commandes du projet ».
+Installation, tests, lint, format, typecheck, audit, build, migration et dérive du schéma :
+`.claude/pipeline.config.md`, section « Commandes du projet ».
 
 ## Serveur MCP local
 
