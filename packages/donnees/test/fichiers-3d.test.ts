@@ -81,7 +81,7 @@ describe("modèle par défaut d'une classe", () => {
 		[
 			"un fichier d'une autre classe",
 			3,
-			"Le fichier 3D 3 est celui de la classe golem, pas de la classe wizard.",
+			"Le fichier 3D 3 est celui d'une autre classe.",
 		],
 	])("%s : refusé, rien n'est écrit", async (_, fileId, message) => {
 		const db = await freshDatabase();

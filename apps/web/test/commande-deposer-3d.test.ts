@@ -55,7 +55,7 @@ describe("la commande deposer-3d", () => {
 		const bytes = glb(CONFORMING);
 		expect(
 			await depositModel(
-				{ file: join(folder, "magicien.glb"), classe: "wizard" },
+				{ file: join(folder, "magicien.glb"), classe: "magicien" },
 				ENV,
 				fetchFrom(serve),
 			),
@@ -87,7 +87,7 @@ describe("la commande deposer-3d", () => {
 		const folder = await folderWith({ "magicien.glb": NON_CONFORMING });
 		await expect(
 			depositModel(
-				{ file: join(folder, "magicien.glb"), classe: "wizard" },
+				{ file: join(folder, "magicien.glb"), classe: "magicien" },
 				ENV,
 				fetchFrom(serve),
 			),
@@ -108,7 +108,7 @@ describe("la commande deposer-3d", () => {
 			const { serve, requests } = await recordingEndpoint();
 			const folder = await folderWith({ "magicien.glb": CONFORMING });
 			const refusal = depositModel(
-				{ file: join(folder, "magicien.glb"), classe: "wizard" },
+				{ file: join(folder, "magicien.glb"), classe: "magicien" },
 				env,
 				fetchFrom(serve),
 			);
@@ -138,7 +138,7 @@ describe("la commande deposer-3d", () => {
 		const folder = await folderWith({ "magicien.glb": CONFORMING });
 		const token = "x".repeat(32);
 		const refusal = depositModel(
-			{ file: join(folder, "magicien.glb"), classe: "wizard" },
+			{ file: join(folder, "magicien.glb"), classe: "magicien" },
 			{ ...ENV, MCP_TOKEN: token },
 			fetchFrom(serve),
 		);
@@ -199,7 +199,7 @@ describe("le point d'entrée de deposer-3d, lancé par Node", () => {
 		const bytes = glb(CONFORMING);
 		expect(
 			await runEntryPoint(
-				[join(folder, "magicien.glb"), "--classe", "wizard"],
+				[join(folder, "magicien.glb"), "--classe", "magicien"],
 				{ MCP_URL: await listen(serve), MCP_TOKEN: TOKEN },
 			),
 		).toEqual({
@@ -214,7 +214,7 @@ describe("le point d'entrée de deposer-3d, lancé par Node", () => {
 		const folder = await folderWith({ "magicien.glb": NON_CONFORMING });
 		expect(
 			await runEntryPoint(
-				[join(folder, "magicien.glb"), "--classe", "wizard"],
+				[join(folder, "magicien.glb"), "--classe", "magicien"],
 				{ MCP_URL: await listen(serve), MCP_TOKEN: TOKEN },
 			),
 		).toEqual({ code: 1, stdout: "", stderr: `${DEVIATIONS}\n` });
@@ -222,11 +222,11 @@ describe("le point d'entrée de deposer-3d, lancé par Node", () => {
 	});
 
 	test("sans fichier : sortie 1, l'usage affiché", async () => {
-		expect(await runEntryPoint(["--classe", "wizard"], ENV)).toEqual({
+		expect(await runEntryPoint(["--classe", "magicien"], ENV)).toEqual({
 			code: 1,
 			stdout: "",
 			stderr:
-				"Usage : pnpm --filter web deposer-3d <fichier.glb> --classe <classe>, ou --monstre <nom>\n",
+				"Usage : pnpm --filter web deposer-3d <fichier.glb> --classe <classe>, ou --monstre <nom> ; <classe> parmi magicien, golem, guerrier, nain, vampire, druide, paysan, fee\n",
 		});
 	});
 });

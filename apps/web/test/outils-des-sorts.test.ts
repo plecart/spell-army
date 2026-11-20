@@ -23,6 +23,7 @@ import {
 } from "vitest";
 import { registry } from "../app/mcp/registry.ts";
 import { callTool } from "../app/mcp/tool.ts";
+import { CLASS } from "./classes.ts";
 import { gif, IMAGE_FORMATS, png } from "./images.ts";
 import {
 	auditRows,
@@ -33,8 +34,8 @@ import {
 } from "./montage.ts";
 
 // Le vocabulaire des outils, en littéraux : l'oracle de la traduction du modèle de `combat`, tenu à
-// part des tables de `spell-vocabulary.ts`. Les noms viennent du game design (§ 1, « Classe » ;
-// § 2, « Formes », « Effets ») et de l'issue #12 (« Décisions », « Modèle d'un sort »).
+// part des tables de `spell-vocabulary.ts` (les classes, dans `classes.ts`). Les noms viennent du
+// game design (§ 2, « Formes », « Effets ») et de l'issue #12 (« Décisions », « Modèle d'un sort »).
 const STAT: Record<string, string> = {
 	life: "vie",
 	strength: "force",
@@ -46,16 +47,6 @@ const GAUGE = {
 	armyWounds: "blessures_de_l_armee",
 	classShare: "part_d_une_classe",
 	casterClassShare: "part_de_la_classe_du_lanceur",
-};
-const CLASS = {
-	wizard: "magicien",
-	golem: "golem",
-	warrior: "guerrier",
-	dwarf: "nain",
-	vampire: "vampire",
-	druid: "druide",
-	peasant: "paysan",
-	fairy: "fee",
 };
 const BASE = {
 	armyStat: "stat_de_l_armee",
