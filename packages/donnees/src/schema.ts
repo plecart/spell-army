@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import {
 	boolean,
 	check,
+	customType,
 	doublePrecision,
 	integer,
 	jsonb,
@@ -11,6 +12,7 @@ import {
 	smallint,
 	text,
 	timestamp,
+	uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -63,6 +65,55 @@ export const calibrationSettings = pgTable(
 		check(
 			"calibration_settings_day_two_budget_recruits_check",
 			sql`${table.dayTwoBudgetRecruits} >= 1`,
+		),
+	],
+);
+
+// `bytea`, que `pg-core` ne fournit pas (drizzle-orm 0.45.4) : `pg` envoie un `Uint8Array` en
+// paramètre binaire et rend un `Buffer` (`prepareValue` de `pg/lib/utils.js` 8.23.1, `writeValues`
+// de `pg-protocol` 1.16.1, parseur 17 de `pg-types` 2.2.0, lus le 2026-11-20).
+const bytea = customType<{ data: Uint8Array }>({ dataType: () => "bytea" });
+
+/**
+ * La réserve de sorts (game design § 2), sous leur numéro, l'identifiant stable du pied de la carte.
+ * La migration `0004_reserve_de_depart` pose la réserve de départ ; `spells.ts` lit et écrit la
+ * table. `recipe`, `form` et `effect` portent le modèle de `combat` tel quel, `key` sa clé
+ * d'unicité (`spellKey`), sous un index unique. Chaque borne est une contrainte `check`, nommée
+ * `spells_<colonne>_check` ; l'image, des octets et leur type, est facultative.
+ */
+export const spells = pgTable(
+	"spells",
+	{
+		number: integer().primaryKey(),
+		name: text().notNull(),
+		recipe: jsonb().notNull(),
+		form: jsonb().notNull(),
+		effect: jsonb().notNull(),
+		key: text().notNull(),
+		weight: doublePrecision().notNull(),
+		description: text().notNull(),
+		image: bytea(),
+		imageType: text("image_type"),
+	},
+	(table) => [
+		uniqueIndex("spells_key_unique").on(table.key),
+		// Même garde que les réglages : la borne haute écarte `NaN` avec `Infinity`.
+		check(
+			"spells_weight_check",
+			sql`${table.weight} >= 0 and ${table.weight} < 'Infinity'::double precision`,
+		),
+		check(
+			"spells_description_check",
+			sql`${table.description} ~ '[^[:space:]]'`,
+		),
+		// Les octets et leur type, ensemble ou pas du tout.
+		check(
+			"spells_image_check",
+			sql`(${table.image} is null) = (${table.imageType} is null)`,
+		),
+		check(
+			"spells_image_type_check",
+			sql`${table.imageType} in ('image/png', 'image/jpeg', 'image/webp')`,
 		),
 	],
 );

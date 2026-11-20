@@ -26,6 +26,9 @@ importers:
       '@modelcontextprotocol/server':
         specifier: ^2.4.0
         version: 2.4.0
+      combat:
+        specifier: workspace:*
+        version: link:../../packages/combat
       donnees:
         specifier: workspace:*
         version: link:../../packages/donnees

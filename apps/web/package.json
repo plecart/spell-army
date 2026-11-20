@@ -10,6 +10,7 @@
 	},
 	"dependencies": {
 		"@modelcontextprotocol/server": "^2.4.0",
+		"combat": "workspace:*",
 		"donnees": "workspace:*",
 		"next": "^16.4.6",
 		"react": "^19.3.1",

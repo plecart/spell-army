@@ -24,7 +24,7 @@ issue, aucune conversation avec Claude : chaque étape qui le touche se fait dan
 terminal.
 
 1. **Migrer la base** de `DATABASE_URL` : `pnpm --filter donnees run migrate`. Les migrations posent
-   aussi les réglages de départ du calibrage.
+   aussi les réglages de départ du calibrage et la réserve de départ des sorts.
 2. **Créer le jeton**, dans un terminal ouvert hors de l'app Claude, Git Bash depuis le menu
    Démarrer par exemple : le panneau Terminal de l'app est lisible par Claude.
    `openssl rand -base64 32` donne 44 caractères, au-delà des 32 octets requis. Le ranger dans

@@ -1,0 +1,307 @@
+{
+  "id": "1ca29193-f288-4814-a01a-29bb299c0c99",
+  "prevId": "f83ee446-eb5f-4052-8045-6d7d6f9bb934",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.audit_log": {
+      "name": "audit_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "audit_log_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "tool": {
+          "name": "tool",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "input": {
+          "name": "input",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "succeeded": {
+          "name": "succeeded",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "before": {
+          "name": "before",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "after": {
+          "name": "after",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "audit_log_succeeded_check": {
+          "name": "audit_log_succeeded_check",
+          "value": "\"audit_log\".\"succeeded\" = (\"audit_log\".\"error\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.calibration_settings": {
+      "name": "calibration_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "smallint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "recruit_share": {
+          "name": "recruit_share",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recruit_share_drop": {
+          "name": "recruit_share_drop",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference_window_days": {
+          "name": "reference_window_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "average_recruit_life": {
+          "name": "average_recruit_life",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "average_recruit_strength": {
+          "name": "average_recruit_strength",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "average_recruit_magic": {
+          "name": "average_recruit_magic",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "average_recruit_speed": {
+          "name": "average_recruit_speed",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "day_two_budget_recruits": {
+          "name": "day_two_budget_recruits",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "calibration_settings_id_check": {
+          "name": "calibration_settings_id_check",
+          "value": "\"calibration_settings\".\"id\" = 1"
+        },
+        "calibration_settings_recruit_share_check": {
+          "name": "calibration_settings_recruit_share_check",
+          "value": "\"calibration_settings\".\"recruit_share\" between 0 and 1"
+        },
+        "calibration_settings_recruit_share_drop_check": {
+          "name": "calibration_settings_recruit_share_drop_check",
+          "value": "\"calibration_settings\".\"recruit_share_drop\" between 0 and 1"
+        },
+        "calibration_settings_reference_window_days_check": {
+          "name": "calibration_settings_reference_window_days_check",
+          "value": "\"calibration_settings\".\"reference_window_days\" >= 1"
+        },
+        "calibration_settings_average_recruit_life_check": {
+          "name": "calibration_settings_average_recruit_life_check",
+          "value": "\"calibration_settings\".\"average_recruit_life\" > 0 and \"calibration_settings\".\"average_recruit_life\" < 'Infinity'::double precision"
+        },
+        "calibration_settings_average_recruit_strength_check": {
+          "name": "calibration_settings_average_recruit_strength_check",
+          "value": "\"calibration_settings\".\"average_recruit_strength\" > 0 and \"calibration_settings\".\"average_recruit_strength\" < 'Infinity'::double precision"
+        },
+        "calibration_settings_average_recruit_magic_check": {
+          "name": "calibration_settings_average_recruit_magic_check",
+          "value": "\"calibration_settings\".\"average_recruit_magic\" > 0 and \"calibration_settings\".\"average_recruit_magic\" < 'Infinity'::double precision"
+        },
+        "calibration_settings_average_recruit_speed_check": {
+          "name": "calibration_settings_average_recruit_speed_check",
+          "value": "\"calibration_settings\".\"average_recruit_speed\" > 0 and \"calibration_settings\".\"average_recruit_speed\" < 'Infinity'::double precision"
+        },
+        "calibration_settings_day_two_budget_recruits_check": {
+          "name": "calibration_settings_day_two_budget_recruits_check",
+          "value": "\"calibration_settings\".\"day_two_budget_recruits\" >= 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.spells": {
+      "name": "spells",
+      "schema": "",
+      "columns": {
+        "number": {
+          "name": "number",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recipe": {
+          "name": "recipe",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "form": {
+          "name": "form",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effect": {
+          "name": "effect",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weight": {
+          "name": "weight",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image": {
+          "name": "image",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image_type": {
+          "name": "image_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "spells_key_unique": {
+          "name": "spells_key_unique",
+          "columns": [
+            {
+              "expression": "key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "spells_weight_check": {
+          "name": "spells_weight_check",
+          "value": "\"spells\".\"weight\" >= 0 and \"spells\".\"weight\" < 'Infinity'::double precision"
+        },
+        "spells_description_check": {
+          "name": "spells_description_check",
+          "value": "\"spells\".\"description\" ~ '[^[:space:]]'"
+        },
+        "spells_image_check": {
+          "name": "spells_image_check",
+          "value": "(\"spells\".\"image\" is null) = (\"spells\".\"image_type\" is null)"
+        },
+        "spells_image_type_check": {
+          "name": "spells_image_type_check",
+          "value": "\"spells\".\"image_type\" in ('image/png', 'image/jpeg', 'image/webp')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
