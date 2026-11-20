@@ -30,7 +30,8 @@ const TRUNCATED = "[imbrication tronquée]";
 // UTF-16), ou une suite d'octets de plus de 65 536 éléments, est remplacé en entier par son
 // empreinte, `{ taille, sha256 }`, en JSON dans un texte. C'est celle de l'issue #15, critère
 // « Ligne d'audit » : « un texte de 65 536 caractères reste entier ; un texte de 65 537 caractères
-// est remplacé par sa longueur et son empreinte SHA-256 ».
+// est remplacé par la taille de ses octets et leur empreinte SHA-256 (octets décodés s'il est en
+// base64, sinon UTF-8) ».
 const MAX_AUDITED_LENGTH = 65_536;
 // Le champ des outils qui porte une image (`modifier_sort`) : sa valeur est remplacée par son
 // empreinte quelle que soit sa longueur, et que l'image soit admise ou non.
