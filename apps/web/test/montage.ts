@@ -11,6 +11,7 @@ import { freshDatabase } from "donnees/test/base-neuve";
 import { expect, onTestFinished } from "vitest";
 import { registry } from "../app/mcp/registry.ts";
 import { createMcpEndpoint } from "../app/mcp/server.ts";
+import { listTools } from "../app/mcp/tool.ts";
 
 // Jeton factice de 32 octets, le minimum admis.
 export const TOKEN = "t".repeat(32);
@@ -81,6 +82,11 @@ export async function connectToRegistry() {
 	);
 	await client.listTools();
 	return { db, client };
+}
+
+/** Ce que publie `tools/list` des outils `names`, dans l'ordre du registre réel. */
+export function publishedTools(names: readonly string[]) {
+	return listTools(registry).filter(({ name }) => names.includes(name));
 }
 
 /** La sortie d'un appel réussi : son `structuredContent`, que son texte JSON répète. */

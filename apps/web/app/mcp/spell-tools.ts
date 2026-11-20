@@ -26,12 +26,12 @@ const MIN_WIDTH = 1200;
 const MIN_HEIGHT = 900;
 const MAX_IMAGE_BYTES = 3_000_000;
 const MAX_IMAGE_BASE64 = (MAX_IMAGE_BYTES / 3) * 4;
-const IMAGE_RULE =
-	"un PNG, un JPEG ou un WebP d'au moins 1 200 × 900 px et d'au plus 3 000 000 octets";
+const MIN_SIZE_WORDS = "1 200 × 900 px";
+const MAX_BYTES_WORDS = "3 000 000 octets";
+const IMAGE_RULE = `un PNG, un JPEG ou un WebP d'au moins ${MIN_SIZE_WORDS} et d'au plus ${MAX_BYTES_WORDS}`;
 const NOT_AN_IMAGE = "l'image doit être un fichier PNG, JPEG ou WebP complet";
-const TOO_SMALL = "l'image doit faire au moins 1 200 × 900 px";
-const TOO_LARGE =
-	"l'image doit faire au plus 3 000 000 octets, soit 4 000 000 caractères en base64";
+const TOO_SMALL = `l'image doit faire au moins ${MIN_SIZE_WORDS}`;
+const TOO_LARGE = `l'image doit faire au plus ${MAX_BYTES_WORDS}, soit 4 000 000 caractères en base64`;
 
 const modification = z
 	.strictObject({

@@ -22,9 +22,15 @@ import {
 	test,
 } from "vitest";
 import { registry } from "../app/mcp/registry.ts";
-import { callTool, listTools } from "../app/mcp/tool.ts";
+import { callTool } from "../app/mcp/tool.ts";
 import { gif, IMAGE_FORMATS, png } from "./images.ts";
-import { auditRows, connectToRegistry, INFINITE, outputOf } from "./montage.ts";
+import {
+	auditRows,
+	connectToRegistry,
+	INFINITE,
+	outputOf,
+	publishedTools,
+} from "./montage.ts";
 
 // Le vocabulaire des outils, en littéraux : l'oracle de la traduction du modèle de `combat`, tenu à
 // part des tables de `spell-vocabulary.ts`. Les noms viennent du game design (§ 1, « Classe » ;
@@ -187,12 +193,8 @@ async function expectRefusal(
 }
 
 describe("outils des sorts : tools/list", () => {
-	function spellTools() {
-		return listTools(registry).filter(({ name }) => SPELL_TOOLS.includes(name));
-	}
-
 	test("publie chaque outil et chacun de ses champs sous son nom français, avec une description", () => {
-		const described = spellTools().flatMap(
+		const described = publishedTools(SPELL_TOOLS).flatMap(
 			({ name, description, inputSchema }) => [
 				[name, description],
 				...Object.entries(inputSchema.properties ?? {}).map(
@@ -223,12 +225,14 @@ describe("outils des sorts : tools/list", () => {
 			additionalProperties: false,
 		});
 		expect(
-			spellTools().map(({ name, title, annotations, outputSchema }) => ({
-				name,
-				title,
-				annotations,
-				outputSchema,
-			})),
+			publishedTools(SPELL_TOOLS).map(
+				({ name, title, annotations, outputSchema }) => ({
+					name,
+					title,
+					annotations,
+					outputSchema,
+				}),
+			),
 		).toEqual([
 			{
 				name: "lister_sorts",
@@ -267,7 +271,7 @@ describe("outils des sorts : tools/list", () => {
 	});
 
 	test("publie qu'au moins un champ, outre le numéro, est requis par modifier_sort", () => {
-		const update = spellTools().find(({ name }) => name === "modifier_sort");
+		const [update] = publishedTools(["modifier_sort"]);
 		expect(update?.inputSchema).toMatchObject({
 			required: ["numero"],
 			minProperties: 2,

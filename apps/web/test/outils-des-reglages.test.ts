@@ -1,8 +1,12 @@
 import type { Client } from "@modelcontextprotocol/client";
 import { describe, expect, test } from "vitest";
-import { registry } from "../app/mcp/registry.ts";
-import { listTools } from "../app/mcp/tool.ts";
-import { auditRows, connectToRegistry, INFINITE, outputOf } from "./montage.ts";
+import {
+	auditRows,
+	connectToRegistry,
+	INFINITE,
+	outputOf,
+	publishedTools,
+} from "./montage.ts";
 
 // Posés par la migration `0002_reglages_de_depart` (game design § 6, issue #11).
 const STARTING_SETTINGS = {
@@ -16,12 +20,7 @@ const STARTING_SETTINGS = {
 	budget_jour_2: 10,
 };
 
-/** Ce que publie `tools/list` des deux outils des réglages, parmi ceux du registre. */
-function settingsTools() {
-	return listTools(registry).filter(({ name }) =>
-		["lire_reglages", "modifier_reglages"].includes(name),
-	);
-}
+const SETTINGS_TOOLS = ["lire_reglages", "modifier_reglages"];
 
 // La plus grande valeur d'une colonne `integer` de Postgres.
 const POSTGRES_INTEGER_MAX = 2_147_483_647;
@@ -32,7 +31,7 @@ async function readSettings(client: Client) {
 
 describe("outils des réglages du calibrage", () => {
 	test("tools/list publie chaque outil et chaque réglage sous son nom français, avec une description", () => {
-		const described = settingsTools().flatMap(
+		const described = publishedTools(SETTINGS_TOOLS).flatMap(
 			({ name, description, inputSchema }) => [
 				[name, description],
 				...Object.entries(inputSchema.properties ?? {}).map(
@@ -55,9 +54,7 @@ describe("outils des réglages du calibrage", () => {
 	});
 
 	test("tools/list publie qu'au moins un réglage est requis par modifier_reglages", () => {
-		const update = settingsTools().find(
-			({ name }) => name === "modifier_reglages",
-		);
+		const [update] = publishedTools(["modifier_reglages"]);
 		expect(update?.inputSchema).toMatchObject({ minProperties: 1 });
 	});
 
@@ -68,12 +65,14 @@ describe("outils des réglages du calibrage", () => {
 			additionalProperties: false,
 		});
 		expect(
-			settingsTools().map(({ name, title, annotations, outputSchema }) => ({
-				name,
-				title,
-				annotations,
-				outputSchema,
-			})),
+			publishedTools(SETTINGS_TOOLS).map(
+				({ name, title, annotations, outputSchema }) => ({
+					name,
+					title,
+					annotations,
+					outputSchema,
+				}),
+			),
 		).toEqual([
 			{
 				name: "lire_reglages",
