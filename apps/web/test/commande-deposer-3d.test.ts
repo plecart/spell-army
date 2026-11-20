@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -8,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { modelFiles } from "donnees";
 import { glb } from "personnages/test/glb";
 import { describe, expect, onTestFinished, test } from "vitest";
-import { depositModel } from "../scripts/deposit-model.ts";
+import { depositModel, REQUIRED_VARIABLES } from "../scripts/deposit-model.ts";
 import { CONFORMING, DEVIATIONS, NON_CONFORMING } from "./fichiers-3d.ts";
 import {
 	ENDPOINT_URL,
@@ -92,14 +93,21 @@ describe("la commande deposer-3d", () => {
 		expect(requests).toEqual([]);
 	});
 
-	// Le dénombrement des variables que la commande exige, hors `INIT_CWD` qui a son repli : chacune
-	// absente, puis vide, puis les deux.
+	// Les variables que la commande exige sont `REQUIRED_VARIABLES` : chacune absente, puis vide,
+	// puis toutes absentes.
 	test.each<[string, Record<string, string>, string]>([
-		["MCP_URL absente", { MCP_TOKEN: TOKEN }, "MCP_URL"],
-		["MCP_URL vide", { MCP_URL: "", MCP_TOKEN: TOKEN }, "MCP_URL"],
-		["MCP_TOKEN absente", { MCP_URL: ENDPOINT_URL }, "MCP_TOKEN"],
-		["MCP_TOKEN vide", { MCP_URL: ENDPOINT_URL, MCP_TOKEN: "" }, "MCP_TOKEN"],
-		["les deux absentes", {}, "MCP_URL, MCP_TOKEN"],
+		...REQUIRED_VARIABLES.flatMap(
+			(name): [string, Record<string, string>, string][] => {
+				const others = Object.fromEntries(
+					Object.entries(ENV).filter(([key]) => key !== name),
+				);
+				return [
+					[`${name} absente`, others, name],
+					[`${name} vide`, { ...others, [name]: "" }, name],
+				];
+			},
+		),
+		["les deux absentes", {}, REQUIRED_VARIABLES.join(", ")],
 	])(
 		"%s : arrêtée avant l'envoi, la variable nommée, aucune valeur écrite",
 		async (_, env, names) => {
@@ -118,6 +126,16 @@ describe("la commande deposer-3d", () => {
 			expect(requests).toEqual([]);
 		},
 	);
+
+	test("chaque variable que la commande exige est nommée dans .env.example, sans valeur", () => {
+		const lines = readFileSync(
+			new URL("../../../.env.example", import.meta.url),
+			"utf8",
+		).split(/\r?\n/);
+		for (const name of REQUIRED_VARIABLES) {
+			expect(lines).toContain(`${name}=`);
+		}
+	});
 
 	test("un refus du serveur rend son message", async () => {
 		const { serve } = await recordingEndpoint();

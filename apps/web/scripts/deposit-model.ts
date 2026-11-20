@@ -29,6 +29,9 @@ type Env = Record<string, string | undefined>;
 
 const UNAUTHORIZED = 401;
 
+/** Les variables d'environnement que la commande exige, hors `INIT_CWD` qui a son repli. */
+export const REQUIRED_VARIABLES = ["MCP_URL", "MCP_TOKEN"] as const;
+
 /**
  * Les valeurs des variables `names` de `env` ; une erreur qui nomme celles qui manquent ou sont
  * vides, sans écrire aucune valeur.
@@ -70,7 +73,7 @@ export async function depositModel(
 	if (deviations.length > 0) {
 		throw new Error(describeDeviations(deviations));
 	}
-	const { MCP_URL, MCP_TOKEN } = readVariables(env, ["MCP_URL", "MCP_TOKEN"]);
+	const { MCP_URL, MCP_TOKEN } = readVariables(env, REQUIRED_VARIABLES);
 	const transport = new StreamableHTTPClientTransport(new URL(MCP_URL), {
 		fetch,
 		requestInit: { headers: { authorization: `Bearer ${MCP_TOKEN}` } },
