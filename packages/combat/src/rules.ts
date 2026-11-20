@@ -26,7 +26,8 @@ const TEXT_FIELDS = [
 
 /**
  * La catégorie d'un effet, toujours déduite, jamais saisie : dégâts seuls → `damage`, soin seul →
- * `heal`, les deux → `lifesteal`, quelles que soient leurs valeurs.
+ * `heal`, les deux → `lifesteal`, quelles que soient leurs valeurs. Une part présente compte : sur un
+ * sort valide, elle n'est jamais nulle aux deux bouts de la jauge (`validateSpell`).
  *
  * @throws {RangeError} si l'effet ne fait ni dégâts ni soin.
  */
@@ -78,9 +79,9 @@ function formKey(form: Form): string {
  * - Forme : la part perdue d'un coûteux strictement entre 0 et 1 ; une classe nommée si et
  *   seulement si la jauge est `classShare`.
  * - Effet : des dégâts, du soin ou les deux, chacun un nombre fini ≥ 0 aux deux bouts de la
- *   jauge, et qui ne suit une jauge que dans une forme conditionnelle. Un sort mixte vaut au plus
- *   ×1,0 en dégâts + soin aux deux bouts de sa jauge (game design § 2, « Vol de vie ») ; l'effet
- *   étant linéaire, ses bouts suffisent.
+ *   jauge, non nul à l'un d'eux au moins — une part nulle s'omet —, et qui ne suit une jauge que
+ *   dans une forme conditionnelle. Un sort mixte vaut au plus ×1,0 en dégâts + soin aux deux bouts
+ *   de sa jauge (game design § 2, « Vol de vie ») ; l'effet étant linéaire, ses bouts suffisent.
  * - Poids : un nombre fini ≥ 0 ; 0, jamais tiré, est accepté.
  * - Nom et description : non vides une fois les blancs retirés.
  */
@@ -174,6 +175,11 @@ function linearErrors(
 			`le coefficient de ${label} doit être un nombre fini ≥ 0 aux deux bouts de la jauge, reçu : constant ${constant}, perGauge ${perGauge}`,
 		);
 	}
+	if (isZero(linear)) {
+		errors.push(
+			`le coefficient de ${label} vaut 0 aux deux bouts de la jauge : omettre la part de ${label}`,
+		);
+	}
 	if (!conditional && perGauge !== 0) {
 		errors.push(
 			`le coefficient de ${label} ne suit une jauge que dans une forme conditionnelle, reçu : perGauge ${perGauge}`,
@@ -184,6 +190,8 @@ function linearErrors(
 
 function mixedErrors({ damage, heal }: Effect): string[] {
 	if (damage === undefined || heal === undefined) return [];
+	// Une part nulle, refusée à part, ne rend pas le sort mixte.
+	if (isZero(damage) || isZero(heal)) return [];
 	const totals = GAUGE_ENDS.map(
 		(gauge) => valueAt(damage, gauge) + valueAt(heal, gauge),
 	);
@@ -209,6 +217,11 @@ function textErrors(candidate: Spell): string[] {
 /** La valeur d'un coefficient à un point de la jauge, de 0 à 1. */
 function valueAt({ constant, perGauge }: Linear, gauge: number): number {
 	return constant + perGauge * gauge;
+}
+
+/** Une part qui vaut 0 aux deux bouts de la jauge : elle ne fait rien. */
+function isZero(linear: Linear): boolean {
+	return GAUGE_ENDS.every((gauge) => valueAt(linear, gauge) === 0);
 }
 
 /** Les parts d'une recette, en paires `[stat, part]` ; une part `undefined` est absente. */

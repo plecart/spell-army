@@ -1,7 +1,8 @@
 {
 	"extends": "../../tsconfig.base.json",
 	// Pour `node:fs`, qui lit le game design dans les tests : sans ce réglage, TypeScript 7.0.2 ne
-	// trouve pas les types de Node de la racine (mesuré le 2026-11-20).
+	// trouve pas les types de Node de la racine (mesuré le 2026-11-20). Il vaut aussi pour `src`, que
+	// `test/purete.test.ts` garde de tout import de Node ou d'un paquet.
 	"compilerOptions": {
 		"types": ["node"]
 	},
