@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { auditLog } from "donnees";
 import { freshDatabase } from "donnees/test/base-neuve";
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
@@ -9,18 +10,20 @@ import { auditRows } from "./montage.ts";
 
 // Le dénombrement de `writeAuditEntry` (`app/mcp/audit.ts`) : chaque voie par laquelle des octets
 // reçus entrent dans une ligne d'audit — une valeur sous chaque forme, un texte en base64 — et
-// chaque colonne qu'ils atteignent. Aucune ligne ne garde les octets ; chaque colonne atteinte garde
-// leur empreinte (issue #12, « Image »). Les cas sont écrits en littéraux, sans rien lire
-// d'`audit.ts`.
+// chaque colonne qu'ils atteignent, puis chaque voie d'un texte reçu. Aucune ligne ne garde les
+// octets : chaque colonne atteinte garde leur empreinte (issue #12, « Image »), sauf un message de
+// plus de 65 536 caractères, remplacé en entier par la sienne comme tout texte de cette longueur
+// (issue #15, « Ligne d'audit »). Les cas sont écrits en littéraux, sans rien lire d'`audit.ts`.
 
 // Un PNG de 57 octets, que la réserve admet : une image plus courte que toute borne de longueur.
 const SMALL_IMAGE = png(1200, 900);
-// Un PNG privé de son dernier octet : pas une image, mais 3 999 octets.
-const LONG_BYTES = png(1200, 900, 4000).subarray(0, 3999);
+// Un PNG privé de son dernier octet : pas une image, mais 65 537 octets, un de plus que la borne de
+// longueur.
+const LONG_BYTES = png(1200, 900, 65_538).subarray(0, 65_537);
 
 const BYTES: [string, Uint8Array][] = [
 	["une image de 57 octets", SMALL_IMAGE],
-	["3 999 octets qui ne sont pas une image", LONG_BYTES],
+	["65 537 octets qui ne sont pas une image", LONG_BYTES],
 ];
 
 const sha256 = (bytes: Uint8Array) =>
@@ -64,7 +67,7 @@ const echoInput = z.strictObject({
 });
 
 // Un outil de test, la voie d'un outil à venir : il rend `valeur` dans l'avant et l'après de sa
-// ligne, ou, avec `echec`, lève un message qui la recopie.
+// ligne, ou, avec `echec`, lève `valeur` pour message.
 const echoTool: McpTool<typeof echoInput> = {
 	name: "renvoyer",
 	title: "Renvoyer une valeur",
@@ -79,7 +82,7 @@ const echoTool: McpTool<typeof echoInput> = {
 	input: echoInput,
 	output: z.strictObject({}),
 	run: async (_, { valeur, echec }) => {
-		if (echec) throw new Error(`refusé : ${String(valeur)}`);
+		if (echec) throw new Error(String(valeur));
 		return { output: {}, before: { valeur }, after: { valeur } };
 	},
 };
@@ -87,9 +90,10 @@ const echoTool: McpTool<typeof echoInput> = {
 const TOOLS: readonly McpTool[] = [...registry, echoTool];
 
 type Column = "tool" | "input" | "error" | "before" | "after";
+type Row = Record<Column, unknown>;
 
 // Les voies d'une valeur reçue : l'outil appelé, l'entrée qui la porte et les colonnes qu'elle
-// atteint. Le champ image de modifier_sort couvre le succès, le refus de l'outil (3 999 octets qui
+// atteint. Le champ image de modifier_sort couvre le succès, le refus de l'outil (65 537 octets qui
 // ne sont pas une image) et celui du schéma (les formes autres que le base64).
 const VALUE_PATHS: [
 	string,
@@ -141,53 +145,109 @@ const VALUE_PATHS: [
 	],
 ];
 
-// Les voies d'un texte reçu, ici des octets en base64 : l'outil et l'entrée qui le portent, et les
-// colonnes qu'il atteint.
+// Les voies d'un texte reçu, ici des octets en base64 : l'outil et l'entrée qui le portent, les
+// colonnes qui le reçoivent entier, et celles dont le message le cite.
 const TEXT_PATHS: [
 	string,
 	(text: string) => [string, Record<string, unknown>],
 	Column[],
+	Column[],
 ][] = [
-	["le nom d'un outil inconnu", (text) => [text, {}], ["tool", "error"]],
+	["le nom d'un outil inconnu", (text) => [text, {}], ["tool"], ["error"]],
 	[
 		"une clé que le schéma refuse et que son message cite",
 		(text) => ["modifier_sort", { numero: 1, [text]: 1 }],
-		["input", "error"],
+		["input"],
+		["error"],
 	],
 	[
 		"un message d'erreur d'outil qui la recopie",
 		(text) => ["renvoyer", { valeur: text, echec: true }],
 		["input", "error"],
+		[],
 	],
 ];
 
-/**
- * Appelle `tool` avec `args` sur une base neuve : une seule ligne d'audit, qui ne garde `bytes`
- * sous aucune forme. Rend la ligne.
- */
-async function auditedWithoutBytes(
+/** Un texte de `length` caractères en mots courts, ni base64 ni image : seule sa longueur compte. */
+const shortWords = (length: number) => "mot ".repeat(length).slice(0, length);
+
+/** La `valeur` que l'outil `renvoyer` range dans la colonne JSON `column` de `row`. */
+const valeurOf = (row: Row, column: Column) =>
+	(row[column] as { valeur: unknown }).valeur;
+
+// Les voies par lesquelles un texte reçu entre dans une ligne d'audit, le dénombrement de
+// `writeAuditEntry` : la colonne, l'appel qui l'y porte, ce que la ligne en garde, et la forme de
+// son empreinte une fois remplacé — en JSON dans une colonne texte ou une clé, en objet pour une
+// chaîne d'une colonne JSON.
+type TextSlot = [
+	string,
+	Column,
+	(text: string) => [string, Record<string, unknown>],
+	(row: Row) => unknown,
+	(stored: ReturnType<typeof fingerprint>) => unknown,
+];
+const TEXT_SLOTS: TextSlot[] = [
+	[
+		"le nom d'un outil inconnu",
+		"tool",
+		(text) => [text, {}],
+		(row) => row.tool,
+		JSON.stringify,
+	],
+	[
+		"un message d'erreur",
+		"error",
+		(text) => ["renvoyer", { valeur: text, echec: true }],
+		(row) => row.error,
+		JSON.stringify,
+	],
+	...(["input", "before", "after"] as const).flatMap((column): TextSlot[] => [
+		[
+			`une clé de ${column}`,
+			column,
+			(text) => ["renvoyer", { valeur: { [text]: 1 } }],
+			(row) => Object.keys(valeurOf(row, column) as object)[0],
+			JSON.stringify,
+		],
+		[
+			`une chaîne de ${column}`,
+			column,
+			(text) => ["renvoyer", { valeur: text }],
+			(row) => valeurOf(row, column),
+			(stored) => stored,
+		],
+	]),
+];
+
+/** Appelle `tool` avec `args` sur une base neuve, et rend sa ligne d'audit, la seule. */
+async function auditedRow(
 	tool: string,
 	args: Record<string, unknown>,
-	bytes: Uint8Array,
-) {
+): Promise<Row> {
 	const db = await freshDatabase();
 	// Un outil inconnu lève une erreur de protocole, après sa ligne d'audit.
 	await callTool(TOOLS, db, tool, args).catch(() => undefined);
 	const rows = await auditRows(db);
 	expect(rows).toHaveLength(1);
-	const stored = JSON.stringify(rows);
+	return rows[0] as Row;
+}
+
+/** `auditedRow`, dont la ligne ne garde `bytes` sous aucune forme. */
+async function auditedWithoutBytes(
+	tool: string,
+	args: Record<string, unknown>,
+	bytes: Uint8Array,
+): Promise<Row> {
+	const row = await auditedRow(tool, args);
+	const stored = JSON.stringify(row);
 	for (const form of storedForms(bytes)) {
 		expect(stored).not.toContain(form);
 	}
-	return rows[0] as Record<Column, unknown>;
+	return row;
 }
 
 /** Chaque colonne de `columns` de `row` cite l'empreinte de `bytes`, en objet ou en texte. */
-function expectCited(
-	row: Record<Column, unknown>,
-	columns: Column[],
-	bytes: Uint8Array,
-) {
+function expectCited(row: Row, columns: readonly Column[], bytes: Uint8Array) {
 	for (const column of columns) {
 		expect(JSON.stringify(row[column])).toContain(sha256(bytes));
 	}
@@ -219,15 +279,39 @@ describe("l'audit ne garde jamais des octets reçus, seulement leur taille et le
 	});
 
 	test.each(
-		TEXT_PATHS.flatMap(([path, call, columns]) =>
-			BYTES.map(
-				([what, bytes]) =>
-					[what, path, ...call(base64(bytes)), bytes, columns] as const,
-			),
+		TEXT_PATHS.map(
+			([path, call, entire, quoting]) =>
+				[path, ...call(base64(SMALL_IMAGE)), [...entire, ...quoting]] as const,
 		),
-	)("%s en base64 par %s", async (_, __, tool, args, bytes, columns) => {
-		expectCited(await auditedWithoutBytes(tool, args, bytes), columns, bytes);
-	});
+	)(
+		"une image de 57 octets en base64 par %s : chaque colonne atteinte cite son empreinte",
+		async (_, tool, args, columns) => {
+			expectCited(
+				await auditedWithoutBytes(tool, args, SMALL_IMAGE),
+				columns,
+				SMALL_IMAGE,
+			);
+		},
+	);
+
+	test.each(
+		TEXT_PATHS.map(
+			([path, call, entire, quoting]) =>
+				[path, ...call(base64(LONG_BYTES)), entire, quoting] as const,
+		),
+	)(
+		"65 537 octets en base64 par %s : la colonne qui les reçoit entiers cite leur empreinte, un message qui les cite est remplacé en entier",
+		async (_, tool, args, entire, quoting) => {
+			const row = await auditedWithoutBytes(tool, args, LONG_BYTES);
+			expectCited(row, entire, LONG_BYTES);
+			for (const column of quoting) {
+				expect(JSON.parse(row[column] as string)).toEqual({
+					taille: expect.any(Number),
+					sha256: expect.any(String),
+				});
+			}
+		},
+	);
 
 	// Les deux seuls chemins dont la clé est `image` : une image de 57 octets coupée en deux chaînes
 	// base64 courtes, rangées dans un tableau, garde la marque du champ : chaque morceau est remplacé
@@ -268,35 +352,60 @@ describe("l'audit ne garde jamais des octets reçus, seulement leur taille et le
 		]);
 	});
 
-	test("3 999 octets écrits en nombres, sans blanc, dans le nom d'un outil inconnu : l'empreinte de ce texte", async () => {
-		const text = Array.from(LONG_BYTES).join(",");
-		expectCited(
-			await auditedWithoutBytes(text, {}, LONG_BYTES),
-			["tool", "error"],
-			new TextEncoder().encode(text),
+	// La borne de l'issue #15 (« Ligne d'audit ») sur chaque voie d'un texte : des mots courts, sans
+	// base64 ni image, que seule leur longueur fait remplacer.
+	test.each(TEXT_SLOTS)(
+		"%s : un texte de 65 536 caractères reste entier",
+		async (_, __, call, stored) => {
+			const text = shortWords(65_536);
+			expect(stored(await auditedRow(...call(text)))).toBe(text);
+		},
+	);
+
+	test.each(TEXT_SLOTS)(
+		"%s : un texte de 65 537 caractères est remplacé en entier par sa longueur et son empreinte SHA-256",
+		async (_, __, call, stored, replaced) => {
+			const text = shortWords(65_537);
+			expect(stored(await auditedRow(...call(text)))).toEqual(
+				replaced({
+					taille: 65_537,
+					sha256: sha256(new TextEncoder().encode(text)),
+				}),
+			);
+		},
+	);
+
+	// Un texte entre dans une colonne `text` (`dataType` « string » pour Drizzle) par une voie, dans
+	// une colonne `jsonb` (« json ») par deux : une clé et une chaîne, à toute profondeur.
+	test("les voies d'un texte couvrent chaque colonne texte ou JSON d'audit_log", () => {
+		const slotsPerType: Record<string, number> = { string: 1, json: 2 };
+		const columns = Object.values(auditLog).flatMap(
+			({ name, dataType }: { name: string; dataType?: string }) =>
+				Array<string>(slotsPerType[dataType ?? ""] ?? 0).fill(name),
+		);
+		expect(TEXT_SLOTS.map(([, column]) => column).sort()).toEqual(
+			columns.sort(),
 		);
 	});
 
-	// La borne de longueur, au-dessus de la plus longue valeur légitime d'une entrée, la description
-	// d'un sort (500 caractères) ; un texte qui n'est pas du base64 compte pour ses octets UTF-8.
-	test("un texte de 1 000 caractères sous une clé quelconque est gardé tel quel", async () => {
-		const text = "é".repeat(1000);
-		const db = await freshDatabase();
-		await callTool(TOOLS, db, "renvoyer", { valeur: text });
-		expect(await auditRows(db)).toEqual([
-			expect.objectContaining({ input: { valeur: text } }),
-		]);
+	// La borne compte des caractères, non des octets ; un texte qui n'est pas du base64 est remplacé
+	// par la taille et l'empreinte de ses octets UTF-8.
+	test("un texte de 65 536 « é », 131 072 octets UTF-8, sous une clé quelconque est gardé tel quel", async () => {
+		const text = "é".repeat(65_536);
+		expect((await auditedRow("renvoyer", { valeur: text })).input).toEqual({
+			valeur: text,
+		});
 	});
 
-	test("un texte de 1 001 caractères est remplacé par la taille et l'empreinte de ses octets UTF-8", async () => {
-		const utf8 = new TextEncoder().encode("é".repeat(1001));
+	test("un texte de 65 537 « é » est remplacé par la taille et l'empreinte de ses octets UTF-8", async () => {
+		const utf8 = new TextEncoder().encode("é".repeat(65_537));
 		const row = await auditedWithoutBytes(
 			"renvoyer",
-			{ valeur: "é".repeat(1001) },
+			{ valeur: "é".repeat(65_537) },
 			utf8,
 		);
 		expect(row.input).toEqual({
-			valeur: { taille: 2002, sha256: sha256(utf8) },
+			valeur: { taille: 131_074, sha256: sha256(utf8) },
 		});
 	});
 });
