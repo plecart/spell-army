@@ -78,6 +78,12 @@ const MORPHING_TUNIQUE = {
 	primitives: [{ attributes: { POSITION: 2 }, targets: [{ POSITION: 0 }] }],
 };
 
+// « tunique », en lignes : un écart « budget », sans triangle compté.
+const LINES_TUNIQUE = {
+	...TUNIQUE,
+	primitives: [{ mode: 1, attributes: { POSITION: 2 } }],
+};
+
 const MESSAGE = expect.stringMatching(/\S/);
 
 // Une fixture par règle, ses identifiants écrits en toutes lettres : chacune n'enfreint que sa
@@ -110,16 +116,7 @@ const FIXTURES: [RuleId, Uint8Array, string | undefined][] = [
 	["pieces-rigides", file({ meshes: [PIECE, MORPHING_TUNIQUE] }), "tunique"],
 	["materiaux", file({ materials: [...MATERIALS, { name: "robe" }] }), "robe"],
 	["sans-texture", file({ textures: [{ sampler: 0 }] }), undefined],
-	[
-		"budget",
-		file({
-			meshes: [
-				PIECE,
-				{ ...TUNIQUE, primitives: [{ mode: 1, attributes: { POSITION: 2 } }] },
-			],
-		}),
-		"tunique",
-	],
+	["budget", file({ meshes: [PIECE, LINES_TUNIQUE] }), "tunique"],
 ];
 
 test("un GLB conforme n'a aucun écart", () => {
@@ -451,5 +448,45 @@ test.each<[number, string, boolean]>([
 		expect(message.match(/✖/g)).toHaveLength(10);
 		expect(message.includes("nodes[10].mesh")).toBe(false);
 		expect(message.includes(`${count} problèmes en tout`)).toBe(counted);
+	},
+);
+
+/** `count` copies de `fields`, renommées `e0`, `e1`… */
+const numbered = (count: number, fields: object = {}) =>
+	Array.from({ length: count }, (_, at) => ({ ...fields, name: `e${at}` }));
+
+// Les règles qui rendent un écart par élément du fichier sont quatre : « lisible », bornée dans
+// son unique écart (test des renvois rompus ci-dessus), et les trois de cette table, chacune avec
+// le personnage conforme augmenté de `count` éléments en écart. « ancres » et « ancre-unique »
+// rendent au plus un écart par ancre, cinq ; les quatre autres règles, un au plus.
+const ONE_PER_ELEMENT: [RuleId, (count: number) => Uint8Array][] = [
+	[
+		"materiaux",
+		(count) => file({ materials: [...MATERIALS, ...numbered(count)] }),
+	],
+	[
+		"pieces-rigides",
+		(count) => file({ nodes: [...NODES, ...numbered(count, { skin: 0 })] }),
+	],
+	[
+		"budget",
+		(count) =>
+			file({ meshes: [PIECE, TUNIQUE, ...numbered(count, LINES_TUNIQUE)] }),
+	],
+];
+
+test.each(ONE_PER_ELEMENT)(
+	"« %s » à dix éléments en écart : dix écarts ; à onze : les dix premiers, puis un écart sans cible qui compte le onzième",
+	(regle, withElements) => {
+		const listed = numbered(10).map(({ name }) => ({
+			regle,
+			cible: name,
+			message: MESSAGE,
+		}));
+		expect(checkModel(withElements(10))).toEqual(listed);
+		expect(checkModel(withElements(11))).toEqual([
+			...listed,
+			{ regle, message: expect.stringContaining(" 1 autre") },
+		]);
 	},
 );
