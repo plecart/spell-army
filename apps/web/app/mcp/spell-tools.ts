@@ -18,19 +18,33 @@ import {
 } from "./spell-vocabulary.ts";
 import type { McpTool } from "./tool.ts";
 
-// Les bornes d'une image (issue #12, « Image »), en nombres puis en mots. En base64, 3 octets
-// s'écrivent en 4 caractères : borner le texte à 4 000 000 caractères, c'est borner l'image à
-// 3 000 000 octets (`test/outils-des-sorts.test.ts` en éprouve les deux côtés).
+// Les bornes d'une image (issue #12, « Image »), en nombres, puis en mots qui en dérivent. En
+// base64, 3 octets s'écrivent en 4 caractères : borner le texte à `MAX_IMAGE_BASE64` caractères,
+// c'est borner l'image à `MAX_IMAGE_BYTES` octets (`test/outils-des-sorts.test.ts` en éprouve les
+// deux côtés).
 const MIN_WIDTH = 1200;
 const MIN_HEIGHT = 900;
 const MAX_IMAGE_BYTES = 3_000_000;
 const MAX_IMAGE_BASE64 = (MAX_IMAGE_BYTES / 3) * 4;
-const MIN_SIZE_WORDS = "1 200 × 900 px";
-const MAX_BYTES_WORDS = "3 000 000 octets";
+
+/**
+ * `count` en chiffres groupés par trois, séparés par une espace : « 3 000 000 ». Le séparateur de
+ * groupe que rend ICU pour fr-FR, U+202F (Node 24.3, ICU 77.1, mesuré le 2026-11-20), est
+ * remplacé, pour que les textes publiés n'en dépendent pas.
+ */
+function grouped(count: number): string {
+	return new Intl.NumberFormat("fr-FR")
+		.formatToParts(count)
+		.map(({ type, value }) => (type === "group" ? " " : value))
+		.join("");
+}
+
+const MIN_SIZE_WORDS = `${grouped(MIN_WIDTH)} × ${grouped(MIN_HEIGHT)} px`;
+const MAX_BYTES_WORDS = `${grouped(MAX_IMAGE_BYTES)} octets`;
 const IMAGE_RULE = `un PNG, un JPEG ou un WebP d'au moins ${MIN_SIZE_WORDS} et d'au plus ${MAX_BYTES_WORDS}`;
 const NOT_AN_IMAGE = "l'image doit être un fichier PNG, JPEG ou WebP complet";
 const TOO_SMALL = `l'image doit faire au moins ${MIN_SIZE_WORDS}`;
-const TOO_LARGE = `l'image doit faire au plus ${MAX_BYTES_WORDS}, soit 4 000 000 caractères en base64`;
+const TOO_LARGE = `l'image doit faire au plus ${MAX_BYTES_WORDS}, soit ${grouped(MAX_IMAGE_BASE64)} caractères en base64`;
 
 const modification = z
 	.strictObject({
