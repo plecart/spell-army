@@ -270,6 +270,18 @@ describe("outils des sorts : tools/list", () => {
 		]);
 	});
 
+	test("publie les bornes de l'image, chiffres groupés par une espace, dans modifier_sort et son champ image", () => {
+		const [update] = publishedTools(["modifier_sort"]);
+		const rule =
+			"un PNG, un JPEG ou un WebP d'au moins 1 200 × 900 px et d'au plus 3 000 000 octets";
+		expect(update?.description).toBe(
+			`Modifie le poids de tirage, la description ou l'image d'un sort, et rien d'autre : au moins l'un des trois est requis. L'image se donne en base64 : ${rule} ; null la retire. Rend le sort après la modification ; le journal d'audit garde l'avant et l'après, l'image en taille et empreinte.`,
+		);
+		expect(update?.inputSchema.properties?.image).toMatchObject({
+			description: `L'image de la carte, ses octets en base64 : ${rule} ; null la retire.`,
+		});
+	});
+
 	test("publie qu'au moins un champ, outre le numéro, est requis par modifier_sort", () => {
 		const [update] = publishedTools(["modifier_sort"]);
 		expect(update?.inputSchema).toMatchObject({
@@ -638,7 +650,7 @@ describe("modifier_sort", () => {
 			"un PNG de 3 000 001 octets",
 			png(1200, 900, 3_000_001),
 			{},
-			"l'image doit faire au plus 3 000 000 octets",
+			"l'image doit faire au plus 3 000 000 octets, soit 4 000 000 caractères en base64",
 		],
 		["un texte qui n'est pas du base64", "pas du base64 !", {}, "base64"],
 		[
