@@ -363,7 +363,7 @@ describe("l'audit ne garde jamais des octets reçus, seulement leur taille et le
 	);
 
 	test.each(TEXT_SLOTS)(
-		"%s : un texte de 65 537 caractères est remplacé en entier par sa longueur et son empreinte SHA-256",
+		"%s : un texte de 65 537 caractères est remplacé en entier par la taille de ses octets et leur empreinte SHA-256",
 		async (_, __, call, stored, replaced) => {
 			const text = shortWords(65_537);
 			expect(stored(await auditedRow(...call(text)))).toEqual(
