@@ -105,6 +105,9 @@ describe("aucun paramètre de requête libre", () => {
 		expect(tools.map(({ name }) => name)).toEqual([
 			"lire_reglages",
 			"modifier_reglages",
+			"lister_sorts",
+			"ajouter_sort",
+			"modifier_sort",
 		]);
 		expect(
 			tools.flatMap(({ name, inputSchema }) =>

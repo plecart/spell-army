@@ -69,6 +69,9 @@ describe("route /api/mcp", () => {
 		expect(tools.map(({ name }) => name)).toEqual([
 			"lire_reglages",
 			"modifier_reglages",
+			"lister_sorts",
+			"ajouter_sort",
+			"modifier_sort",
 		]);
 	});
 });

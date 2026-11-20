@@ -46,7 +46,11 @@ export function effectCategory({ damage, heal }: Effect): EffectCategory {
  *
  * @throws {RangeError} si l'effet ne fait ni dégâts ni soin.
  */
-export function spellKey({ recipe, form, effect }: Spell): string {
+export function spellKey({
+	recipe,
+	form,
+	effect,
+}: Pick<Spell, "recipe" | "form" | "effect">): string {
 	return [
 		recipeKey(recipe),
 		formKey(form),
@@ -85,7 +89,7 @@ function formKey(form: Form): string {
  * - Poids : un nombre fini ≥ 0 ; 0, jamais tiré, est accepté.
  * - Nom et description : non vides une fois les blancs retirés.
  */
-export function validateSpell(candidate: Spell): string[] {
+export function validateSpell(candidate: Omit<Spell, "number">): string[] {
 	return [
 		...recipeErrors(candidate.recipe),
 		...formErrors(candidate.form),
@@ -208,7 +212,7 @@ function weightErrors(weight: number): string[] {
 		: [`le poids doit être un nombre fini ≥ 0, reçu : ${weight}`];
 }
 
-function textErrors(candidate: Spell): string[] {
+function textErrors(candidate: Omit<Spell, "number">): string[] {
 	return TEXT_FIELDS.filter(([field]) => candidate[field].trim() === "").map(
 		([, label]) => `${label} ne doit pas être vide`,
 	);

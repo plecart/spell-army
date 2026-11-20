@@ -9,7 +9,7 @@ import type { Executor } from "donnees";
 import { z } from "zod";
 import { writeAuditEntry } from "./audit.ts";
 
-/** Ce que rend un outil : sa sortie et, pour une modification, l'état avant et après. */
+/** Ce que rend un outil : sa sortie et, pour un changement, l'état avant et après. */
 export interface ToolOutcome {
 	output: unknown;
 	before?: unknown;
@@ -32,6 +32,11 @@ export interface McpTool<Input extends z.ZodObject = z.ZodObject> {
 	/** Schéma de sortie strict, `z.strictObject(…)` : la sortie y passe avant d'être rendue. */
 	output: z.ZodObject;
 	run(executor: Executor, input: z.output<Input>): Promise<ToolOutcome>;
+	/**
+	 * L'entrée telle que l'audit la garde, quand elle ne doit pas l'être brute : appliquée à l'entrée
+	 * brute avant chaque ligne d'audit de l'outil, entrée refusée comprise. Elle ne doit pas lever.
+	 */
+	auditInput?(input: Record<string, unknown>): unknown;
 }
 
 /** Message d'un appel refusé sans message propre : une ligne d'audit en erreur en porte toujours un. */
@@ -72,8 +77,9 @@ export function listTools(tools: readonly McpTool[]): Tool[] {
  *   s'annule, la ligne en erreur s'écrit hors d'elle et le résultat est `isError`, sans
  *   `structuredContent`.
  *
- * L'entrée auditée est l'entrée brute, `{}` quand `args` manque. Si la ligne en erreur ne peut pas
- * s'écrire, une erreur de protocole `InternalError` au message court remonte : rien n'a été validé.
+ * L'entrée auditée est l'entrée brute, `{}` quand `args` manque, passée par l'`auditInput` de l'outil
+ * quand il en a un. Si la ligne en erreur ne peut pas s'écrire, une erreur de protocole
+ * `InternalError` au message court remonte : rien n'a été validé.
  *
  * Limite : une requête que le SDK refuse comme malformée n'atteint pas cette fonction, et n'a donc
  * ni exécution ni ligne d'audit. Ainsi d'`arguments` qui n'est pas un objet : le SDK 2.4.0 répond
@@ -92,14 +98,15 @@ export async function callTool(
 		await auditError(executor, name, input, message);
 		throw new ProtocolError(ProtocolErrorCode.InvalidParams, message);
 	}
+	const audited = tool.auditInput ? tool.auditInput(input) : input;
 	const parsed = tool.input.safeParse(input);
 	if (!parsed.success) {
-		return refuse(executor, name, input, errorMessage(parsed.error));
+		return refuse(executor, name, audited, errorMessage(parsed.error));
 	}
 	try {
 		const validated = await executor.transaction(async (tx) => {
 			const { output, before, after } = await tool.run(tx, parsed.data);
-			await writeAuditEntry(tx, { tool: name, input, before, after });
+			await writeAuditEntry(tx, { tool: name, input: audited, before, after });
 			return tool.output.parse(output);
 		});
 		return {
@@ -107,7 +114,7 @@ export async function callTool(
 			structuredContent: validated,
 		};
 	} catch (error) {
-		return refuse(executor, name, input, errorMessage(error));
+		return refuse(executor, name, audited, errorMessage(error));
 	}
 }
 

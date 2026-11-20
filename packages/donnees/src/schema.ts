@@ -119,9 +119,9 @@ export const spells = pgTable(
 );
 
 /**
- * Journal d'audit des appels d'outils du serveur MCP : l'outil, l'entrée brute reçue, l'issue, et
- * pour une modification les réglages avant et après. Un appel réussi n'a pas de message d'erreur,
- * un appel échoué en a un.
+ * Journal d'audit des appels d'outils du serveur MCP : l'outil, l'entrée reçue (les octets d'une
+ * image remplacés par leur taille et leur empreinte), l'issue, et pour un changement l'état avant
+ * et après. Un appel réussi n'a pas de message d'erreur, un appel échoué en a un.
  */
 export const auditLog = pgTable(
 	"audit_log",

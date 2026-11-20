@@ -1,10 +1,8 @@
-import type { CallToolResult, Client } from "@modelcontextprotocol/client";
-import { freshDatabase } from "donnees/test/base-neuve";
+import type { Client } from "@modelcontextprotocol/client";
 import { describe, expect, test } from "vitest";
 import { registry } from "../app/mcp/registry.ts";
-import { createMcpEndpoint } from "../app/mcp/server.ts";
 import { listTools } from "../app/mcp/tool.ts";
-import { auditRows, connectClient, rewritingBodies, TOKEN } from "./montage.ts";
+import { auditRows, connectToRegistry, INFINITE, outputOf } from "./montage.ts";
 
 // Posés par la migration `0002_reglages_de_depart` (game design § 6, issue #11).
 const STARTING_SETTINGS = {
@@ -18,47 +16,15 @@ const STARTING_SETTINGS = {
 	budget_jour_2: 10,
 };
 
+/** Ce que publie `tools/list` des deux outils des réglages, parmi ceux du registre. */
+function settingsTools() {
+	return listTools(registry).filter(({ name }) =>
+		["lire_reglages", "modifier_reglages"].includes(name),
+	);
+}
+
 // La plus grande valeur d'une colonne `integer` de Postgres.
 const POSTGRES_INTEGER_MAX = 2_147_483_647;
-
-// `JSON.stringify` écrit un nombre infini `null` : le corps brut porte `1e999` à la place de cette
-// chaîne, que `JSON.parse` lit `Infinity`.
-const INFINITE = "__infini__";
-
-/**
- * Le client officiel, branché sur le point d'entrée du registre réel et une base migrée neuve. Il
- * liste les outils d'abord : il valide alors le `structuredContent` de chaque appel contre le
- * `outputSchema` publié.
- */
-async function connectToRegistry() {
-	const db = await freshDatabase();
-	const endpoint = createMcpEndpoint({
-		token: () => TOKEN,
-		database: () => db,
-		tools: registry,
-	});
-	const client = await connectClient(
-		rewritingBodies(endpoint, (body) =>
-			body.replaceAll(`"${INFINITE}"`, "1e999"),
-		),
-	);
-	await client.listTools();
-	return { db, client };
-}
-
-/** La sortie d'un appel réussi : son `structuredContent`, que son texte JSON répète. */
-function outputOf({
-	content,
-	structuredContent,
-	isError,
-}: CallToolResult): unknown {
-	const [block] = content;
-	if (isError || block?.type !== "text") {
-		throw new Error(`Appel en échec : ${JSON.stringify(content)}`);
-	}
-	expect(structuredContent).toEqual(JSON.parse(block.text));
-	return structuredContent;
-}
 
 async function readSettings(client: Client) {
 	return outputOf(await client.callTool({ name: "lire_reglages" }));
@@ -66,7 +32,7 @@ async function readSettings(client: Client) {
 
 describe("outils des réglages du calibrage", () => {
 	test("tools/list publie chaque outil et chaque réglage sous son nom français, avec une description", () => {
-		const described = listTools(registry).flatMap(
+		const described = settingsTools().flatMap(
 			({ name, description, inputSchema }) => [
 				[name, description],
 				...Object.entries(inputSchema.properties ?? {}).map(
@@ -89,7 +55,7 @@ describe("outils des réglages du calibrage", () => {
 	});
 
 	test("tools/list publie qu'au moins un réglage est requis par modifier_reglages", () => {
-		const update = listTools(registry).find(
+		const update = settingsTools().find(
 			({ name }) => name === "modifier_reglages",
 		);
 		expect(update?.inputSchema).toMatchObject({ minProperties: 1 });
@@ -102,7 +68,7 @@ describe("outils des réglages du calibrage", () => {
 			additionalProperties: false,
 		});
 		expect(
-			listTools(registry).map(({ name, title, annotations, outputSchema }) => ({
+			settingsTools().map(({ name, title, annotations, outputSchema }) => ({
 				name,
 				title,
 				annotations,
