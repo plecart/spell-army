@@ -229,6 +229,45 @@ describe("l'audit ne garde jamais des octets reçus, seulement leur taille et le
 		expectCited(await auditedWithoutBytes(tool, args, bytes), columns, bytes);
 	});
 
+	// Les deux seuls chemins dont la clé est `image` : une image de 57 octets coupée en deux chaînes
+	// base64 courtes, rangées dans un tableau, garde la marque du champ : chaque morceau est remplacé
+	// par sa propre taille et sa propre empreinte.
+	test.each([
+		["le champ image de modifier_sort", "modifier_sort", { numero: 1 }],
+		["un champ image donné à ajouter_sort", "ajouter_sort", {}],
+	])(
+		"une image de 57 octets en deux morceaux base64 sous %s : chaque morceau est remplacé par son empreinte",
+		async (_, tool, args) => {
+			const half = SMALL_IMAGE.length >> 1;
+			const chunks = [
+				SMALL_IMAGE.subarray(0, half),
+				SMALL_IMAGE.subarray(half),
+			];
+			const row = await auditedWithoutBytes(
+				tool,
+				{ ...args, image: chunks.map(base64) },
+				SMALL_IMAGE,
+			);
+			for (const chunk of chunks) {
+				expect(JSON.stringify(row)).not.toContain(base64(chunk));
+				expect(nested(row.input)).toContainEqual(fingerprint(chunk));
+			}
+		},
+	);
+
+	// `JSON.stringify` écrit un `Date` en texte ISO ; l'objet lui-même n'a aucune clé et serait `{}`.
+	test("un après qui contient une date est audité en texte ISO", async () => {
+		const db = await freshDatabase();
+		await callTool(TOOLS, db, "renvoyer", {
+			valeur: new Date("2026-11-20T00:00:00.000Z"),
+		});
+		expect(await auditRows(db)).toEqual([
+			expect.objectContaining({
+				after: { valeur: "2026-11-20T00:00:00.000Z" },
+			}),
+		]);
+	});
+
 	test("3 999 octets écrits en nombres, sans blanc, dans le nom d'un outil inconnu : l'empreinte de ce texte", async () => {
 		const text = Array.from(LONG_BYTES).join(",");
 		expectCited(
