@@ -144,7 +144,7 @@ function storableJson(value: unknown, depth = 0, imageField = false): unknown {
 		return TRUNCATED;
 	}
 	if (Array.isArray(value)) {
-		return value.map((item) => storableJson(item, depth + 1));
+		return value.map((item) => storableJson(item, depth + 1, imageField));
 	}
 	return Object.fromEntries(
 		Object.entries(value).map(([key, item]) => [
@@ -153,6 +153,10 @@ function storableJson(value: unknown, depth = 0, imageField = false): unknown {
 		]),
 	);
 }
+
+/** `value` tel que `JSON.stringify` l'écrit — un `Date` en texte ISO, non en `{}` ; `undefined` reste. */
+const asJson = (value: unknown): unknown =>
+	value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 
 /**
  * Écrit la ligne d'audit d'un appel d'outil, sur le client ou dans une transaction.
@@ -168,7 +172,8 @@ function storableJson(value: unknown, depth = 0, imageField = false): unknown {
  *   message de Zod (4.6.7, `v4/locales/en.js` et `prettifyError`, lus le 2026-11-20) ; un nombre,
  *   ou un nom d'un vocabulaire fermé, que cite `validateSpell` ; tout message d'outil ou de
  *   Postgres ;
- * - `before`, `after` : ce que rend l'outil, où une image est déjà `{ type, taille, sha256 }`.
+ * - `before`, `after` : ce que rend l'outil, où une image est déjà `{ type, taille, sha256 }`,
+ *   passé par `JSON.stringify` avant d'être traité, pour qu'un `Date` s'écrive en texte ISO.
  *
  * `test/audit-sans-octets.test.ts` éprouve chaque voie : une valeur sous chaque forme d'octets, un
  * texte en base64.
@@ -182,7 +187,7 @@ export async function writeAuditEntry(
 		input: storableJson(input),
 		succeeded: error === undefined,
 		error: error === undefined ? undefined : storableText(error),
-		before: storableJson(before),
-		after: storableJson(after),
+		before: storableJson(asJson(before)),
+		after: storableJson(asJson(after)),
 	});
 }
