@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { readImageInfo } from "../app/mcp/image.ts";
-import { gif, IMAGE_FORMATS } from "./images.ts";
+import { gif, IMAGE_FORMATS, pngWithFirstChunk } from "./images.ts";
 
 // 1 200 × 900, la plus petite image d'un sort ; 16 383 × 1, la plus grande largeur d'un WebP avec
 // perte (14 bits) et la plus petite hauteur.
@@ -59,10 +59,17 @@ describe("lecture d'une image", () => {
 		).toBeUndefined();
 	});
 
+	// Un PNG dont IHDR n'est pas le premier morceau, ou n'a pas ses 13 octets, dit aux octets 16 et
+	// 20 des dimensions arbitraires : ici 1 200 × 900, la plus petite image d'un sort.
 	test.each([
 		["un GIF", gif(1200, 900)],
 		["du texte", TEXT],
 		["un fichier vide", new Uint8Array()],
+		[
+			"un PNG dont le premier morceau n'est pas IHDR",
+			pngWithFirstChunk("tEXt", 1200, 900),
+		],
+		["un PNG dont IHDR n'a que 8 octets", pngWithFirstChunk("IHDR", 1200, 900)],
 	])("%s : refusé", (_, bytes) => {
 		expect(readImageInfo(bytes)).toBeUndefined();
 	});

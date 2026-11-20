@@ -29,16 +29,30 @@ function pngChunk(type: string, data: Bytes): Uint8Array {
 	return concat(u32be(data.length), typeAndData, u32be(crc32(typeAndData)));
 }
 
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
 /** Les octets d'un PNG sans données d'image : signature, IHDR, IDAT vide et IEND. */
 const PNG_MINIMUM_SIZE = 57;
 
 /** Un PNG de `size` octets, complété par les données de son morceau IDAT. */
 export function png(width: number, height: number, size = PNG_MINIMUM_SIZE) {
 	return concat(
-		[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+		PNG_SIGNATURE,
 		// Profondeur 8, couleurs RVB, compression, filtre et entrelacement par défaut.
 		pngChunk("IHDR", [...u32be(width), ...u32be(height), 8, 2, 0, 0, 0]),
 		pngChunk("IDAT", new Uint8Array(size - PNG_MINIMUM_SIZE)),
+		pngChunk("IEND", []),
+	);
+}
+
+/**
+ * Un PNG mal formé dont le premier morceau, de type `type`, porte seulement `width` et `height`,
+ * sur 4 octets chacun : aux octets 16 et 20, où IHDR les donne, mais dans un morceau de 8 octets.
+ */
+export function pngWithFirstChunk(type: string, width: number, height: number) {
+	return concat(
+		PNG_SIGNATURE,
+		pngChunk(type, [...u32be(width), ...u32be(height)]),
 		pngChunk("IEND", []),
 	);
 }

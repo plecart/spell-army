@@ -56,15 +56,21 @@ function includesFrom(
 }
 
 // PNG (ISO/IEC 15948) : une signature de 8 octets, puis des morceaux, chacun sa longueur sur 4
-// octets gros-boutistes, son type, ses données et un CRC sur 4 octets. Le premier, IHDR, donne
-// largeur et hauteur sur 4 octets aux octets 16 et 20 ; le dernier, IEND, est vide et son CRC
-// constant.
+// octets gros-boutistes, son type, ses données et un CRC sur 4 octets. Le premier, IHDR, de 13
+// octets de données, donne largeur et hauteur sur 4 octets aux octets 16 et 20 ; le dernier,
+// IEND, est vide et son CRC constant.
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+const PNG_IHDR = [0, 0, 0, 13, ...ascii("IHDR")];
 const PNG_IEND = [0, 0, 0, 0, ...ascii("IEND"), 0xae, 0x42, 0x60, 0x82];
 const PNG_CHUNK_OVERHEAD = 12;
 
 function readPng(view: DataView): Size | undefined {
-	if (!matches(view, 0, PNG_SIGNATURE)) return undefined;
+	if (
+		!matches(view, 0, PNG_SIGNATURE) ||
+		!matches(view, PNG_SIGNATURE.length, PNG_IHDR)
+	) {
+		return undefined;
+	}
 	for (let offset = PNG_SIGNATURE.length; !matches(view, offset, PNG_IEND); ) {
 		offset += PNG_CHUNK_OVERHEAD + view.getUint32(offset);
 	}
