@@ -1,6 +1,6 @@
 # Wizard Army — Direction artistique
 
-État au 2026-11-16. Ce document détaille la section « Modèles 3D » du [cadrage](etudes/00-cadrage.md)
+État au 2026-11-20. Ce document détaille la section « Modèles 3D » du [cadrage](etudes/00-cadrage.md)
 et l'organisation du site. Le cadrage fait foi en cas de désaccord (rang 1 des sources de vérité).
 Il a été arrêté avec le mainteneur sur des prototypes jetables, hors dépôt ; les captures du § 10 en
 gardent la trace.
@@ -87,10 +87,10 @@ Chaque sort est une **carte à jouer**, au format 63 × 88.
 |---|---|---|
 | Fond | Un **décor par classe**, derrière le personnage, dans la vignette comme dans la fiche. Les fonds « halo » et « rayons » sont écartés. | Décidé |
 | Sol | Un **socle rond** de figurine : base sombre, dessus à la couleur de la classe. La tuile hexagonale et la simple ombre sont écartées. | Décidé |
-| Valeurs par défaut | Chaque classe a, à un seul endroit, son **modèle 3D**, son **décor** et son **socle** par défaut. Un personnage qui rejoint l'armée reçoit ces trois valeurs. | Décidé |
+| Valeurs par défaut | Chaque classe a son **modèle 3D**, son **décor** et son **socle** par défaut. Le modèle par défaut vit en base et se règle par le MCP ; un personnage qui rejoint l'armée le reçoit. Au MVP, le décor et le socle de chaque classe sont fixés dans le code. | Décidé |
 | Changement individuel | Plus tard, chacune des trois valeurs pourra être changée personnage par personnage, par le MCP. Aucun choix n'est fait par le joueur. | Décidé |
 | Changement d'un défaut | Quand le défaut d'une classe change, les personnages dont la valeur **était égale à l'ancien défaut** reçoivent le nouveau ; les autres ne bougent pas. Conséquence : un personnage à qui l'on aurait donné à la main exactement le défaut suit lui aussi. | Décidé |
-| Réglage | Décor et socle se règlent par le MCP, comme le modèle. | Décidé |
+| Réglage | Le modèle se dépose et se règle par le MCP. Décor et socle ne se règlent pas au MVP ; leur réglage par le MCP pourra venir plus tard. | Décidé |
 
 **Règles de dessin du décor** (Décidé) :
 
@@ -146,9 +146,9 @@ au site et à la vidéo.
 | Ancre `dos` | Pour une cape ou des ailes. | Proposé |
 | Pièces | Chaque pièce est un maillage rigide, enfant de son ancre. Pas de squelette exigé. | Décidé |
 | Repère | Axe Y vers le haut, personnage tourné vers +Z (convention glTF) ; origine au centre du sol, sous les pieds ; un personnage mesure environ 2 unités de haut. | Proposé |
-| Matériaux | Un matériau par partie, nommé : `corps`, `secondaire`, `peau`, `poils`, `coiffe`, `accessoire`, `fixe`. Couleurs unies, sans texture peinte ; le vernis passe par la rugosité et le vernis glTF (`KHR_materials_clearcoat`). Les noms permettront de recolorer une partie lors d'un changement individuel. | Proposé |
+| Matériaux | Un matériau par partie, nommé : `corps`, `secondaire`, `peau`, `poils`, `coiffe`, `accessoire`, `fixe`. Couleurs unies, sans texture peinte ; le vernis passe par la rugosité et le vernis glTF (`KHR_materials_clearcoat`). Les noms permettront de recolorer une partie lors d'un changement individuel. | Décidé |
 | Contour | Ajouté à l'affichage, pas dans le fichier. | Proposé |
-| Budget | 30 000 triangles au plus par personnage. | Proposé |
+| Budget | 30 000 triangles au plus par personnage. | Décidé |
 | Fabrication | **Blender**, installé sur le poste le 2026-11-16 (version 5.3). | Décidé |
 | Pilotage de Blender | Le serveur MCP officiel de Blender reste candidat. L'essai s'en est passé : Blender piloté par un script Python, sans fenêtre. | Ouvert |
 
