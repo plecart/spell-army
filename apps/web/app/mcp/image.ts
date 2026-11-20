@@ -2,6 +2,12 @@
  * Le type et les dimensions d'une image, lus dans ses octets sans la décoder ni dépendance native :
  * PNG, JPEG ou WebP. Rien n'est validé au-delà : un fichier mal formé ailleurs passe, un fichier
  * tronqué non (chaque format y dit où il finit).
+ *
+ * Les dispositions d'octets ci-dessous suivent les documents qu'elles nomment, non relus : la
+ * mesure les établit. Mesuré le 2026-11-20 sur les fichiers qu'encode sharp 0.35.5 (libpng 1.6.58,
+ * mozjpeg, libwebp 1.6.0) — PNG, JPEG de base et progressif, WebP avec perte (`VP8 `), sans perte
+ * (`VP8L`), avec perte et transparence (`VP8X`), en 1 200 × 900, 1 199 × 900 et 3 001 × 2 001 :
+ * type et dimensions exacts, et chacun refusé privé de son dernier octet.
  */
 
 /** Les types d'image qu'admet la réserve de sorts. */
@@ -49,10 +55,10 @@ function includesFrom(
 	return false;
 }
 
-// PNG (W3C, ISO/IEC 15948), « PNG signature », puis « Chunk layout » : chaque morceau porte sa
-// longueur sur 4 octets gros-boutistes, son type, ses données et un CRC sur 4 octets. Le premier,
-// « IHDR Image header », donne largeur et hauteur sur 4 octets aux octets 16 et 20 ; le dernier,
-// « IEND Image trailer », est vide et son CRC constant.
+// PNG (ISO/IEC 15948) : une signature de 8 octets, puis des morceaux, chacun sa longueur sur 4
+// octets gros-boutistes, son type, ses données et un CRC sur 4 octets. Le premier, IHDR, donne
+// largeur et hauteur sur 4 octets aux octets 16 et 20 ; le dernier, IEND, est vide et son CRC
+// constant.
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const PNG_IEND = [0, 0, 0, 0, ...ascii("IEND"), 0xae, 0x42, 0x60, 0x82];
 const PNG_CHUNK_OVERHEAD = 12;
@@ -65,11 +71,11 @@ function readPng(view: DataView): Size | undefined {
 	return { width: view.getUint32(16), height: view.getUint32(20) };
 }
 
-// JPEG (ITU-T T.81, annexe B) : SOI, puis des segments, chacun un marqueur FF xx, que précèdent
-// d'éventuels octets de remplissage FF, et une longueur sur 2 octets gros-boutistes qui se compte
-// elle-même. L'en-tête de trame (« Frame header syntax », marqueurs SOFn de la table B.1 : C0 à CF
-// sauf DHT C4, JPG C8 et DAC CC) porte la précision sur 1 octet, puis la hauteur et la largeur sur
-// 2. Les données de l'image le suivent ; le fichier finit à EOI.
+// JPEG (ITU-T T.81) : SOI, puis des segments, chacun un marqueur FF xx, que précèdent d'éventuels
+// octets de remplissage FF, et une longueur sur 2 octets gros-boutistes qui se compte elle-même.
+// L'en-tête de trame (marqueurs SOFn : C0 à CF sauf DHT C4, JPG C8 et DAC CC) porte la précision
+// sur 1 octet, puis la hauteur et la largeur sur 2. Les données de l'image le suivent ; le fichier
+// finit à EOI.
 const JPEG_SOI = [0xff, 0xd8];
 const JPEG_EOI = [0xff, 0xd9];
 const JPEG_FILL = 0xff;
@@ -99,9 +105,9 @@ function readJpeg(view: DataView): Size | undefined {
 	}
 }
 
-// WebP (RFC 9649), « RIFF Header » : « RIFF », la taille du fichier comptée à partir de l'octet 8
-// sur 4 octets petit-boutistes, « WEBP » ; puis le premier morceau, son code sur 4 octets, sa
-// taille sur 4, et ses données à l'octet 20, lues selon le code.
+// WebP (RFC 9649) : « RIFF », la taille du fichier comptée à partir de l'octet 8 sur 4 octets
+// petit-boutistes, « WEBP » ; puis le premier morceau, son code sur 4 octets, sa taille sur 4, et
+// ses données à l'octet 20, lues selon le code.
 const RIFF = ascii("RIFF");
 const WEBP = ascii("WEBP");
 const RIFF_HEADER = 8;
@@ -119,9 +125,8 @@ function uint24(view: DataView, offset: number): number {
 	return view.getUint16(offset, true) | (view.getUint8(offset + 2) << 16);
 }
 
-// « Simple File Format (Lossy) », données VP8 (RFC 6386 § 9.1, « Uncompressed Data Chunk ») : 3
-// octets d'étiquette de trame et 3 de code de départ, puis largeur et hauteur sur 2 octets
-// petit-boutistes, dont les 2 bits du haut sont l'échelle.
+// WebP avec perte, données VP8 (RFC 6386) : 3 octets d'étiquette de trame et 3 de code de départ,
+// puis largeur et hauteur sur 2 octets petit-boutistes, dont les 2 bits du haut sont l'échelle.
 function readVp8(view: DataView): Size {
 	return {
 		width: view.getUint16(WEBP_PAYLOAD + 6, true) & FOURTEEN_BITS,
@@ -129,7 +134,7 @@ function readVp8(view: DataView): Size {
 	};
 }
 
-// « Simple File Format (Lossless) » : la signature 2F, puis largeur − 1 et hauteur − 1 sur 14 bits
+// WebP sans perte : la signature 2F, puis largeur − 1 et hauteur − 1 sur 14 bits
 // chacune, petit-boutistes.
 function readVp8l(view: DataView): Size {
 	const bits = view.getUint32(WEBP_PAYLOAD + 1, true);
@@ -139,7 +144,7 @@ function readVp8l(view: DataView): Size {
 	};
 }
 
-// « Extended File Format » : 4 octets de drapeaux et réservés, puis largeur − 1 et hauteur − 1 du
+// WebP étendu : 4 octets de drapeaux et réservés, puis largeur − 1 et hauteur − 1 du
 // canevas sur 3 octets petit-boutistes.
 function readVp8x(view: DataView): Size {
 	return {

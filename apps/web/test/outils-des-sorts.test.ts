@@ -27,8 +27,8 @@ import { gif, IMAGE_FORMATS, png } from "./images.ts";
 import { auditRows, connectToRegistry, INFINITE, outputOf } from "./montage.ts";
 
 // Le vocabulaire des outils, en littéraux : l'oracle de la traduction du modèle de `combat`, tenu à
-// part des tables de `spell-tools.ts`. Les noms viennent du game design (§ 1, « Classe » ; § 2,
-// « Formes », « Effets ») et de l'issue #12 (« Décisions », « Modèle d'un sort »).
+// part des tables de `spell-vocabulary.ts`. Les noms viennent du game design (§ 1, « Classe » ;
+// § 2, « Formes », « Effets ») et de l'issue #12 (« Décisions », « Modèle d'un sort »).
 const STAT: Record<string, string> = {
 	life: "vie",
 	strength: "force",

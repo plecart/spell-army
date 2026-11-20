@@ -20,8 +20,8 @@ import {
 import type { McpTool } from "./tool.ts";
 
 // Les bornes d'une image (issue #12, « Image »), en nombres puis en mots. En base64, 3 octets
-// s'écrivent en 4 caractères (RFC 4648 § 4) : borner le texte à 4 000 000 caractères, c'est borner
-// l'image à 3 000 000 octets.
+// s'écrivent en 4 caractères : borner le texte à 4 000 000 caractères, c'est borner l'image à
+// 3 000 000 octets (`test/outils-des-sorts.test.ts` en éprouve les deux côtés).
 const MIN_WIDTH = 1200;
 const MIN_HEIGHT = 900;
 const MAX_IMAGE_BYTES = 3_000_000;
