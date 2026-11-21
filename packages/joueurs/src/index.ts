@@ -1,25 +1,10 @@
-export {
-	type ClassDefaultModelChange,
-	changeClassDefaultModel,
-} from "./default-model.ts";
-export {
-	type FollowerEntry,
-	type ScreenedPage,
-	screenEntries,
-} from "./entries.ts";
-export {
-	createHikerApiProvider,
-	type HikerApiOptions,
-} from "./hikerapi.ts";
+export { changeClassDefaultModel } from "./default-model.ts";
+export { type FollowerEntry, screenEntries } from "./entries.ts";
+export { createHikerApiProvider } from "./hikerapi.ts";
 export { listPasses, type PassLogEntry } from "./journal.ts";
-export {
-	acquireImportLock,
-	IMPORT_LEASE_MS,
-	releaseImportLock,
-} from "./lock.ts";
+export { acquireImportLock, releaseImportLock } from "./lock.ts";
 export {
 	closeStalePasses,
-	type ImportPass,
 	type PassContext,
 	resumeFullPass,
 	runQuickPass,
@@ -30,7 +15,7 @@ export {
 	type FollowerProvider,
 	ProviderError,
 } from "./provider.ts";
-export { type WrittenPage, writePage } from "./registration.ts";
+export { writePage } from "./registration.ts";
 export {
 	type ImportOptions,
 	relaunchPass,

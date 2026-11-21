@@ -6,7 +6,7 @@ import { eq, lte } from "drizzle-orm";
  * La durée du bail du verrou de l'import : 300 s, la durée maximale d'une fonction Vercel sur
  * Hobby (ADR 0002, « Verrou à bail »). Un tic tué ne bloque donc jamais les suivants.
  */
-export const IMPORT_LEASE_MS = 300_000;
+const IMPORT_LEASE_MS = 300_000;
 
 /**
  * Prend le verrou de l'import (ADR 0002, « Verrou à bail ») pour un bail de `IMPORT_LEASE_MS` à
