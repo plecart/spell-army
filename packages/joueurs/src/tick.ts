@@ -83,7 +83,7 @@ const SELF_CHECK_INTERVAL_MS = DAY_MS;
  * @throws toute erreur de la base, telle quelle, le verrou rendu ; si son rendu échoue aussi,
  * l'erreur d'origine remonte, et le bail expire seul.
  */
-export async function runTic(
+export async function runTick(
 	options: ImportOptions,
 ): Promise<TickReport | null> {
 	return underImportLock(options, async (context) => {

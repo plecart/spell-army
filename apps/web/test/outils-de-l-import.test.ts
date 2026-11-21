@@ -1,7 +1,7 @@
 import { setTimeout as sleep } from "node:timers/promises";
 import type { Client } from "@modelcontextprotocol/client";
 import { type Executor, importPasses } from "donnees";
-import { acquireImportLock, listPasses, runTic, writePage } from "joueurs";
+import { acquireImportLock, listPasses, runTick, writePage } from "joueurs";
 import { FakeFollowerProvider, followers } from "joueurs/test/faux-fournisseur";
 import { describe, expect, test } from "vitest";
 import {
@@ -369,7 +369,7 @@ describe("relancer_passe", () => {
 		const call = relaunch(client, "rapide");
 		await reading.promise;
 		try {
-			const tick = runTic({
+			const tick = runTick({
 				db,
 				provider: new FakeFollowerProvider(followers(3)),
 			});
