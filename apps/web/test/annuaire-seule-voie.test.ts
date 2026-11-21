@@ -116,8 +116,8 @@ const FORMS: [
 
 // Les autres voies — `drizzle-orm`, `pg`, un module calculé, le client donné ailleurs qu'en premier
 // argument de la lecture — et ce qui reste permis : une constante de `donnees`, un homonyme local
-// d'une table, le client donné à la lecture, même sous d'autres noms. `apps/web` ne dépend ni de `drizzle-orm` ni de `pg` : leurs
-// imports ne s'y résolvent pas.
+// d'une table, le client donné à la lecture, même sous d'autres noms. `apps/web` ne dépend ni de
+// `drizzle-orm` ni de `pg` : leurs imports ne s'y résolvent pas.
 const OTHER_CASES: [string, string, string[]][] = [
 	[
 		"une requête de drizzle-orm",
