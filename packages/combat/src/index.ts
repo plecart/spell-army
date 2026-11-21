@@ -13,7 +13,7 @@ export {
 export {
 	measureSpell,
 	type SpellMeasure,
-	type SpellTrial,
+	type SpellMeasureInput,
 } from "./measure.ts";
 export {
 	type Monster,
@@ -30,12 +30,8 @@ export {
 	spellKey,
 	validateSpell,
 } from "./rules.ts";
-export {
-	type Sample,
-	scaleFactor,
-	type Trial,
-	victoryShare,
-} from "./scale.ts";
+export { type Sample, scaleFactor } from "./scale.ts";
+export { type Trial, victoryShare } from "./simulation.ts";
 export { STARTING_POOL } from "./starting-pool.ts";
 export type {
 	CharacterClass,
