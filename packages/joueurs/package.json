@@ -10,6 +10,8 @@
 		"typecheck": "tsc"
 	},
 	"dependencies": {
-		"donnees": "workspace:*"
+		"donnees": "workspace:*",
+		"drizzle-orm": "^0.45.4",
+		"personnages": "workspace:*"
 	}
 }
