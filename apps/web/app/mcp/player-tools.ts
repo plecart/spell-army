@@ -1,5 +1,10 @@
 import { INSTAGRAM_ID_PATTERN, INSTAGRAM_USERNAME_PATTERN } from "donnees";
-import { type FoundPlayer, MAX_FOUND_PLAYERS, searchPlayers } from "joueurs";
+import {
+	type FoundPlayer,
+	giveSpell,
+	MAX_FOUND_PLAYERS,
+	searchPlayers,
+} from "joueurs";
 import { z } from "zod";
 import type { McpTool } from "./tool.ts";
 import { CLASSES } from "./vocabulary.ts";
@@ -13,6 +18,16 @@ const search = z.strictObject({
 	pseudo: username.describe(
 		"Une partie du pseudo, prise littéralement, sans tenir compte des majuscules : 1 à 30 lettres ASCII, chiffres, « . » ou « _ ».",
 	),
+});
+
+const gift = z.strictObject({
+	identifiant: instagramId.describe(
+		"L'identifiant du joueur, tel que chercher_joueur le rend.",
+	),
+	sort: z
+		.int32()
+		.min(1)
+		.describe("Le numéro du sort à donner, tel que lister_sorts le rend."),
 });
 
 const toolPlayer = z.strictObject({
@@ -52,5 +67,30 @@ export const searchPlayerTool: McpTool<typeof search> = {
 		return {
 			output: { joueurs: players.map(toToolPlayer), tronque: truncated },
 		};
+	},
+};
+
+/**
+ * `destructiveHint` : le don écrase en place le sort du joueur (définition MCP, ADR 0005,
+ * « Conséquences »). Comme `modifier_reglages`, l'outil ne demande pas de confirmation : l'audit
+ * garde l'ancien numéro. `idempotentHint` : N appels identiques laissent le même état.
+ */
+export const giveSpellTool: McpTool<typeof gift> = {
+	name: "donner_sort",
+	title: "Donner un sort à un joueur",
+	description:
+		"Remplace le sort d'un joueur, désigné par son identifiant, par le sort de ce numéro dans la réserve, poids 0 compris : un sort de poids 0 ne se tire jamais à l'inscription, il ne se donne qu'ainsi. Refuse un identifiant sans joueur, celui d'un joueur retiré compris, puis un numéro sans sort, sans rien changer. Rend l'identifiant et le nouveau numéro ; le journal d'audit garde l'ancien et le nouveau.",
+	annotations: {
+		readOnlyHint: false,
+		destructiveHint: true,
+		idempotentHint: true,
+		openWorldHint: false,
+	},
+	input: gift,
+	output: gift,
+	run: async (executor, { identifiant, sort }) => {
+		const { before, after } = await giveSpell(executor, identifiant, sort);
+		const output = { identifiant, sort: after };
+		return { output, before: { identifiant, sort: before }, after: output };
 	},
 };
