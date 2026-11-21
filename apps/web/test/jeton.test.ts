@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { describe, expect, test, vi } from "vitest";
-import { isAuthorized } from "../app/mcp/token.ts";
+import { isAuthorized } from "../app/token.ts";
 
 // `timingSafeEqual` garde son comportement d'origine ; le test lit ce qu'il reçoit.
 vi.mock(import("node:crypto"), async (importOriginal) => {
@@ -12,7 +12,7 @@ vi.mock(import("node:crypto"), async (importOriginal) => {
 const TOKEN = "t".repeat(32);
 const MULTIBYTE_TOKEN = "é".repeat(16);
 
-describe("jeton du serveur MCP", () => {
+describe("jeton du serveur MCP et secret du tic", () => {
 	test.each<[string, string | null, string | undefined]>([
 		["en-tête absent", null, TOKEN],
 		["en-tête vide", "", TOKEN],

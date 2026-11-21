@@ -86,7 +86,8 @@ export const toolPass = z.strictObject({
 
 /**
  * La passe `entry` sous les noms des outils (`toolPass`), telle que la rendent les outils de
- * l'import. Ses champs se nomment un par un : rien d'autre ne passe, ni curseur ni identifiant.
+ * l'import et la route du tic. Ses champs se nomment un par un : rien d'autre ne passe, ni curseur
+ * ni identifiant.
  */
 export function toToolPass(entry: PassLogEntry): z.output<typeof toolPass> {
 	return {
