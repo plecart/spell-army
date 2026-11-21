@@ -53,7 +53,7 @@ function textOf(result: Awaited<ReturnType<Client["callTool"]>>): unknown {
 }
 
 describe("outils de l'import : tools/list", () => {
-	test("publie lister_passes en lecture seule et relancer_passe, qui ajoute sans rien écraser et joint le fournisseur ; des schémas de sortie stricts, chaque champ d'entrée décrit", () => {
+	test("publie lister_passes en lecture seule et relancer_passe, qui peut réécrire la ligne de sa complète et joint le fournisseur ; des schémas de sortie stricts, chaque champ d'entrée décrit", () => {
 		const strict = expect.objectContaining({
 			type: "object",
 			additionalProperties: false,
@@ -91,7 +91,7 @@ describe("outils de l'import : tools/list", () => {
 				title: "Relancer une passe de l'import",
 				annotations: {
 					readOnlyHint: false,
-					destructiveHint: false,
+					destructiveHint: true,
 					idempotentHint: false,
 					openWorldHint: true,
 				},
