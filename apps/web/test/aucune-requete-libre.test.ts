@@ -113,6 +113,7 @@ describe("aucun paramètre de requête libre", () => {
 			"lister_passes",
 			"relancer_passe",
 			"chercher_joueur",
+			"donner_sort",
 		]);
 		expect(
 			tools.flatMap(({ name, inputSchema }) =>

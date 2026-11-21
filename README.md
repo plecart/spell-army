@@ -35,6 +35,9 @@ Pour les joueurs, `chercher_joueur` rend ceux dont le pseudo contient une partie
 compte des majuscules ; la partie suit l'alphabet des pseudos Instagram et se prend littéralement.
 Il en rend au plus 20, triés par pseudo dans l'ordre des octets, et dit si la liste est tronquée ;
 pour chacun, l'identifiant, le pseudo, la classe, le numéro et le nom du sort, rien d'autre.
+`donner_sort` remplace le sort d'un joueur, désigné par son identifiant, par un sort de la réserve,
+poids 0 compris : un tel sort ne se tire jamais, il ne se donne qu'ainsi. Il refuse un joueur absent
+et un sort inexistant sans rien changer, et le journal d'audit garde l'ancien numéro.
 
 1. **Migrer la base** de `DATABASE_URL` : `pnpm --filter donnees run migrate`. Les migrations posent
    aussi les réglages de départ du calibrage et la réserve de départ des sorts.

@@ -21,6 +21,7 @@ export {
 	MAX_FOUND_PLAYERS,
 	searchPlayers,
 } from "./search.ts";
+export { giveSpell } from "./spell.ts";
 export {
 	type ImportOptions,
 	relaunchPass,

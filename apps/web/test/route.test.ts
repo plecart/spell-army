@@ -77,6 +77,7 @@ describe("route /api/mcp", () => {
 			"lister_passes",
 			"relancer_passe",
 			"chercher_joueur",
+			"donner_sort",
 		]);
 	});
 });
