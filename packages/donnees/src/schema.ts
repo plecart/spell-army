@@ -187,8 +187,8 @@ function matches(column: PgColumn, pattern: RegExp): SQL {
  * Les joueurs (ADR 0003, « Données stockées », « Écriture » et « Sort à l'inscription ») : de
  * l'abonné, l'identifiant et le pseudo du fournisseur, rien d'autre ; la date d'arrivée, l'instant
  * de la transaction qui l'écrit ; le numéro du sort tiré à l'inscription ; le fichier du modèle 3D,
- * nul tant que sa classe n'a pas de modèle par défaut. La classe et les statistiques se calculent
- * depuis l'identifiant, jamais stockées.
+ * celui par défaut de sa classe à l'inscription, nul si elle n'en avait pas. La classe et les
+ * statistiques se calculent depuis l'identifiant, jamais stockées.
  */
 export const players = pgTable(
 	"players",

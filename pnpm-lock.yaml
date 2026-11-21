@@ -87,6 +87,12 @@ importers:
       donnees:
         specifier: workspace:*
         version: link:../donnees
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@types/pg@8.23.1)(pg@8.23.1)
+      personnages:
+        specifier: workspace:*
+        version: link:../personnages
 
   packages/personnages:
     dependencies:

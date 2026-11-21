@@ -8,8 +8,9 @@ Monorepo pnpm, un paquet par domaine sous `packages/` (`docs/adr/0001-architectu
 - **Node 24**, au moins la version de `.nvmrc` : le plancher d'`engines`, celle que la CI exécute.
 - **pnpm par corepack** : `corepack enable` une fois, puis `pnpm` prend la version du champ
   `packageManager` de `package.json`.
-- **Docker Desktop allumé** pour les tests de `packages/donnees` et d'`apps/web` : la suite démarre
-  elle-même un Postgres 18 jetable, et s'arrête sur une ligne qui le dit quand Docker ne répond pas.
+- **Docker Desktop allumé** pour les tests de `packages/donnees`, `packages/joueurs` et `apps/web` :
+  la suite démarre elle-même un Postgres 18 jetable, et s'arrête sur une ligne qui le dit quand
+  Docker ne répond pas.
 
 ## Commandes
 
