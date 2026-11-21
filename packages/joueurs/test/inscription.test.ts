@@ -17,6 +17,7 @@ import {
 } from "donnees/test/base-neuve";
 import { eq, getTableColumns, sql } from "drizzle-orm";
 import { characterOf, drawSpell } from "personnages";
+import { idsOf } from "personnages/test/identifiants";
 import { describe, expect, test } from "vitest";
 import { changeClassDefaultModel, writePage } from "../src/index.ts";
 import { entry, followers, UNTRUSTED_PAGE } from "./faux-fournisseur.ts";
@@ -292,21 +293,10 @@ describe("changement du modèle par défaut d'une classe", () => {
 		);
 	}
 
-	/** Les `count` premiers identifiants de la classe de « 12 », à partir de « 100 ». */
-	function idsOfClassOf12(count: number): string[] {
-		const ids: string[] = [];
-		for (let n = 100; ids.length < count; n++) {
-			if (characterOf(String(n)).class === CLASS_OF_12) {
-				ids.push(String(n));
-			}
-		}
-		return ids;
-	}
-
 	test("les joueurs inscrits sans défaut reçoivent le modèle au premier réglage de leur classe ; les joueurs sans modèle des autres classes ne bougent pas", async () => {
 		const db = await freshDatabase();
 		expect(characterOf("13").class).not.toBe(CLASS_OF_12);
-		const [first, second] = idsOfClassOf12(2) as [string, string];
+		const [first, second] = idsOf(CLASS_OF_12, 2) as [string, string];
 		await writePage(db, [entry(first), entry(second), entry("13")]);
 		const fileId = await storeClassFile(db, "12");
 		expect(await changeClassDefaultModel(db, CLASS_OF_12, fileId)).toEqual({
@@ -324,7 +314,7 @@ describe("changement du modèle par défaut d'une classe", () => {
 	test("après un réglage, les joueurs dont le modèle valait l'ancien défaut ont le nouveau ; un joueur de la classe au modèle différent et un joueur d'une autre classe ne bougent pas", async () => {
 		const db = await freshDatabase();
 		const before = await setDefaultFor(db, "12");
-		const [first, second, different] = idsOfClassOf12(3) as [
+		const [first, second, different] = idsOf(CLASS_OF_12, 3) as [
 			string,
 			string,
 			string,
@@ -357,7 +347,7 @@ describe("changement du modèle par défaut d'une classe", () => {
 	test("régler à nouveau le même fichier ne fait suivre aucun joueur et ne change aucun modèle", async () => {
 		const db = await freshDatabase();
 		const fileId = await setDefaultFor(db, "12");
-		const [first] = idsOfClassOf12(1) as [string];
+		const [first] = idsOf(CLASS_OF_12, 1) as [string];
 		await writePage(db, [entry(first), entry("13")]);
 		const models = await readModels(db);
 		expect(models[first]).toBe(fileId);
@@ -399,7 +389,7 @@ describe("changement du modèle par défaut d'une classe", () => {
 		timeout: 60_000,
 	}, async () => {
 		const db = await freshDatabase();
-		const ids = idsOfClassOf12(PARAMETER_CEILING + 1);
+		const ids = idsOf(CLASS_OF_12, PARAMETER_CEILING + 1);
 		await db.execute(
 			sql`insert into players (instagram_id, username, spell_number)
 					select id, 'joueur_' || id, 1 from unnest(${sql.param(ids)}::text[]) as id`,
