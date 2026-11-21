@@ -36,6 +36,10 @@ function relativeLuminance(hex: string): number {
 	return 0.2126 * linear(1) + 0.7152 * linear(3) + 0.0722 * linear(5);
 }
 
+/** Le document SVG `backdrop`, attributs compris (préfixe `@_`). */
+const parseSvg = (backdrop: string) =>
+	new XMLParser({ ignoreAttributes: false }).parse(backdrop);
+
 test("les couleurs de classe exportées sont celles de la direction artistique § 2", () => {
 	expect(CLASS_COLORS).toEqual(SECTION_2_COLORS);
 });
@@ -55,7 +59,7 @@ describe.each(CLASSES)("%s", (classKey, color) => {
 		const backdrop = BACKDROPS[classKey];
 
 		expect(XMLValidator.validate(backdrop)).toBe(true);
-		const parsed = new XMLParser({ ignoreAttributes: false }).parse(backdrop);
+		const parsed = parseSvg(backdrop);
 		expect(Object.keys(parsed)).toEqual(["svg"]);
 		expect(parsed.svg).toMatchObject({
 			"@_xmlns": "http://www.w3.org/2000/svg",
@@ -63,8 +67,14 @@ describe.each(CLASSES)("%s", (classKey, color) => {
 		});
 	});
 
-	test("son décor porte la couleur de sa classe", () => {
-		expect(BACKDROPS[classKey]).toContain(color);
+	test("ses trois plans — lointain, sol, élément — sont à la couleur de sa classe", () => {
+		const layers: { "@_fill": string }[] = parseSvg(BACKDROPS[classKey]).svg.g;
+
+		expect(layers.slice(0, 3).map((layer) => layer["@_fill"])).toEqual([
+			color,
+			color,
+			color,
+		]);
 	});
 
 	test("son décor écrit ses nombres au millième au plus", () => {
