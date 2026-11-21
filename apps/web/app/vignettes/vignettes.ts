@@ -34,15 +34,15 @@ export function createVignettes(render: Render): Render {
 // d'un dixième à deux pixels par point. Rendre à la taille affichée si cela se voit.
 const SIZE = 512;
 
-let renderer: WebGLRenderer | undefined;
+let pageRenderer: WebGLRenderer | undefined;
 
 // Le moteur de la page, créé au premier rendu, au fond transparent. Lève sans WebGL 2.
 function engine(): WebGLRenderer {
-	if (!renderer) {
-		renderer = new WebGLRenderer({ alpha: true, antialias: true });
-		renderer.setSize(SIZE, SIZE, false);
+	if (!pageRenderer) {
+		pageRenderer = new WebGLRenderer({ alpha: true, antialias: true });
+		pageRenderer.setSize(SIZE, SIZE, false);
 	}
-	return renderer;
+	return pageRenderer;
 }
 
 // Le tour du moteur : chaque rendu attend que le précédent ait capturé son image.
@@ -57,15 +57,15 @@ async function renderInBrowser(
 	classKey: ClassKey,
 	pedestal: Pedestal,
 ): Promise<string | null> {
-	const page = engine();
+	const renderer = engine();
 	const { scene: figure } = await new GLTFLoader().loadAsync(
 		`/api/modeles/${classKey}`,
 	);
 	const { scene, camera } = stageOf(figure, pedestal);
 	const png = turn.then(() => {
-		page.render(scene, camera);
+		renderer.render(scene, camera);
 		return new Promise<Blob | null>((resolve) =>
-			page.domElement.toBlob(resolve),
+			renderer.domElement.toBlob(resolve),
 		);
 	});
 	turn = png.catch(() => undefined);
