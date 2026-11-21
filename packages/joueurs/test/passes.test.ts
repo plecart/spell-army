@@ -1,10 +1,17 @@
-import { type Executor, excludedPlayers, importPasses, players } from "donnees";
+import {
+	type Executor,
+	excludedPlayers,
+	importPasses,
+	players,
+	spells,
+} from "donnees";
 import { freshDatabase } from "donnees/test/base-neuve";
 import { sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import {
 	closeStalePasses,
 	type FollowerEntry,
+	type FollowerProvider,
 	type PassContext,
 	resumeFullPass,
 	runQuickPass,
@@ -286,4 +293,124 @@ describe("passes restées en cours", () => {
 			{ kind: "quick", status: "done", finishedAt: T0, cursor: null },
 		]);
 	});
+});
+
+describe("passe en échec", () => {
+	test("le fournisseur échoue à la page 3 d'une complète : passe en échec, erreur au journal, pages 1 et 2 gardées ; la reprise relit la page 3, efface l'erreur et termine", async () => {
+		const db = await freshDatabase();
+		const { provider, context } = passOver(db, followers(10), { pageSize: 2 });
+		provider.failingPage = 3;
+		expect(await startFullPass(context, "weekly")).toMatchObject({
+			status: "failed",
+			finishedAt: after(3),
+			error: "panne injectée à la page 3",
+			pages: 2,
+			added: 4,
+			cursor: provider.cursorOf(3),
+		});
+		expect(await db.$count(players)).toBe(4);
+
+		provider.failingPage = null;
+		expect(await resumeFullPass(context)).toMatchObject({
+			status: "done",
+			error: null,
+			pages: 5,
+			added: 10,
+		});
+		expect(provider.cursors).toEqual(
+			[1, 2, 3, 3, 4, 5].map((page) => provider.cursorOf(page)),
+		);
+	});
+
+	test("une rapide dont le fournisseur échoue se clôt en échec, l'erreur au journal", async () => {
+		const db = await freshDatabase();
+		const { provider, context } = passOver(db, followers(3));
+		provider.failingPage = 1;
+		expect(await runQuickPass(context, "tick")).toMatchObject({
+			status: "failed",
+			error: "panne injectée à la page 1",
+			pages: 0,
+		});
+		expect(await readPasses(db)).toHaveLength(1);
+	});
+
+	test("une erreur inattendue ne laisse au journal que son nom, jamais son message", async () => {
+		const db = await freshDatabase();
+		const { context } = passOver(db, []);
+		const provider: FollowerProvider = {
+			readPage: async () => {
+				throw new TypeError("joueur_reçu");
+			},
+			readFollowerCount: async () => 0,
+		};
+		expect(await runQuickPass({ ...context, provider }, "tick")).toMatchObject({
+			status: "failed",
+			error: "TypeError",
+		});
+	});
+
+	test("une réserve sans poids positif clôt la passe en échec, l'erreur du tirage au journal, sans rien écrire de la page", async () => {
+		const db = await freshDatabase();
+		await db.update(spells).set({ weight: 0 });
+		const { context } = passOver(db, followers(3));
+		expect(await runQuickPass(context, "tick")).toMatchObject({
+			status: "failed",
+			error:
+				"la réserve tirable doit contenir au moins un sort de poids positif",
+			pages: 0,
+			added: 0,
+		});
+		expect(await db.$count(players)).toBe(0);
+	});
+
+	// Une fonction de déclencheur qui lève une exception Postgres (P0001).
+	const FAIL = `create function fail_on_page() returns trigger language plpgsql
+		as $$ begin raise exception 'panne injectée'; end $$`;
+
+	test.each([
+		[
+			"à l'insertion de ses joueurs",
+			[
+				FAIL,
+				`create trigger fail_on_page before insert on players for each row
+					when (new.instagram_id = '90003') execute function fail_on_page()`,
+			],
+			"erreur Postgres P0001",
+		],
+		[
+			"sur un contrôle de ses joueurs",
+			[
+				`alter table players add constraint players_test_check
+					check (instagram_id <> '90003')`,
+			],
+			"erreur Postgres 23514 (players_test_check)",
+		],
+		[
+			"au journal de la page, ses joueurs insérés",
+			[
+				FAIL,
+				`create trigger fail_on_page before update on import_passes for each row
+					when (new.pages <> old.pages) execute function fail_on_page()`,
+			],
+			"erreur Postgres P0001",
+		],
+	])(
+		"une panne de la base %s : la page n'est ni écrite ni comptée, et le journal porte le code Postgres, sans aucune valeur de la page",
+		async (_, statements, error) => {
+			const db = await freshDatabase();
+			for (const statement of statements) {
+				await db.execute(sql.raw(statement));
+			}
+			const page = followers(5, 90001);
+			const { context } = passOver(db, page);
+			expect(await runQuickPass(context, "tick")).toMatchObject({
+				status: "failed",
+				error,
+				pages: 0,
+				added: 0,
+			});
+			expect(await db.$count(players)).toBe(0);
+			await expectNoReceivedValue(db, page);
+		},
+	);
 });

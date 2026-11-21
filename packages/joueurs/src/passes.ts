@@ -2,12 +2,13 @@ import {
 	type Executor,
 	type FullPassTrigger,
 	importPasses,
+	postgresErrorCode,
 	type QuickPassTrigger,
 } from "donnees";
 import { and, eq, ne, type SQL, sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
-import type { FollowerPage, FollowerProvider } from "./provider.ts";
-import { type WrittenPage, writePage } from "./registration.ts";
+import { type FollowerProvider, ProviderError } from "./provider.ts";
+import { writePage } from "./registration.ts";
 
 /** Une ligne du journal des passes d'import. */
 export type ImportPass = typeof importPasses.$inferSelect;
@@ -27,8 +28,10 @@ export interface PassContext {
 /**
  * Lance une passe rapide (ADR 0003, « Passe rapide ») : depuis le haut de la liste, page après
  * page, jusqu'à une page qui n'ajoute aucun joueur — connus et exclus comptent comme connus —, ou
- * jusqu'en fin de liste. La passe s'inscrit au journal en cours, et s'y clôt terminée, ou
- * interrompue quand le budget échoit avant une page.
+ * jusqu'en fin de liste. La passe s'inscrit au journal en cours, et s'y clôt terminée ;
+ * interrompue, sans erreur, quand le budget échoit avant une page ; en échec quand une page ne se
+ * lit ou ne s'écrit pas (ADR 0003, « Mode dégradé ») — l'erreur au journal, la page ni écrite ni
+ * comptée, rien de supprimé.
  *
  * S'appelle sous le verrou de l'import (`acquireImportLock`), qu'elle ne prend pas elle-même.
  *
@@ -45,8 +48,9 @@ export async function runQuickPass(
 
 /**
  * Démarre une passe complète (ADR 0003, « Passe complète ») depuis le haut de la liste, jusqu'en
- * fin de liste. Son curseur s'écrit au journal avec chaque page : interrompue par le budget avant
- * une page, elle le garde, et `resumeFullPass` la reprend à cette page.
+ * fin de liste. Elle se clôt comme la passe rapide (`runQuickPass`), et son curseur s'écrit au
+ * journal avec chaque page : interrompue par le budget ou en échec, elle le garde, et
+ * `resumeFullPass` la reprend à la page qui n'a pas été écrite.
  *
  * S'appelle sous le verrou de l'import (`acquireImportLock`), qu'elle ne prend pas elle-même.
  *
@@ -64,9 +68,10 @@ export async function startFullPass(
 }
 
 /**
- * Reprend la passe complète non terminée — interrompue, ou restée en cours, sa fonction tuée — à
- * son curseur, sous son déclencheur d'origine, sur la même ligne du journal : ses compteurs
- * s'ajoutent à ceux déjà notés, son début reste le premier.
+ * Reprend la passe complète non terminée — interrompue, en échec, ou restée en cours, sa fonction
+ * tuée — à son curseur, sous son déclencheur d'origine, sur la même ligne du journal : son erreur
+ * s'efface, ses compteurs s'ajoutent à ceux déjà notés, son début reste le premier. Elle se clôt
+ * comme la passe rapide (`runQuickPass`).
  *
  * S'appelle sous le verrou de l'import (`acquireImportLock`), qu'elle ne prend pas elle-même.
  *
@@ -79,7 +84,7 @@ export async function resumeFullPass(
 ): Promise<ImportPass | null> {
 	const [pass] = await context.db
 		.update(importPasses)
-		.set({ status: "running", finishedAt: null })
+		.set({ status: "running", finishedAt: null, error: null })
 		.where(and(eq(importPasses.kind, "full"), ne(importPasses.status, "done")))
 		.returning();
 	return pass ? runPass(context, pass) : null;
@@ -118,7 +123,7 @@ async function openPass(
 }
 
 // Lit et écrit les pages de la passe, de son curseur jusqu'à son arrêt, puis la clôt. Le budget se
-// juge avant chaque page.
+// juge avant chaque page ; une page qui ne se lit ou ne s'écrit pas clôt la passe en échec.
 async function runPass(
 	context: PassContext,
 	pass: ImportPass,
@@ -128,23 +133,35 @@ async function runPass(
 		if (context.clock().getTime() >= context.deadline.getTime()) {
 			return closePass(context, pass.id, "interrupted");
 		}
-		const page = await context.provider.readPage(cursor);
-		const { added } = await writeJournaledPage(context.db, pass, page);
-		if (page.next === null || (pass.kind === "quick" && added === 0)) {
+		let page: ImportedPage;
+		try {
+			page = await importPage(context, pass, cursor);
+		} catch (error) {
+			return closePass(context, pass.id, "failed", failureText(error));
+		}
+		if (page.next === null || (pass.kind === "quick" && page.added === 0)) {
 			return closePass(context, pass.id, "done");
 		}
 		cursor = page.next;
 	}
 }
 
-// Écrit la page et la compte au journal de la passe, dans une même transaction : une page qui
-// échoue n'est ni écrite ni comptée. Une complète y note le curseur de sa page suivante.
-async function writeJournaledPage(
-	db: Executor,
+// Ce qu'a donné une page : ses joueurs ajoutés, et le curseur de la suivante.
+interface ImportedPage {
+	added: number;
+	next: string | null;
+}
+
+// Lit la page de `cursor`, puis l'écrit et la compte au journal de la passe dans une même
+// transaction : une page qui échoue n'est ni écrite ni comptée. Une complète y note le curseur de
+// sa page suivante.
+async function importPage(
+	context: PassContext,
 	pass: ImportPass,
-	page: FollowerPage,
-): Promise<WrittenPage> {
-	return db.transaction(async (tx) => {
+	cursor: string | null,
+): Promise<ImportedPage> {
+	const page = await context.provider.readPage(cursor);
+	const { added } = await context.db.transaction(async (tx) => {
 		const written = await writePage(tx, page.entries);
 		await tx
 			.update(importPasses)
@@ -161,20 +178,40 @@ async function writeJournaledPage(
 			.where(eq(importPasses.id, pass.id));
 		return written;
 	});
+	return { added, next: page.next };
 }
 
-// Clôt la passe dans l'état `status`, à l'instant de l'horloge.
+// Clôt la passe dans l'état `status`, à l'instant de l'horloge, avec l'erreur d'un échec.
 async function closePass(
 	context: PassContext,
 	id: number,
 	status: Exclude<ImportPass["status"], "running">,
+	error: string | null = null,
 ): Promise<ImportPass> {
 	const [pass] = await context.db
 		.update(importPasses)
-		.set({ status, finishedAt: context.clock() })
+		.set({ status, finishedAt: context.clock(), error })
 		.where(eq(importPasses.id, id))
 		.returning();
 	return pass as ImportPass;
+}
+
+// Le texte d'un échec au journal, que le MCP rend à Claude : composé par le code, il ne recopie
+// jamais une valeur reçue (ADR 0003, « Pseudos, données non fiables »). Le message d'une erreur
+// du fournisseur ou du tirage est composé par le code ; d'une erreur de la base, seuls son code et
+// sa contrainte se gardent — le message d'une erreur de requête Drizzle recopie la requête et ses
+// paramètres, donc les pseudos de la page ; d'une autre erreur, son nom seul.
+function failureText(error: unknown): string {
+	if (error instanceof ProviderError || error instanceof RangeError) {
+		return error.message;
+	}
+	const postgres = postgresErrorCode(error);
+	if (postgres) {
+		return postgres.constraint === undefined
+			? `erreur Postgres ${postgres.code}`
+			: `erreur Postgres ${postgres.code} (${postgres.constraint})`;
+	}
+	return error instanceof Error ? error.name : "erreur inconnue";
 }
 
 // La valeur de `column` augmentée de `count`.
