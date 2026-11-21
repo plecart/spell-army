@@ -28,7 +28,7 @@ export async function listPasses(
 	return passes.map(logEntry);
 }
 
-// La passe telle que le journal la rend : sans son identifiant ni son curseur.
-function logEntry({ id, cursor, ...entry }: ImportPass): PassLogEntry {
+/** La passe telle que le journal la rend : sans son identifiant ni son curseur. */
+export function logEntry({ id, cursor, ...entry }: ImportPass): PassLogEntry {
 	return entry;
 }

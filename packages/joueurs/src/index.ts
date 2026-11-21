@@ -23,3 +23,4 @@ export {
 	ProviderError,
 } from "./provider.ts";
 export { type WrittenPage, writePage } from "./registration.ts";
+export { type ImportOptions, runTic, type TickReport } from "./tic.ts";

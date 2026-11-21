@@ -18,7 +18,7 @@ import {
 	startFullPass,
 	writePage,
 } from "../src/index.ts";
-import { FakeFollowerProvider } from "./faux-fournisseur.ts";
+import { FakeFollowerProvider, followers } from "./faux-fournisseur.ts";
 
 const T0 = new Date("2026-11-21T10:00:00Z");
 const MINUTE_MS = 60_000;
@@ -26,14 +26,6 @@ const MINUTE_MS = 60_000;
 /** L'instant `minutes` minutes après `from`, `T0` par défaut. */
 function after(minutes: number, from = T0): Date {
 	return new Date(from.getTime() + minutes * MINUTE_MS);
-}
-
-/** `count` abonnés bien formés, d'identifiants consécutifs à partir de `first`. */
-function followers(count: number, first = 1): FollowerEntry[] {
-	return Array.from({ length: count }, (_, index) => {
-		const id = String(first + index);
-		return { id, username: `joueur_${id}` };
-	});
 }
 
 /**
