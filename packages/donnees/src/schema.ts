@@ -166,18 +166,19 @@ export const classDefaultModels = pgTable("class_default_models", {
 /**
  * La forme d'un identifiant Instagram reçu du fournisseur : un entier décimal positif, sans zéro de
  * tête (« 007 » et « 0 » sont hors forme, jamais normalisés). Contrôlée sur `players` et
- * `excluded_players`.
+ * `excluded_players`, et lue par le tri des entrées du paquet `joueurs`.
  */
 export const INSTAGRAM_ID_PATTERN = /^[1-9][0-9]*$/;
 
 /**
  * La forme d'un pseudo Instagram reçu du fournisseur : 1 à 30 lettres ASCII, chiffres, `.` ou `_`
- * (ADR 0003, « Pseudos, données non fiables »). Contrôlée sur `players`.
+ * (ADR 0003, « Pseudos, données non fiables »). Contrôlée sur `players`, et lue par le tri des
+ * entrées du paquet `joueurs`.
  */
 export const INSTAGRAM_USERNAME_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
 
 // Le contrôle qu'une colonne suive `pattern`, dont la source, sans apostrophe, est recopiée en clair
-// dans la migration. `test/formes-instagram.ts` en éprouve les bornes côté base.
+// dans la migration. `test/formes-instagram.ts` en éprouve les bornes, côté base et côté JavaScript.
 function matches(column: PgColumn, pattern: RegExp): SQL {
 	return sql`${column} ~ ${sql.raw(`'${pattern.source}'`)}`;
 }
