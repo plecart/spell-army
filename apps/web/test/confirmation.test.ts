@@ -9,7 +9,6 @@ import { callTool, listTools, type McpTool } from "../app/mcp/tool.ts";
 import {
 	auditRows,
 	CODE_LIFETIME_MS,
-	type Confirmation,
 	codeFor,
 	confirmationOf,
 	connectClient,
@@ -131,18 +130,17 @@ describe("confirmation par code d'un outil destructeur", () => {
 	test("sans code : rien n'est exécuté ; la sortie rend la description, un code et son expiration, 5 minutes plus tard ; une ligne d'audit en succès, sans avant ni après", async () => {
 		freezeDate(NOW);
 		const { db, tools, client } = await confirmableEndpoint();
-		const output = outputOf(
-			await client.callTool({ name: "effacer", arguments: ARGS }),
-		);
-		expect(output).toEqual({
+		const result = await client.callTool({ name: "effacer", arguments: ARGS });
+		expect(outputOf(result)).toEqual({
 			confirmation: {
 				description: DESCRIPTION,
 				code: expect.stringMatching(CODE),
 				expiration: new Date(NOW + CODE_LIFETIME_MS).toISOString(),
 			},
 		});
-		const { code } = (output as { confirmation: Confirmation }).confirmation;
-		expect(CODE.exec(code)?.[1]).toBe(String(NOW + CODE_LIFETIME_MS));
+		expect(CODE.exec(confirmationOf(result).code)?.[1]).toBe(
+			String(NOW + CODE_LIFETIME_MS),
+		);
 		expect(tools.erase.run).not.toHaveBeenCalled();
 		expect(await auditRows(db)).toEqual([
 			expect.objectContaining({
@@ -312,16 +310,9 @@ describe("confirmation par code d'un outil destructeur", () => {
 		async (_, withCode) => {
 			const db = await freshDatabase();
 			const tool = confirmableTool("effacer");
-			const issued = await callTool(
-				[tool],
-				db,
-				"effacer",
-				ARGS,
-				confirmationKey(TOKEN),
+			const { code } = confirmationOf(
+				await callTool([tool], db, "effacer", ARGS, confirmationKey(TOKEN)),
 			);
-			const { code } = (
-				issued.structuredContent as { confirmation: Confirmation }
-			).confirmation;
 			const args = withCode ? { ...ARGS, code } : ARGS;
 			tool.confirmation.mockClear();
 			expect(await callTool([tool], db, "effacer", args)).toEqual({

@@ -181,7 +181,7 @@ const BASE64URL =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
 /** Ce que rend l'appel sans exécution d'un outil confirmable. */
-export interface Confirmation {
+interface Confirmation {
 	description: string;
 	code: string;
 	expiration: string;
