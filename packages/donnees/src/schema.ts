@@ -14,6 +14,7 @@ import {
 	text,
 	timestamp,
 	uniqueIndex,
+	uuid,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -179,15 +180,25 @@ export const INSTAGRAM_ID_PATTERN = /^[1-9][0-9]{0,19}$/;
  */
 export const INSTAGRAM_USERNAME_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
 
-// Le contrôle qu'une colonne suive `pattern`, dont la source, sans apostrophe, est recopiée en clair
-// dans la migration. `test/formes-instagram.ts` en éprouve les bornes, côté base et côté JavaScript.
-function matches(column: PgColumn, pattern: RegExp): SQL {
-	if (pattern.source.includes("'")) {
+// Un texte recopié en clair dans la migration, entre apostrophes : il n'en porte donc aucune.
+function literal(value: string): SQL {
+	if (value.includes("'")) {
 		throw new Error(
-			`la source d'une forme recopiée dans la migration ne doit porter aucune apostrophe : ${pattern.source}`,
+			`un texte recopié dans la migration ne doit porter aucune apostrophe : ${value}`,
 		);
 	}
-	return sql`${column} ~ ${sql.raw(`'${pattern.source}'`)}`;
+	return sql.raw(`'${value}'`);
+}
+
+// Le contrôle qu'une colonne suive `pattern`. `test/formes-instagram.ts` en éprouve les bornes, côté
+// base et côté JavaScript.
+function matches(column: PgColumn, pattern: RegExp): SQL {
+	return sql`${column} ~ ${literal(pattern.source)}`;
+}
+
+// Le contrôle qu'une colonne vaille l'une des `values`.
+function oneOf(column: PgColumn, values: readonly string[]): SQL {
+	return sql`${column} in (${sql.join(values.map(literal), sql`, `)})`;
 }
 
 /**
@@ -235,6 +246,82 @@ export const excludedPlayers = pgTable(
 			matches(table.instagramId, INSTAGRAM_ID_PATTERN),
 		),
 	],
+);
+
+/** Les déclencheurs d'une passe rapide d'import : le tic, ou le MCP. */
+export const QUICK_PASS_TRIGGERS = ["tick", "mcp"] as const;
+
+/** Les déclencheurs d'une passe complète d'import : la semaine, l'auto-contrôle, ou le MCP. */
+export const FULL_PASS_TRIGGERS = ["weekly", "self_check", "mcp"] as const;
+
+// L'état d'une passe : en cours, interrompue (budget, fonction tuée), en échec, terminée.
+const PASS_STATUSES = ["running", "interrupted", "failed", "done"] as const;
+
+/**
+ * Le journal des passes d'import (ADR 0003, « Journal ») : une ligne par passe, qu'une complète
+ * garde sur plusieurs tics, partie de l'un des déclencheurs de son type. `finished_at` est
+ * l'instant du dernier arrêt, nul pendant que la passe tourne ; `error` n'existe que pour une passe
+ * en échec ; `cursor`, le curseur de la prochaine page d'une complète, reste nul pour une rapide.
+ * Les entrées écartées se comptent par motif, jamais gardées. Une seule complète non terminée à la
+ * fois (`import_passes_one_unfinished_full`). `packages/joueurs` écrit la table.
+ */
+export const importPasses = pgTable(
+	"import_passes",
+	{
+		id: integer().primaryKey().generatedAlwaysAsIdentity(),
+		kind: text({ enum: ["quick", "full"] }).notNull(),
+		trigger: text({
+			enum: [...QUICK_PASS_TRIGGERS, ...FULL_PASS_TRIGGERS],
+		}).notNull(),
+		status: text({ enum: PASS_STATUSES }).notNull(),
+		startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+		finishedAt: timestamp("finished_at", { withTimezone: true }),
+		pages: integer().notNull().default(0),
+		added: integer().notNull().default(0),
+		invalidIds: integer("invalid_ids").notNull().default(0),
+		invalidUsernames: integer("invalid_usernames").notNull().default(0),
+		error: text(),
+		cursor: text(),
+	},
+	(table) => [
+		check(
+			"import_passes_trigger_check",
+			sql`(${table.kind} = 'quick' and ${oneOf(table.trigger, QUICK_PASS_TRIGGERS)}) or (${table.kind} = 'full' and ${oneOf(table.trigger, FULL_PASS_TRIGGERS)})`,
+		),
+		check("import_passes_status_check", oneOf(table.status, PASS_STATUSES)),
+		check(
+			"import_passes_finished_at_check",
+			sql`(${table.finishedAt} is null) = (${table.status} = 'running')`,
+		),
+		check(
+			"import_passes_error_check",
+			sql`(${table.error} is not null) = (${table.status} = 'failed')`,
+		),
+		check(
+			"import_passes_cursor_check",
+			sql`${table.kind} = 'full' or ${table.cursor} is null`,
+		),
+		...[table.pages, table.added, table.invalidIds, table.invalidUsernames].map(
+			(count) => check(`import_passes_${count.name}_check`, sql`${count} >= 0`),
+		),
+		uniqueIndex("import_passes_one_unfinished_full")
+			.on(table.kind)
+			.where(sql`${table.kind} = 'full' and ${table.status} <> 'done'`),
+	],
+);
+
+/**
+ * Le verrou à bail de l'import (ADR 0002, « Verrou à bail ») : au plus une ligne (`id = 1`), son
+ * porteur et l'échéance de son bail. `packages/joueurs` le prend et le rend.
+ */
+export const importLock = pgTable(
+	"import_lock",
+	{
+		id: smallint().primaryKey(),
+		holder: uuid().notNull(),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+	},
+	(table) => [check("import_lock_id_check", sql`${table.id} = 1`)],
 );
 
 /**
