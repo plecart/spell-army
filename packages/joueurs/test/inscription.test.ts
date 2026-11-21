@@ -1,4 +1,5 @@
 import {
+	classDefaultModels,
 	type Executor,
 	excludedPlayers,
 	insertSpell,
@@ -10,10 +11,14 @@ import {
 	storeModelFile,
 } from "donnees";
 import { freshDatabase, waitForOneLockWaiter } from "donnees/test/base-neuve";
-import { getTableColumns, sql } from "drizzle-orm";
+import { eq, getTableColumns, sql } from "drizzle-orm";
 import { characterOf, drawSpell } from "personnages";
 import { describe, expect, test } from "vitest";
-import { type FollowerEntry, writePage } from "../src/index.ts";
+import {
+	changeClassDefaultModel,
+	type FollowerEntry,
+	writePage,
+} from "../src/index.ts";
 
 /** Une entrée bien formée, au pseudo tiré de l'identifiant sauf s'il est donné. */
 function entry(id: string, username = `joueur_${id}`): FollowerEntry {
@@ -288,5 +293,146 @@ describe("écriture d'une page et réglage du modèle par défaut", () => {
 			await waitForOneLockWaiter(db);
 		});
 		expect(await setting).toEqual({ before: null, after: fileId });
+	});
+});
+
+describe("changement du modèle par défaut d'une classe", () => {
+	const CLASS_OF_12 = characterOf("12").class;
+
+	/** Le modèle de chaque joueur, par identifiant. */
+	async function readModels(db: Executor) {
+		return Object.fromEntries(
+			(await readPlayers(db)).map(({ instagramId, modelFileId }) => [
+				instagramId,
+				modelFileId,
+			]),
+		);
+	}
+
+	/** Les `count` premiers identifiants de la classe de « 12 », à partir de « 100 ». */
+	function idsOfClassOf12(count: number): string[] {
+		const ids: string[] = [];
+		for (let n = 100; ids.length < count; n++) {
+			if (characterOf(String(n)).class === CLASS_OF_12) {
+				ids.push(String(n));
+			}
+		}
+		return ids;
+	}
+
+	test("les joueurs inscrits sans défaut reçoivent le modèle au premier réglage de leur classe ; les joueurs sans modèle des autres classes ne bougent pas", async () => {
+		const db = await freshDatabase();
+		expect(characterOf("13").class).not.toBe(CLASS_OF_12);
+		const [first, second] = idsOfClassOf12(2) as [string, string];
+		await writePage(db, [entry(first), entry(second), entry("13")]);
+		const fileId = await storeClassFile(db, "12");
+		expect(await changeClassDefaultModel(db, CLASS_OF_12, fileId)).toEqual({
+			before: null,
+			after: fileId,
+			followed: 2,
+		});
+		expect(await readModels(db)).toEqual({
+			[first]: fileId,
+			[second]: fileId,
+			13: null,
+		});
+	});
+
+	test("après un réglage, les joueurs dont le modèle valait l'ancien défaut ont le nouveau ; un joueur de la classe au modèle différent et un joueur d'une autre classe ne bougent pas", async () => {
+		const db = await freshDatabase();
+		const before = await setDefaultFor(db, "12");
+		const [first, second, different] = idsOfClassOf12(3) as [
+			string,
+			string,
+			string,
+		];
+		await writePage(db, [
+			entry(first),
+			entry(second),
+			entry(different),
+			entry("13"),
+		]);
+		const otherModel = await storeClassFile(db, "12");
+		await db
+			.update(players)
+			.set({ modelFileId: otherModel })
+			.where(eq(players.instagramId, different));
+		const after = await storeClassFile(db, "12");
+		expect(await changeClassDefaultModel(db, CLASS_OF_12, after)).toEqual({
+			before,
+			after,
+			followed: 2,
+		});
+		expect(await readModels(db)).toEqual({
+			[first]: after,
+			[second]: after,
+			[different]: otherModel,
+			13: null,
+		});
+	});
+
+	test.each([
+		["sans ancien défaut", false],
+		["avec un ancien défaut", true],
+	])(
+		"une page ouverte dans une transaction non validée fait attendre le changement %s ; après son commit, son joueur suit le nouveau défaut",
+		async (_, hadDefault) => {
+			const db = await freshDatabase();
+			if (hadDefault) {
+				await setDefaultFor(db, "12");
+			}
+			const next = await storeClassFile(db, "12");
+			let change: ReturnType<typeof changeClassDefaultModel> | undefined;
+			await db.transaction(async (tx) => {
+				await writePage(tx, [entry("12")]);
+				change = changeClassDefaultModel(db, CLASS_OF_12, next);
+				await waitForOneLockWaiter(db);
+			});
+			expect(await change).toMatchObject({ after: next, followed: 1 });
+			expect(await readModels(db)).toEqual({ 12: next });
+		},
+	);
+
+	// Le plafond de paramètres d'une requête : le message Bind du protocole Postgres les compte sur
+	// 16 bits (pg-protocol 1.16.1, `serializer.js`, `bind`).
+	const PARAMETER_CEILING = 65_535;
+
+	test("65 536 joueurs sans modèle dans la classe, un de plus que le plafond de paramètres d'une requête, reçoivent tous le premier défaut", {
+		timeout: 60_000,
+	}, async () => {
+		const db = await freshDatabase();
+		const ids = idsOfClassOf12(PARAMETER_CEILING + 1);
+		await db.execute(
+			sql`insert into players (instagram_id, username, spell_number)
+					select id, 'joueur_' || id, 1 from unnest(${sql.param(ids)}::text[]) as id`,
+		);
+		const fileId = await storeClassFile(db, "12");
+		expect(
+			await changeClassDefaultModel(db, CLASS_OF_12, fileId),
+		).toMatchObject({ followed: ids.length });
+		expect(await db.$count(players, eq(players.modelFileId, fileId))).toBe(
+			ids.length,
+		);
+	});
+
+	test("un suivi qui échoue laisse le défaut de la classe inchangé", async () => {
+		const db = await freshDatabase();
+		const before = await setDefaultFor(db, "12");
+		await writePage(db, [entry("12")]);
+		await db.execute(
+			sql.raw(`create function fail_on_follow() returns trigger language plpgsql
+				as $$ begin raise exception 'panne injectée'; end $$`),
+		);
+		await db.execute(
+			sql.raw(`create trigger fail_on_follow before update on players
+				for each row execute function fail_on_follow()`),
+		);
+		const next = await storeClassFile(db, "12");
+		await expect(
+			changeClassDefaultModel(db, CLASS_OF_12, next),
+		).rejects.toMatchObject({ cause: { code: "P0001" } });
+		expect(await db.select().from(classDefaultModels)).toEqual([
+			{ class: CLASS_OF_12, modelFileId: before },
+		]);
 	});
 });
