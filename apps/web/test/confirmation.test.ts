@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import type { Client } from "@modelcontextprotocol/client";
 import type { Executor } from "donnees";
 import { freshDatabase } from "donnees/test/base-neuve";
@@ -366,6 +367,16 @@ describe("confirmation par code d'un outil destructeur", () => {
 		expect(await auditRows(db)).toEqual([]);
 		expect(tool.confirmation).not.toHaveBeenCalled();
 		expect(tool.run).not.toHaveBeenCalled();
+	});
+});
+
+describe("confirmation : clé", () => {
+	test("la clé des codes est l'HMAC-SHA256 du jeton sous le libellé de la confirmation, jamais le jeton lui-même", () => {
+		expect(confirmationKey(TOKEN)).toEqual(
+			createHmac("sha256", TOKEN)
+				.update("wizard-army/mcp/confirmation")
+				.digest(),
+		);
 	});
 });
 
