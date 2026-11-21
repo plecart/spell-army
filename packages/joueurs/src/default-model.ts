@@ -22,6 +22,7 @@ export interface ClassDefaultModelChange {
  * défaut, suivent les joueurs dont le modèle valait l'ancien défaut, quelle que soit leur classe
  * — un défaut est toujours un fichier de sa classe ; sans ancien défaut, les joueurs sans modèle
  * dont la classe, calculée par `characterOf`, est `characterClass`. Les autres ne bougent pas.
+ * Un réglage qui laisse le défaut inchangé ne fait suivre personne.
  *
  * Une page en cours d'écriture tient `class_default_models` en mode partagé (`writePage`) : le
  * réglage attend son commit, et ses joueurs suivent.
@@ -44,6 +45,9 @@ export async function changeClassDefaultModel(
 			characterClass,
 			fileId,
 		);
+		if (before === after) {
+			return { before, after, followed: 0 };
+		}
 		const followers =
 			before === null
 				? await modellessPlayersOf(tx, characterClass)
