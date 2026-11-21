@@ -30,6 +30,8 @@ const BLOCK_BYTES = 64;
 /** La longueur du message en bits, écrite sur 64 bits à la fin du dernier bloc. */
 const LENGTH_BYTES = 8;
 const END_OF_MESSAGE = 0x80;
+/** Un seul encodeur pour tous les condensés : `encode` ne garde rien d'un appel à l'autre. */
+const ENCODER = new TextEncoder();
 
 /** Les huit mots du condensé en cours, dans l'ordre a à h de FIPS 180-4. */
 type Words = [number, number, number, number, number, number, number, number];
@@ -41,7 +43,7 @@ type Words = [number, number, number, number, number, number, number, number];
  * @example sha256("abc") commence par les octets 0xba, 0x78, 0x16, 0xbf.
  */
 export function sha256(text: string): Uint8Array {
-	const blocks = padded(new TextEncoder().encode(text));
+	const blocks = padded(ENCODER.encode(text));
 	const hash = new DataView(new ArrayBuffer(INITIAL_HASH.length * WORD_BYTES));
 	INITIAL_HASH.forEach((word, index) => {
 		hash.setUint32(index * WORD_BYTES, word);

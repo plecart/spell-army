@@ -19,6 +19,13 @@ import { cast, type Situation, strike } from "./power.ts";
 const MAX_ACTIONS = 10_000;
 /** Le compteur d'initiative de départ (game design § 4, « Initiative »). */
 const INITIATIVE_START = 0.5;
+/**
+ * La part de sa Vie de départ sous laquelle une Vie restante compte pour 0 : le résidu des pertes
+ * soustraites une à une en flottant (Vie 1 moins dix coups de 0,1 : 1,4e-16). Une action arrondit
+ * une Vie d'au plus 2 × 2⁻⁵³ ≈ 2,2e-16 de sa Vie de départ (le soin, puis la perte), 10 000
+ * actions d'au plus 2,2e-12 : le seuil garde plus de deux ordres de grandeur de marge.
+ */
+const LIFE_ROUNDING = 1e-9;
 
 /**
  * Les entrées d'un combat : l'armée, des personnages déjà calculés ; le monstre ; la graine, un
@@ -44,8 +51,9 @@ type Side = Action["side"];
  *   (chaque action lui ôte 1), puis le monstre joue une fois : à égalité, l'armée d'abord.
  * - L'armée tire un personnage sans remise (flux `army`), qui lance son sort (`power.ts`) ; le
  *   monstre tire une attaque sans remise (flux `monster`).
- * - Les dégâts ne descendent pas une Vie sous 0 ; le soin ne passe pas la Vie maximale de
- *   l'armée ; un sort coûteux fait perdre à l'armée sa part des dégâts infligés, après le coup.
+ * - Les dégâts ne descendent pas une Vie sous 0, et une Vie que seul l'arrondi des pertes cumulées
+ *   garde au-dessus tombe à 0 ; le soin ne passe pas la Vie maximale de l'armée ; un sort coûteux
+ *   fait perdre à l'armée sa part des dégâts infligés, après le coup.
  * - Fin : victoire quand la Vie du monstre est à 0, défaite quand celle de l'armée l'est — le
  *   monstre se regarde d'abord, avant la première action comme après chacune ; défaite par
  *   épuisement au-delà de 10 000 actions.
@@ -111,14 +119,23 @@ export function fight({
 /**
  * L'ordre des camps, sans fin : le compteur part de 0,5 et gagne R à chaque tour ; l'armée joue
  * tant qu'il vaut au moins 1, puis le monstre une fois.
+ *
+ * Au tour t, après n actions de l'armée, le compteur vaut 0,5 + t × R − n : l'armée rejoue tant que
+ * t × Vitesse de l'armée ≥ (n + 0,5) × Vitesse du monstre. Ces produits se recalculent à chaque
+ * comparaison, sans division ni compteur cumulé : cumulé en flottant, 0,5 + 5 × 0,1 vaut
+ * 0,9999999999999999, et l'armée perdait l'action d'égalité.
  */
 function* initiative(
 	armySpeed: number,
 	monsterSpeed: number,
 ): Generator<Side, never> {
-	const ratio = (armySpeed || 1) / (monsterSpeed || 1);
-	for (let counter = INITIATIVE_START; ; ) {
-		for (counter += ratio; counter >= 1; counter -= 1) yield "army";
+	const army = armySpeed || 1;
+	const monster = monsterSpeed || 1;
+	for (let turn = 1, armyActions = 0; ; turn++) {
+		while (turn * army >= (armyActions + INITIATIVE_START) * monster) {
+			yield "army";
+			armyActions++;
+		}
 		yield "monster";
 	}
 }
@@ -158,7 +175,7 @@ function outcomeOf({
 /**
  * L'action d'un personnage : son sort frappe le monstre, sans descendre sa Vie sous 0, puis soigne
  * l'armée jusqu'à sa Vie maximale ; un sort coûteux lui ôte ensuite sa part des dégâts infligés,
- * ceux qu'a perdus le monstre.
+ * ceux qu'a perdus le monstre — toute sa Vie restante quand il tombe à 0.
  */
 function armyAction(
 	number: number,
@@ -169,13 +186,15 @@ function armyAction(
 		fighter,
 		situation,
 	);
-	const { armyLife, monsterLife, army } = situation;
-	const inflicted = Math.min(damage, monsterLife);
+	const { armyLife, monsterLife, monsterStartLife, army } = situation;
+	const monsterAfter = lifeAfter(monsterLife, damage, monsterStartLife);
+	const inflicted = monsterAfter === 0 ? monsterLife : damage;
 	const { form } = fighter.spell;
 	const armyLoss = form.kind === "costly" ? form.armyLossShare * inflicted : 0;
-	const armyAfter = Math.max(
-		0,
-		Math.min(army.stats.life, armyLife + heal) - armyLoss,
+	const armyAfter = lifeAfter(
+		Math.min(army.stats.life, armyLife + heal),
+		armyLoss,
+		army.stats.life,
 	);
 	return {
 		number,
@@ -188,7 +207,7 @@ function armyAction(
 		damage,
 		heal,
 		armyLife: [armyLife, armyAfter],
-		monsterLife: [monsterLife, monsterLife - inflicted],
+		monsterLife: [monsterLife, monsterAfter],
 		forced: false,
 	};
 }
@@ -198,7 +217,7 @@ function monsterAction(
 	number: number,
 	attack: MonsterAttack,
 	monster: Monster,
-	{ armyLife, monsterLife }: Situation,
+	{ armyLife, monsterLife, army }: Situation,
 ): MonsterAction {
 	const { monsterStat, damage } = strike(attack, monster.stats);
 	return {
@@ -208,7 +227,16 @@ function monsterAction(
 		recipe: attack.recipe,
 		monsterStat,
 		damage,
-		armyLife: [armyLife, Math.max(0, armyLife - damage)],
+		armyLife: [armyLife, lifeAfter(armyLife, damage, army.stats.life)],
 		monsterLife: [monsterLife, monsterLife],
 	};
+}
+
+/**
+ * Une Vie après une perte, jamais sous 0 : 0 dès qu'il n'en reste que l'arrondi des soustractions
+ * cumulées, au plus `LIFE_ROUNDING` de la Vie de départ.
+ */
+function lifeAfter(life: number, loss: number, startLife: number): number {
+	const left = life - loss;
+	return left > LIFE_ROUNDING * startLife ? left : 0;
 }
