@@ -1,6 +1,6 @@
 # Wizard Army — Direction artistique
 
-État au 2026-11-20. Ce document détaille la section « Modèles 3D » du [cadrage](etudes/00-cadrage.md)
+État au 2026-11-21. Ce document détaille la section « Modèles 3D » du [cadrage](etudes/00-cadrage.md)
 et l'organisation du site. Le cadrage fait foi en cas de désaccord (rang 1 des sources de vérité).
 Il a été arrêté avec le mainteneur sur des prototypes jetables, hors dépôt ; les captures du § 10 en
 gardent la trace.
@@ -150,7 +150,7 @@ au site et à la vidéo.
 | Contour | Ajouté à l'affichage, pas dans le fichier. | Proposé |
 | Budget | 30 000 triangles au plus par personnage. | Décidé |
 | Fabrication | **Blender**, installé sur le poste le 2026-11-16 (version 5.3). | Décidé |
-| Pilotage de Blender | Le serveur MCP officiel de Blender reste candidat. L'essai s'en est passé : Blender piloté par un script Python, sans fenêtre. | Ouvert |
+| Pilotage de Blender | **Un script Python par classe**, versionné dans `packages/personnages/blender/`, lancé sans fenêtre par `pnpm --filter personnages modeles` (README, « Fabriquer les modèles 3D »). Le serveur MCP officiel de Blender sert d'atelier : regarder et retoucher une pièce dans Blender ouvert, puis reporter le changement dans le script. Essai du 2026-11-21 sur le magicien : même code, même GLB, 0 écart au contrat par les deux voies ; seul le script se refait depuis un clone et se lance par un sous-agent. | Décidé |
 
 **Ce que ce contrat impose à la fabrication :**
 
@@ -176,7 +176,7 @@ au site et à la vidéo.
 | 1 | Design final des huit classes, dont la barbe du magicien. | Références du mainteneur, avant la fabrication des modèles. |
 | 2 | Design des monstres, dont les yeux de Globo. | Références du mainteneur, avant le premier monstre. |
 | 3 | Visuels des 24 sorts. | À dessiner ; les pictogrammes du prototype sont refusés. |
-| 4 | Pilotage de Blender : serveur MCP ou script Python. | À trancher à la fabrication du premier modèle. |
+| 4 | Pilotage de Blender : serveur MCP ou script Python. | Tranché le 2026-11-21 : script Python, le MCP en atelier (§ 7). |
 | 5 | Ancre `dos`. | À confirmer avec la première cape ou les premières ailes. |
 | 6 | Couleurs d'interface et typographie (§ 2). | À confirmer à la première PR du site. |
 
