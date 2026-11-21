@@ -4,7 +4,8 @@
 	"type": "module",
 	"exports": {
 		".": "./src/index.ts",
-		"./test/glb": "./test/glb.ts"
+		"./test/glb": "./test/glb.ts",
+		"./test/identifiants": "./test/identifiants.ts"
 	},
 	"scripts": {
 		"modeles": "node --env-file-if-exists=../../.env scripts/blender.ts modeles",

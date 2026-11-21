@@ -4,6 +4,7 @@ export {
 	type Character,
 	type ClassKey,
 	characterOf,
+	perClass,
 	STAT_KEYS,
 	type StatKey,
 	type Stats,

@@ -1,6 +1,6 @@
 import { type Executor, excludedPlayers, players } from "donnees";
 import { and, desc, eq, notExists, sql } from "drizzle-orm";
-import { CLASS_KEYS, type ClassKey, characterOf } from "personnages";
+import { type ClassKey, characterOf, perClass } from "personnages";
 
 /** Le nombre de joueurs d'une page de l'annuaire (direction artistique § 3, « Pagination »). */
 export const DIRECTORY_PAGE_SIZE = 24;
@@ -117,9 +117,7 @@ function paginate(items: VisiblePlayer[], page: number) {
 
 // Le nombre de `found` de chaque classe, à zéro pour une classe absente.
 function countByClass(found: VisiblePlayer[]): Record<ClassKey, number> {
-	const counts = Object.fromEntries(
-		CLASS_KEYS.map((classKey) => [classKey, 0]),
-	) as Record<ClassKey, number>;
+	const counts = perClass(() => 0);
 	for (const { classKey } of found) {
 		counts[classKey]++;
 	}

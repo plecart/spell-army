@@ -1,5 +1,13 @@
 {
 	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		// `next` n'a pas de champ `exports` : sous `nodenext`, TypeScript ne résout pas le sous-chemin
+		// sans extension de `next/font/google`, que Next.js compile par son propre chargeur de polices.
+		"paths": {
+			"next/font/google": ["./node_modules/next/font/google/index.d.ts"]
+		}
+	},
 	"include": [
 		"next-env.d.ts",
 		".next/types/**/*.ts",

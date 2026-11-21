@@ -17,6 +17,25 @@ Monorepo pnpm, un paquet par domaine sous `packages/` (`docs/adr/0001-architectu
 Installation, tests, lint, format, typecheck, audit, build, migration et dérive du schéma :
 `.claude/pipeline.config.md`, section « Commandes du projet ».
 
+## Site public
+
+Le site public (`docs/direction-artistique.md` § 3) sert sur `/` l'annuaire des recrues : recherche
+dans le pseudo (`?q=`), filtre par classe (`?classe=`, le nom de la classe en minuscules sans
+accent), pages de 24 recrues (`?page=`). Il ne lit les joueurs que par `listVisiblePlayers` du
+paquet `joueurs`, qui écarte ceux de la liste d'exclusion. `pnpm --filter web dev` le sert en local
+sur la base de `DATABASE_URL`.
+
+Deux variables, non secrètes (gabarit : `.env.example`) :
+
+- `BETA_BANNER` : non vide, le bandeau « BÊTA — version de test » s'affiche en tête de chaque page
+  (ADR 0004, « Bandeau bêta ») ;
+- `INSTAGRAM_ACCOUNT_HANDLE` : le pseudo du compte, sans `@`. Le titre « L'armée de @compte » et le
+  lien « Instagram » du pied y mènent ; absente ou hors de la forme d'un pseudo, le titre est
+  « L'armée », sans lien.
+
+Le CDN de Vercel garde `/` et `/informations` une heure au plus (`Vercel-CDN-Cache-Control`,
+`apps/web/next.config.ts`) : une recrue importée au tic horaire y apparaît dans l'heure.
+
 ## Serveur MCP local
 
 Le serveur MCP (`docs/adr/0005-serveur-mcp.md`) sert sur `/api/mcp` les outils de pilotage :

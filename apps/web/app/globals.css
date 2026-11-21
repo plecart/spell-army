@@ -1,0 +1,452 @@
+/*
+ * Le style BD du site (direction artistique § 1, « Site ») : fond crème à trame de points, bordures
+ * d'encre de 2 px, ombres décalées de 3 px, titres gras ; le téléphone d'abord.
+ *
+ * Couleurs d'interface (direction artistique § 2), claires puis sombres. Le thème suit le système
+ * (`color-scheme: light dark`) tant que le bouton n'en a pas posé un sur `<html>` (`data-theme`,
+ * `theme.ts`). `light-dark()` demande Safari 17.5, Chrome 123 ou Firefox 120.
+ */
+:root {
+	color-scheme: light dark;
+	--background: light-dark(#f3ead5, #14161c);
+	--surface: light-dark(#fffaf0, #1e2129);
+	--ink: light-dark(#17161c, #f1ead8);
+	--muted: light-dark(#47444d, #b9b09d);
+	--line: light-dark(#17161c, #6e6a62);
+	--accent: light-dark(#b83b26, #e8735b);
+	/* Encre à 85 % en clair, noir à 60 % en sombre : une ombre claire est refusée. */
+	--shadow: light-dark(rgb(23 22 28 / 85%), rgb(0 0 0 / 60%));
+	--dots: color-mix(in srgb, var(--ink) 12%, transparent);
+	--border: 2px solid var(--line);
+	--offset-shadow: 3px 3px 0 var(--shadow);
+	--radius: 12px;
+}
+
+:root[data-theme="light"] {
+	color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+	color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	background-color: var(--background);
+	background-image: radial-gradient(var(--dots) 1px, transparent 1.5px);
+	background-size: 14px 14px;
+	color: var(--ink);
+	line-height: 1.4;
+}
+
+a {
+	color: inherit;
+}
+
+h1,
+h2 {
+	margin: 0;
+	font-weight: 800;
+	line-height: 1.1;
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* Le cadre : bandeau bêta, en-tête, pied. */
+
+.site-header,
+.directory,
+.site-footer {
+	width: min(100%, 64rem);
+	margin-inline: auto;
+	padding-inline: 1rem;
+}
+
+.beta {
+	margin: 0;
+	padding: 0.375rem 1rem;
+	background: var(--ink);
+	color: var(--background);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	text-align: center;
+}
+
+.site-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-block: 1rem 0.75rem;
+}
+
+.logo {
+	font-size: 1.125rem;
+	font-weight: 800;
+	text-decoration: none;
+	text-shadow: 2px 2px 0 var(--accent);
+}
+
+.site-footer {
+	display: flex;
+	justify-content: center;
+	gap: 1.5rem;
+	padding-block: 2rem 2.5rem;
+	font-weight: 700;
+}
+
+/* Les blocs BD : surface, bordure d'encre, ombre décalée. */
+
+.icon-button,
+.search,
+.chip,
+.card,
+.button,
+.empty {
+	border: var(--border);
+	border-radius: var(--radius);
+	background: var(--surface);
+	box-shadow: var(--offset-shadow);
+}
+
+.icon-button {
+	display: grid;
+	place-items: center;
+	flex: none;
+	width: 3rem;
+	height: 3rem;
+	padding: 0;
+	color: var(--ink);
+	cursor: pointer;
+}
+
+.icon-button svg {
+	width: 1.5rem;
+	height: 1.5rem;
+}
+
+.site-header .icon-button {
+	border-radius: 50%;
+	box-shadow: none;
+}
+
+/* L'annuaire. */
+
+.banderole {
+	width: fit-content;
+	max-width: 100%;
+	margin: 0.25rem 0 1.25rem;
+	filter: drop-shadow(var(--offset-shadow));
+	transform: rotate(-2deg);
+}
+
+.banderole span {
+	display: block;
+	padding: 0.5rem 1.5rem;
+	background: var(--accent);
+	color: var(--background);
+	font-size: 0.8125rem;
+	font-weight: 800;
+	clip-path: polygon(
+		0 0,
+		100% 0,
+		calc(100% - 0.75rem) 50%,
+		100% 100%,
+		0 100%,
+		0.75rem 50%
+	);
+}
+
+.directory h1 {
+	margin-bottom: 0.5rem;
+	font-size: clamp(2rem, 8vw, 3rem);
+	overflow-wrap: anywhere;
+}
+
+h1 a {
+	text-decoration: none;
+}
+
+h1 a:hover {
+	text-decoration: underline;
+}
+
+.lede {
+	margin: 0 0 1.25rem;
+	color: var(--muted);
+	font-size: 1.0625rem;
+}
+
+.toolbar {
+	display: flex;
+	gap: 0.625rem;
+}
+
+.toolbar .icon-button {
+	width: 3.25rem;
+	height: auto;
+}
+
+.search {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	padding-inline: 0.875rem;
+	color: var(--muted);
+}
+
+.search form {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: 0.5rem;
+	min-width: 0;
+	margin: 0;
+}
+
+.search svg {
+	width: 1.25rem;
+	height: 1.25rem;
+	flex: none;
+}
+
+.search input {
+	flex: 1;
+	min-width: 0;
+	height: 3rem;
+	border: 0;
+	background: transparent;
+	color: var(--ink);
+	font: inherit;
+	font-size: 1rem;
+	outline: none;
+}
+
+.search input::placeholder {
+	color: var(--muted);
+}
+
+.search:focus-within {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 1rem;
+	padding: 0.25rem 0.75rem;
+	border-radius: 999px;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.counter {
+	margin: 1.25rem 0 0.875rem;
+	color: var(--muted);
+	font-size: 0.9375rem;
+}
+
+.counter strong {
+	color: var(--ink);
+	font-weight: 800;
+}
+
+.cards {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.875rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+@media (min-width: 40rem) {
+	.cards {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 60rem) {
+	.cards {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+.card {
+	min-width: 0;
+	padding: 0.375rem 0.375rem 0.625rem;
+}
+
+/* La vignette : le décor de la classe sur une teinte de sa couleur ; le personnage s'y posera. */
+.vignette {
+	aspect-ratio: 1;
+	border-radius: 8px;
+	background-color: color-mix(in srgb, var(--class-color) 18%, var(--surface));
+	background-position: center bottom;
+	background-size: cover;
+}
+
+.handle {
+	margin: 0.5rem 0.25rem 0.125rem;
+	font-weight: 800;
+	overflow-wrap: anywhere;
+}
+
+.class-name {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	margin: 0 0.25rem;
+	color: var(--muted);
+	font-size: 0.875rem;
+}
+
+.dot {
+	flex: none;
+	width: 0.75rem;
+	height: 0.75rem;
+	border: 1px solid var(--line);
+	border-radius: 50%;
+	background: var(--class-color);
+}
+
+.pagination {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	margin-top: 1.5rem;
+	font-size: 0.9375rem;
+	font-weight: 700;
+}
+
+.button {
+	padding: 0.5rem 0.75rem;
+	text-decoration: none;
+}
+
+.button.disabled {
+	box-shadow: none;
+	opacity: 0.45;
+}
+
+.empty {
+	margin: 1.5rem 0 0;
+	padding: 1.5rem 1rem;
+	font-weight: 700;
+	text-align: center;
+}
+
+/* La feuille du filtre, qui monte du bas de l'écran. Sans marge intérieure : un appui sur le fond
+   atteint le `<dialog>` lui-même (`filter-sheet.tsx`). */
+
+.sheet {
+	width: 100%;
+	max-width: 40rem;
+	max-height: 85vh;
+	margin: auto auto 0;
+	padding: 0;
+	border: var(--border);
+	border-bottom: 0;
+	border-radius: 1.25rem 1.25rem 0 0;
+	background: var(--surface);
+	color: var(--ink);
+}
+
+.sheet[open] {
+	animation: rise 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sheet[open] {
+		animation: none;
+	}
+}
+
+@keyframes rise {
+	from {
+		transform: translateY(100%);
+	}
+}
+
+.sheet::backdrop {
+	background: rgb(0 0 0 / 45%);
+}
+
+.sheet-body {
+	padding: 1rem 1rem 1.5rem;
+}
+
+.sheet-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 1rem;
+}
+
+.sheet-header h2 {
+	font-size: 1.25rem;
+}
+
+.sheet-header form {
+	margin: 0;
+}
+
+.class-options {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.625rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.class-options li:first-child {
+	grid-column: 1 / -1;
+}
+
+.class-options a {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.75rem;
+	border: var(--border);
+	border-radius: var(--radius);
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.class-options a[aria-current="true"] {
+	background: var(--ink);
+	color: var(--surface);
+}
+
+.class-options .count {
+	margin-left: auto;
+	color: var(--muted);
+	font-weight: 600;
+}
+
+.class-options a[aria-current="true"] .count {
+	color: inherit;
+}

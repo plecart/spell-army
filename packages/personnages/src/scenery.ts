@@ -1,12 +1,5 @@
-import { CLASS_KEYS, type ClassKey } from "./character.ts";
+import { type ClassKey, perClass } from "./character.ts";
 import { CLASS_COLORS } from "./class-colors.ts";
-
-/** Une valeur par classe de `CLASS_KEYS`. */
-function perClass<T>(valueFor: (classKey: ClassKey) => T): Record<ClassKey, T> {
-	return Object.fromEntries(
-		CLASS_KEYS.map((classKey) => [classKey, valueFor(classKey)]),
-	) as Record<ClassKey, T>;
-}
 
 // Le décor de classe (direction artistique § 5, « Règles de dessin du décor »), porté du prototype
 // `annuaire-bd.html` de la direction artistique. Repère du `viewBox` : 100 × 100, y vers le bas.
