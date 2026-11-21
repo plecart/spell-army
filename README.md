@@ -31,6 +31,11 @@ relancée sous le verrou de l'import, qui lit la liste chez HikerAPI avec `HIKER
 déjà. Le jeton n'entre dans aucun fichier suivi par git, aucune issue, aucune conversation
 avec Claude : chaque étape qui le touche se fait dans son propre terminal.
 
+Pour les joueurs, `chercher_joueur` rend ceux dont le pseudo contient une partie donnée, sans tenir
+compte des majuscules ; la partie suit l'alphabet des pseudos Instagram et se prend littéralement.
+Il en rend au plus 20, triés par pseudo dans l'ordre des octets, et dit si la liste est tronquée ;
+pour chacun, l'identifiant, le pseudo, la classe, le numéro et le nom du sort, rien d'autre.
+
 1. **Migrer la base** de `DATABASE_URL` : `pnpm --filter donnees run migrate`. Les migrations posent
    aussi les réglages de départ du calibrage et la réserve de départ des sorts.
 2. **Créer le jeton**, dans un terminal ouvert hors de l'app Claude, Git Bash depuis le menu
