@@ -22,7 +22,7 @@ export default function Informations() {
 			<section>
 				<h2>Qui traite ces données</h2>
 				<p>
-					[Nom Prénom], éditeur du jeu, joignable par message privé sur{" "}
+					Bernier Pacôme, éditeur du jeu, joignable par message privé sur{" "}
 					{account}.
 				</p>
 			</section>

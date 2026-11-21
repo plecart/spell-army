@@ -16,7 +16,7 @@ const POINTS: [string, string, string][] = [
 	[
 		"qui traite les données",
 		"Qui traite ces données",
-		"[Nom Prénom], éditeur du jeu, joignable par message privé sur le compte Instagram du jeu.",
+		"Bernier Pacôme, éditeur du jeu, joignable par message privé sur le compte Instagram du jeu.",
 	],
 	[
 		"lesquelles",
@@ -63,7 +63,7 @@ describe("page « Informations »", () => {
 		expect(linksOf(render(<Informations />))).toEqual([account, account]);
 		expect(sections()).toContainEqual([
 			"Qui traite ces données",
-			"[Nom Prénom], éditeur du jeu, joignable par message privé sur @wizardarmy.",
+			"Bernier Pacôme, éditeur du jeu, joignable par message privé sur @wizardarmy.",
 		]);
 		expect(sections()).toContainEqual([
 			"Demander ton retrait",
