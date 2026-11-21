@@ -1,4 +1,8 @@
 export {
+	type ClassDefaultModelChange,
+	changeClassDefaultModel,
+} from "./default-model.ts";
+export {
 	type FollowerEntry,
 	type ScreenedPage,
 	screenEntries,
