@@ -4,8 +4,7 @@ import {
 	importPasses,
 	players,
 } from "donnees";
-import { freshDatabase } from "donnees/test/base-neuve";
-import { sql } from "drizzle-orm";
+import { freshDatabase, injectFailure } from "donnees/test/base-neuve";
 import { describe, expect, test } from "vitest";
 import {
 	acquireImportLock,
@@ -39,28 +38,6 @@ function tickOver(
 ): { provider: FakeFollowerProvider; options: ImportOptions } {
 	const { provider, clock } = pacedProvider(list, { pageSize, start, pageMs });
 	return { provider, options: { db, provider, clock } };
-}
-
-/**
- * Fait échouer sous le code `code` toute instruction `event` sur `table`, par un déclencheur ; rend
- * de quoi le retirer.
- */
-async function injectFailure(
-	db: Executor,
-	event: "insert" | "delete",
-	table: string,
-	code: string,
-): Promise<() => Promise<unknown>> {
-	const name = `fail_on_${event}_${table}`;
-	await db.execute(
-		sql.raw(`create function ${name}() returns trigger language plpgsql
-			as $$ begin raise exception 'panne injectée' using errcode = '${code}'; end $$`),
-	);
-	await db.execute(
-		sql.raw(`create trigger ${name} before ${event} on ${table}
-			for each row execute function ${name}()`),
-	);
-	return () => db.execute(sql.raw(`drop trigger ${name} on ${table}`));
 }
 
 /** Inscrit au journal une passe complète terminée, partie à `startedAt`. */
@@ -393,7 +370,10 @@ describe("verrou du tic", () => {
 
 	test("une erreur de la base remonte du tic, et le verrou est rendu", async () => {
 		const db = await freshDatabase();
-		const repair = await injectFailure(db, "insert", "import_passes", "P0001");
+		const repair = await injectFailure(db, {
+			event: "insert",
+			table: "import_passes",
+		});
 		await expect(runTick(tickOver(db, []).options)).rejects.toMatchObject({
 			cause: { code: "P0001" },
 		});
@@ -407,9 +387,13 @@ describe("verrou du tic", () => {
 	])("un rendu du verrou qui échoue %s", async (_, failingPass, code) => {
 		const db = await freshDatabase();
 		if (failingPass) {
-			await injectFailure(db, "insert", "import_passes", "P0001");
+			await injectFailure(db, { event: "insert", table: "import_passes" });
 		}
-		await injectFailure(db, "delete", "import_lock", "P0004");
+		await injectFailure(db, {
+			event: "delete",
+			table: "import_lock",
+			code: "P0004",
+		});
 		await expect(runTick(tickOver(db, []).options)).rejects.toMatchObject({
 			cause: { code },
 		});

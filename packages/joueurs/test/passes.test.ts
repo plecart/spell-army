@@ -5,7 +5,7 @@ import {
 	players,
 	spells,
 } from "donnees";
-import { freshDatabase } from "donnees/test/base-neuve";
+import { freshDatabase, injectFailure } from "donnees/test/base-neuve";
 import { sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import {
@@ -352,44 +352,41 @@ describe("passe en échec", () => {
 		expect(await db.$count(players)).toBe(0);
 	});
 
-	// Une fonction de déclencheur qui lève une exception Postgres (P0001).
-	const FAIL = `create function fail_on_page() returns trigger language plpgsql
-		as $$ begin raise exception 'panne injectée'; end $$`;
-
-	test.each([
+	test.each<[string, (db: Executor) => Promise<unknown>, string]>([
 		[
 			"à l'insertion de ses joueurs",
-			[
-				FAIL,
-				`create trigger fail_on_page before insert on players for each row
-					when (new.instagram_id = '90003') execute function fail_on_page()`,
-			],
+			(db) =>
+				injectFailure(db, {
+					event: "insert",
+					table: "players",
+					when: "new.instagram_id = '90003'",
+				}),
 			"erreur Postgres P0001",
 		],
 		[
 			"sur un contrôle de ses joueurs",
-			[
-				`alter table players add constraint players_test_check
-					check (instagram_id <> '90003')`,
-			],
+			(db) =>
+				db.execute(
+					sql`alter table players add constraint players_test_check
+						check (instagram_id <> '90003')`,
+				),
 			"erreur Postgres 23514 (players_test_check)",
 		],
 		[
 			"au journal de la page, ses joueurs insérés",
-			[
-				FAIL,
-				`create trigger fail_on_page before update on import_passes for each row
-					when (new.pages <> old.pages) execute function fail_on_page()`,
-			],
+			(db) =>
+				injectFailure(db, {
+					event: "update",
+					table: "import_passes",
+					when: "new.pages <> old.pages",
+				}),
 			"erreur Postgres P0001",
 		],
 	])(
 		"une panne de la base %s : la page n'est ni écrite ni comptée, et le journal porte le code Postgres, sans aucune valeur de la page",
-		async (_, statements, error) => {
+		async (_, breakDatabase, error) => {
 			const db = await freshDatabase();
-			for (const statement of statements) {
-				await db.execute(sql.raw(statement));
-			}
+			await breakDatabase(db);
 			const page = followers(5, 90001);
 			const { context } = passOver(db, page);
 			expect(await runQuickPass(context, "tick")).toMatchObject({

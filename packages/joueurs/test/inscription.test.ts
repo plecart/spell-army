@@ -10,7 +10,11 @@ import {
 	spells,
 	storeModelFile,
 } from "donnees";
-import { freshDatabase, waitForOneLockWaiter } from "donnees/test/base-neuve";
+import {
+	freshDatabase,
+	injectFailure,
+	waitForOneLockWaiter,
+} from "donnees/test/base-neuve";
 import { eq, getTableColumns, sql } from "drizzle-orm";
 import { characterOf, drawSpell } from "personnages";
 import { describe, expect, test } from "vitest";
@@ -130,20 +134,11 @@ describe("écriture d'une page", () => {
 	test("une panne au milieu de la page n'en écrit aucun joueur", async () => {
 		const db = await freshDatabase();
 		// Le troisième identifiant de la page, « 12 », fait échouer son insertion.
-		await db.execute(
-			sql.raw(`create function fail_on_third_entry() returns trigger
-				language plpgsql as $$
-				begin
-					if new.instagram_id = '12' then
-						raise exception 'panne injectée';
-					end if;
-					return new;
-				end $$`),
-		);
-		await db.execute(
-			sql.raw(`create trigger fail_on_third_entry before insert on players
-				for each row execute function fail_on_third_entry()`),
-		);
+		await injectFailure(db, {
+			event: "insert",
+			table: "players",
+			when: "new.instagram_id = '12'",
+		});
 		await expect(writePage(db, PAGE)).rejects.toMatchObject({
 			cause: { code: "P0001", message: "panne injectée" },
 		});
@@ -434,14 +429,7 @@ describe("changement du modèle par défaut d'une classe", () => {
 		const db = await freshDatabase();
 		const before = await setDefaultFor(db, "12");
 		await writePage(db, [entry("12")]);
-		await db.execute(
-			sql.raw(`create function fail_on_follow() returns trigger language plpgsql
-				as $$ begin raise exception 'panne injectée'; end $$`),
-		);
-		await db.execute(
-			sql.raw(`create trigger fail_on_follow before update on players
-				for each row execute function fail_on_follow()`),
-		);
+		await injectFailure(db, { event: "update", table: "players" });
 		const next = await storeClassFile(db, "12");
 		await expect(
 			changeClassDefaultModel(db, CLASS_OF_12, next),
