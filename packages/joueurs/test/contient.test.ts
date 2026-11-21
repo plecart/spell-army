@@ -14,7 +14,8 @@ describe("un texte contient un fragment, sans tenir compte des majuscules", () =
 		["a%b", "%", true],
 		["abc", "%", false],
 		["a\\b", "\\", true],
-		["ab", "\\", false],
+		["ab", "a\\b", false],
+		["wizard", "", true],
 	])("« %s » contient « %s » : %s", async (text, fragment, found) => {
 		const db = await freshDatabase();
 		const { rows } = await db.execute(
