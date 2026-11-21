@@ -3,16 +3,10 @@ import { Socket } from "node:net";
 import { UNREACHABLE_DATABASE_URL } from "donnees/test/base-de-test";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { createTickEndpoint } from "../app/tick.ts";
+import { TICK_SECRET, tickRequest } from "./montage.ts";
 
-// Secrets factices : 32 octets, le minimum admis ; 31, un de moins.
-const SECRET = "s".repeat(32);
+// Secret factice de 31 octets, un de moins que le minimum admis.
 const SHORT_SECRET = "s".repeat(31);
-const TICK_URL = "http://wizard-army.test/api/tic";
-
-/** Un `POST` du tic, avec les en-têtes `headers`. */
-function tick(headers: Record<string, string> = {}): Request {
-	return new Request(TICK_URL, { method: "POST", headers });
-}
 
 /** La route, évaluée à neuf : son import ne doit lire aucune variable ni ouvrir de connexion. */
 async function importRoute() {
@@ -24,11 +18,11 @@ describe("tic : refus avant toute base et tout fournisseur", () => {
 	// Le dénombrement des refus : l'en-tête absent, un mauvais secret, un secret configuré trop court
 	// ou absent. Le contrôle lui-même se dénombre dans `jeton.test.ts`.
 	test.each<[string, Record<string, string>, string | undefined]>([
-		["sans en-tête", {}, SECRET],
+		["sans en-tête", {}, TICK_SECRET],
 		[
 			"un mauvais secret de même longueur",
 			{ authorization: `Bearer ${"u".repeat(32)}` },
-			SECRET,
+			TICK_SECRET,
 		],
 		[
 			"un secret configuré de 31 octets, présenté tel quel",
@@ -45,7 +39,7 @@ describe("tic : refus avant toute base et tout fournisseur", () => {
 				secret: () => secret,
 				database,
 				provider,
-			})(tick(headers));
+			})(tickRequest(headers));
 			expect(response.status).toBe(401);
 			expect(response.headers.get("www-authenticate")).toBe("Bearer");
 			expect(await response.text()).toBe("");
@@ -72,7 +66,7 @@ describe("route /api/tic", () => {
 	test("sans CRON_SECRET, 401, et ni l'import ni le refus n'ouvrent de connexion", async () => {
 		const connect = vi.spyOn(Socket.prototype, "connect");
 		const { POST } = await importRoute();
-		const response = await POST(tick({ authorization: `Bearer ${SECRET}` }));
+		const response = await POST(tickRequest());
 		expect(response.status).toBe(401);
 		expect(connect).not.toHaveBeenCalled();
 	});
@@ -81,8 +75,8 @@ describe("route /api/tic", () => {
 		const connect = vi.spyOn(Socket.prototype, "connect");
 		const serverLog = vi.spyOn(console, "error").mockReturnValue();
 		const { POST } = await importRoute();
-		vi.stubEnv("CRON_SECRET", SECRET);
-		const response = await POST(tick({ authorization: `Bearer ${SECRET}` }));
+		vi.stubEnv("CRON_SECRET", TICK_SECRET);
+		const response = await POST(tickRequest());
 		expect(response.status).toBe(500);
 		expect(await response.json()).toEqual({
 			message: "configuration de l'import incomplète",
