@@ -22,6 +22,7 @@ import {
 	type FakeFollowerProvider,
 	followers,
 	pacedProvider,
+	UNTRUSTED_PAGE,
 } from "./faux-fournisseur.ts";
 import { after, HOUR_MS, MINUTE_MS, T0 } from "./horloge.ts";
 
@@ -220,23 +221,15 @@ describe("passe complète", () => {
 
 	test("données non fiables : le journal compte les écartées par motif, et aucune colonne de sa ligne ne porte une valeur reçue", async () => {
 		const db = await freshDatabase();
-		const page = [
-			...["12", "abc", "007", "0"].map((id) => ({
-				id,
-				username: `joueur_${id}`,
-			})),
-			{ id: "13", username: "a b" },
-			{ id: "14", username: "a".repeat(31) },
-		];
 		// Une complète : son curseur est la colonne de texte qu'une page écrit.
-		const { context } = passOver(db, page);
+		const { context } = passOver(db, UNTRUSTED_PAGE);
 		expect(await startFullPass(context, "mcp")).toMatchObject({
 			status: "done",
 			added: 1,
 			invalidIds: 3,
 			invalidUsernames: 2,
 		});
-		await expectNoReceivedValue(db, page);
+		await expectNoReceivedValue(db, UNTRUSTED_PAGE);
 	});
 });
 

@@ -5,13 +5,28 @@ import {
 	ProviderError,
 } from "../src/index.ts";
 
+/** Une entrée, au pseudo tiré de l'identifiant sauf s'il est donné. */
+export function entry(id: string, username = `joueur_${id}`): FollowerEntry {
+	return { id, username };
+}
+
 /** `count` abonnés bien formés, d'identifiants consécutifs à partir de `first`. */
 export function followers(count: number, first = 1): FollowerEntry[] {
-	return Array.from({ length: count }, (_, index) => {
-		const id = String(first + index);
-		return { id, username: `joueur_${id}` };
-	});
+	return Array.from({ length: count }, (_, index) =>
+		entry(String(first + index)),
+	);
 }
+
+/**
+ * Une page aux données non fiables : une seule entrée bien formée, « 12 » ; trois identifiants hors
+ * forme — non numérique, à zéro de tête, nul — et deux pseudos hors forme — à espace, de 31
+ * caractères.
+ */
+export const UNTRUSTED_PAGE: readonly FollowerEntry[] = [
+	...["12", "abc", "007", "0"].map((id) => entry(id)),
+	entry("13", "a b"),
+	entry("14", "a".repeat(31)),
+];
 
 /** Les réglages d'un faux fournisseur, tous facultatifs. */
 export interface FakeProviderOptions {

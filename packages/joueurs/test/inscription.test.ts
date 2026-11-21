@@ -18,18 +18,11 @@ import {
 import { eq, getTableColumns, sql } from "drizzle-orm";
 import { characterOf, drawSpell } from "personnages";
 import { describe, expect, test } from "vitest";
-import {
-	changeClassDefaultModel,
-	type FollowerEntry,
-	writePage,
-} from "../src/index.ts";
+import { changeClassDefaultModel, writePage } from "../src/index.ts";
+import { entry, followers, UNTRUSTED_PAGE } from "./faux-fournisseur.ts";
 
-/** Une entrée bien formée, au pseudo tiré de l'identifiant sauf s'il est donné. */
-function entry(id: string, username = `joueur_${id}`): FollowerEntry {
-	return { id, username };
-}
-
-const PAGE = ["10", "11", "12", "13", "14"].map((id) => entry(id));
+// Les joueurs « 10 » à « 14 ».
+const PAGE = followers(5, 10);
 
 /**
  * Les joueurs, par identifiant croissant. La date d'arrivée vient en texte, à la microseconde de la
@@ -181,12 +174,7 @@ describe("écriture d'une page", () => {
 
 	test("données non fiables : seule l'entrée bien formée est écrite, les écartées comptées par motif", async () => {
 		const db = await freshDatabase();
-		const page = [
-			...["12", "abc", "007", "0"].map((id) => entry(id)),
-			entry("13", "a b"),
-			entry("14", "a".repeat(31)),
-		];
-		expect(await writePage(db, page)).toEqual({
+		expect(await writePage(db, UNTRUSTED_PAGE)).toEqual({
 			added: 1,
 			invalidIds: 3,
 			invalidUsernames: 2,
