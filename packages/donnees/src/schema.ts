@@ -248,11 +248,15 @@ export const excludedPlayers = pgTable(
 	],
 );
 
-/** Les déclencheurs d'une passe rapide d'import : le tic, ou le MCP. */
-export const QUICK_PASS_TRIGGERS = ["tick", "mcp"] as const;
+// Les déclencheurs de chaque type de passe d'import, que `import_passes_trigger_check` apparie.
+const QUICK_PASS_TRIGGERS = ["tick", "mcp"] as const;
+const FULL_PASS_TRIGGERS = ["weekly", "self_check", "mcp"] as const;
 
-/** Les déclencheurs d'une passe complète d'import : la semaine, l'auto-contrôle, ou le MCP. */
-export const FULL_PASS_TRIGGERS = ["weekly", "self_check", "mcp"] as const;
+/** Le déclencheur d'une passe rapide d'import : le tic, ou le MCP. */
+export type QuickPassTrigger = (typeof QUICK_PASS_TRIGGERS)[number];
+
+/** Le déclencheur d'une passe complète d'import : la semaine, l'auto-contrôle, ou le MCP. */
+export type FullPassTrigger = (typeof FULL_PASS_TRIGGERS)[number];
 
 // L'état d'une passe : en cours, interrompue (budget, fonction tuée), en échec, terminée.
 const PASS_STATUSES = ["running", "interrupted", "failed", "done"] as const;
