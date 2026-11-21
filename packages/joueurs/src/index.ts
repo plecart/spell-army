@@ -3,6 +3,7 @@ export {
 	type ScreenedPage,
 	screenEntries,
 } from "./entries.ts";
+export { listPasses, type PassLogEntry } from "./journal.ts";
 export {
 	acquireImportLock,
 	IMPORT_LEASE_MS,
