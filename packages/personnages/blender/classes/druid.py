@@ -7,8 +7,9 @@ enfonçait tête et capuche dans la robe : elles flottent ici au-dessus.
 import math
 
 from annuaire import EYES, SCALE, WOOD, hand, head
-from workshop import MATTE, anchor, cylinder, enlarge, material, part, shade, sphere
+from workshop import LEFT, MATTE, RIGHT, anchor, cylinder, enlarge, material, part, shade, sphere
 
+# Les feuilles du bâton, autour de son sommet, leur x compté vers l'extérieur de la main.
 STAFF_LEAVES = ((-0.04, 0.88, 0), (0.06, 0.86, 0.03), (0.01, 0.94, -0.05))
 
 
@@ -33,12 +34,13 @@ def build(color):
         position = (math.sin(a) * 0.28, math.cos(a) * 0.05, math.cos(a) * 0.12)
         part(leaf, secondaire, chapeau, position, scale=(1, 0.45, 1.6))
 
-    main_droite = hand("droite", (0.47, 0.72, 0.05), peau)
+    main_droite = hand(RIGHT, (0.47, 0.72, 0.05), peau)
+    outward = RIGHT.sign  # le bâton penche vers l'extérieur de la main
     staff = cylinder("baton", 0.03, 0.035, 1.55)
-    part(staff, accessoire, main_droite, (0, 0.06, 0), (0, 0, -0.04))
-    for i, position in enumerate(STAFF_LEAVES, 1):
+    part(staff, accessoire, main_droite, (0, 0.06, 0), (0, 0, -outward * 0.04))
+    for i, (x, y, z) in enumerate(STAFF_LEAVES, 1):
         leaf = sphere(f"feuillage_{i}", 0.07, 10, 8)
-        part(leaf, secondaire, main_droite, position, scale=(1, 0.5, 1))
-    hand("gauche", (-0.45, 0.68, 0.08), peau)
+        part(leaf, secondaire, main_droite, (outward * x, y, z), scale=(1, 0.5, 1))
+    hand(LEFT, (0.45, 0.68, 0.08), peau)
 
     enlarge(SCALE)

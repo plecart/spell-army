@@ -6,11 +6,15 @@ Le magicien, brouillon porté du prototype `modeles.html` de la direction artist
 import math
 
 from workshop import (
+    LEFT,
     MATTE,
     METAL,
+    RIGHT,
+    SIDES,
     anchor,
     bent_cone,
     cylinder,
+    hand,
     lathe,
     material,
     octahedron,
@@ -29,6 +33,8 @@ ROBE = [
     (0.19, 0.88),
     (0, 0.91),
 ]
+
+PALM = 0.085  # rayon d'une main
 
 
 def build(color):
@@ -50,11 +56,12 @@ def build(color):
     tete = anchor("tete", position=(0, 0.99, 0))
     part(sphere("visage", 0.3, 40, 30), peau, tete, (0, 0.25, 0))
     part(sphere("nez", 0.065, 20, 16), peau, tete, (0, 0.21, 0.3))
-    for side, s in (("gauche", -1), ("droit", 1)):
-        eye = sphere(f"oeil_{side}", 0.035, 16, 12)
-        part(eye, fixe, tete, (s * 0.1, 0.3, 0.272), scale=(1, 1.3, 0.6))
-        brow = cylinder(f"sourcil_{side}", 0.02, 0.02, 0.11, 12)
-        part(brow, poils, tete, (s * 0.1, 0.365, 0.275), (0, 0, math.pi / 2 + s * 0.25))
+    for side in SIDES:
+        eye = sphere(f"oeil_{side.masculine}", 0.035, 16, 12)
+        part(eye, fixe, tete, (side.sign * 0.1, 0.3, 0.272), scale=(1, 1.3, 0.6))
+        brow = cylinder(f"sourcil_{side.masculine}", 0.02, 0.02, 0.11, 12)
+        tilt = (0, 0, math.pi / 2 + side.sign * 0.25)  # le sourcil remonte vers l'extérieur
+        part(brow, poils, tete, (side.sign * 0.1, 0.365, 0.275), tilt)
     # Calotte ouverte de 0,9 rad de part et d'autre du visage, du chapeau jusqu'au bas des oreilles.
     hair = sphere(
         "cheveux",
@@ -73,10 +80,7 @@ def build(color):
     part(cylinder("galon", 0.31, 0.31, 0.07, 40), secondaire, chapeau, (0, 0.05, 0))
     part(bent_cone("pointe", 0.3, 0.92, 0.03, 40), coiffe, chapeau, (0, 0.02, 0))
 
-    main_gauche = anchor("main_gauche", position=(-0.5, 0.56, 0.1))
-    part(sphere("paume_gauche", 0.085, 20, 16), peau, main_gauche, scale=(1, 1.1, 0.9))
-
-    main_droite = anchor("main_droite", position=(0.52, 0.66, 0.14))
-    part(sphere("paume_droite", 0.085, 20, 16), peau, main_droite, scale=(1, 1.1, 0.9))
+    hand(LEFT, (0.5, 0.56, 0.1), peau, PALM)
+    main_droite = hand(RIGHT, (0.52, 0.66, 0.14), peau, PALM)
     part(cylinder("baton", 0.03, 0.035, 1.62, 16), accessoire, main_droite, (0, 0.1, 0))
     part(octahedron("gemme", 0.11), secondaire, main_droite, (0, 1.0, 0))
