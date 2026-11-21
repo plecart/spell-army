@@ -40,7 +40,7 @@ from workshop import (
 
 SIZE = 1024  # côté d'une image de classe, en pixels
 SURFACE = "#fffaf0"  # fond sous le décor : jeton « surface » clair, direction artistique § 2
-SHEET = (4, 2)  # colonnes et rangées de la planche, aux images réduites de moitié
+COLUMNS = 4  # colonnes de la planche, aux images réduites de moitié ; autant de rangées qu'il faut
 PEDESTAL_SEGMENTS = 48
 
 # La vignette du prototype : caméra perspective de 28° de champ vertical, personnage tourné de
@@ -191,19 +191,23 @@ def render_class(model, setting, path):
 
 
 def sheet(images):
-    """La planche : `images` réduites de moitié, en grille de `SHEET`, dans leur ordre."""
-    columns, rows = SHEET
+    """La planche : `images` réduites de moitié, sur `COLUMNS` colonnes, dans leur ordre."""
+    rows = math.ceil(len(images) / COLUMNS)
     cell = SIZE // 2
-    board = np.full((rows * cell, columns * cell, 3), srgb(SURFACE))
+    board = np.full((rows * cell, COLUMNS * cell, 3), srgb(SURFACE))
     for index, image in enumerate(images):
-        row, column = divmod(index, columns)
+        row, column = divmod(index, COLUMNS)
         half = image.reshape(cell, 2, cell, 2, 3).mean(axis=(1, 3))
         board[row * cell : (row + 1) * cell, column * cell : (column + 1) * cell] = half
     return board
 
 
 def render_previews(classes_file, models_dir, out_dir):
-    """Rend chaque classe de `classes_file` depuis `models_dir`, puis la planche, dans `out_dir`."""
+    """
+    Vérifie le tramage du décor (`backdrop.self_check`), puis rend chaque classe de `classes_file`
+    depuis `models_dir`, et la planche, dans `out_dir`.
+    """
+    backdrop.self_check()
     settings = json.loads(classes_file.read_text(encoding="utf-8"))
     missing = [key for key in settings if not (models_dir / f"{key}.glb").is_file()]
     if missing:
