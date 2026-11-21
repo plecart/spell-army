@@ -371,6 +371,21 @@ describe("changement du modèle par défaut d'une classe", () => {
 		});
 	});
 
+	test("régler à nouveau le même fichier ne fait suivre aucun joueur et ne change aucun modèle", async () => {
+		const db = await freshDatabase();
+		const fileId = await setDefaultFor(db, "12");
+		const [first] = idsOfClassOf12(1) as [string];
+		await writePage(db, [entry(first), entry("13")]);
+		const models = await readModels(db);
+		expect(models[first]).toBe(fileId);
+		expect(await changeClassDefaultModel(db, CLASS_OF_12, fileId)).toEqual({
+			before: fileId,
+			after: fileId,
+			followed: 0,
+		});
+		expect(await readModels(db)).toEqual(models);
+	});
+
 	test.each([
 		["sans ancien défaut", false],
 		["avec un ancien défaut", true],
