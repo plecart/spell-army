@@ -1,3 +1,15 @@
+export type { Fighter } from "./army.ts";
+export { type FightInput, fight } from "./fight.ts";
+export {
+	type Action,
+	type ArmyAction,
+	type CombatLog,
+	type Forced,
+	type MonsterAction,
+	RULES_VERSION,
+	serializeLog,
+} from "./log.ts";
+export type { Monster, MonsterAttack } from "./monster.ts";
 export {
 	DEFAULT_WEIGHT,
 	type EffectCategory,

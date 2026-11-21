@@ -11,7 +11,7 @@
 export const STATS = ["life", "strength", "magic", "speed"] as const;
 export type Stat = (typeof STATS)[number];
 
-/** Une valeur par stat : celles d'un personnage, leurs sommes sur une armée, celles d'un monstre. */
+/** Une valeur par stat : celles d'un personnage, leurs sommes sur une armée, ou d'un monstre. */
 export type Stats = Record<Stat, number>;
 
 /**

@@ -3,18 +3,12 @@ import type { ArmySummary, Fighter } from "../src/army.ts";
 import {
 	type CharacterClass,
 	STARTING_POOL,
-	type Spell,
 	type Stats,
 } from "../src/index.ts";
 import { cast, type Situation, strike } from "../src/power.ts";
+import { spellNumbered } from "./combattants.ts";
 
 const PRECISION = 10;
-
-function spellNumbered(number: number): Spell {
-	const spell = STARTING_POOL.find((candidate) => candidate.number === number);
-	if (spell === undefined) throw new Error(`aucun sort n° ${number}`);
-	return spell;
-}
 
 function casterOf(
 	spellNumber: number,
@@ -33,9 +27,9 @@ function stats(
 	return { life, strength, magic, speed };
 }
 
-// Une armée de dix personnages aux stats égales, à moitié blessée, contre un monstre au trois quarts
-// de sa Vie et dont le dernier coup valait 10 : une stat de l'armée vaut 100 selon toute recette,
-// donc un coup normal (×1,0) vaut 0,2 × 100 = 20 avant l'efficacité.
+// Une armée de dix personnages aux stats égales, à moitié blessée, contre un monstre aux trois
+// quarts de sa Vie et dont le dernier coup valait 10 : une stat de l'armée vaut 100 selon toute
+// recette, donc un coup normal (×1,0) vaut 0,2 × 100 = 20 avant l'efficacité.
 const ARMY: ArmySummary = {
 	size: 10,
 	stats: stats(100, 100, 100, 100),
