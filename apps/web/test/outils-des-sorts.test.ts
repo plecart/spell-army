@@ -20,7 +20,6 @@ import {
 	inject,
 	test,
 } from "vitest";
-import { registry } from "../app/mcp/registry.ts";
 import { callTool } from "../app/mcp/tool.ts";
 import { CLASS } from "./classes.ts";
 import { gif, IMAGE_FORMATS, png } from "./images.ts";
@@ -30,6 +29,7 @@ import {
 	INFINITE,
 	outputOf,
 	publishedTools,
+	registry,
 } from "./montage.ts";
 import { base64, fingerprint, sha256 } from "./octets.ts";
 

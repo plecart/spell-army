@@ -2,10 +2,9 @@ import { auditLog } from "donnees";
 import { freshDatabase } from "donnees/test/base-neuve";
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
-import { registry } from "../app/mcp/registry.ts";
 import { callTool, listTools, type McpTool } from "../app/mcp/tool.ts";
 import { png } from "./images.ts";
-import { auditRows } from "./montage.ts";
+import { auditRows, registry } from "./montage.ts";
 import { base64, fingerprint, sha256 } from "./octets.ts";
 
 // Le dénombrement de `writeAuditEntry` (`app/mcp/audit.ts`) : chaque voie par laquelle des octets

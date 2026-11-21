@@ -24,7 +24,11 @@ Le serveur MCP (`docs/adr/0005-serveur-mcp.md`) sert sur `/api/mcp` les outils d
 `modifier_sort` pour la réserve de sorts, dont l'image se donne en base64 à `modifier_sort` (PNG,
 JPEG ou WebP, au moins 1 200 × 900 px, au plus 3 000 000 octets) ; `deposer_fichier_3d` et
 `regler_modele_classe` pour les fichiers 3D des classes et des monstres et le modèle par défaut de
-chaque classe, que suivent les joueurs de la classe restés sur l'ancien défaut. Le jeton n'entre dans aucun fichier suivi par git, aucune issue, aucune conversation
+chaque classe, que suivent les joueurs de la classe restés sur l'ancien défaut ; `lister_passes` et
+`relancer_passe` pour l'import des abonnés : le journal des passes, et une passe rapide ou complète
+relancée sous le verrou de l'import, qui lit la liste chez HikerAPI avec `HIKERAPI_ACCESS_KEY` et
+`INSTAGRAM_ACCOUNT_ID` (gabarit : `.env.example`) et répond « passe en cours » si une passe tourne
+déjà. Le jeton n'entre dans aucun fichier suivi par git, aucune issue, aucune conversation
 avec Claude : chaque étape qui le touche se fait dans son propre terminal.
 
 1. **Migrer la base** de `DATABASE_URL` : `pnpm --filter donnees run migrate`. Les migrations posent

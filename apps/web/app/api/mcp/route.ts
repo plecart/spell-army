@@ -1,28 +1,15 @@
-import { createClient } from "donnees";
-import { registry } from "../../mcp/registry.ts";
+import { database, followerProvider } from "../../environment.ts";
+import { createRegistry } from "../../mcp/registry.ts";
 import { createMcpEndpoint } from "../../mcp/server.ts";
 
-let client: ReturnType<typeof createClient> | undefined;
-
-/**
- * Le client de la base, créé au premier appel d'outil sur `DATABASE_URL`, puis réutilisé. Rien ne
- * se lit ni ne se connecte à l'import : `next build` importe la route.
- */
-function database() {
-	if (!client) {
-		const url = process.env.DATABASE_URL;
-		if (!url) {
-			throw new Error("DATABASE_URL absent : le serveur MCP n'a pas de base.");
-		}
-		client = createClient(url);
-	}
-	return client;
-}
+// La durée maximale d'une fonction sur Hobby (ADR 0002, « Verrou à bail ») : une relance de passe
+// court jusqu'à 240 s. Un littéral, que `next build` lit sans exécuter la route.
+export const maxDuration = 300;
 
 const endpoint = createMcpEndpoint({
 	token: () => process.env.MCP_TOKEN,
 	database,
-	tools: registry,
+	tools: createRegistry(followerProvider),
 });
 
 // Toutes les méthodes qu'une route peut servir : toute requête sans jeton reçoit le même `401`.
