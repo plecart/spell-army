@@ -202,12 +202,15 @@ async function closePass(
 	return pass as ImportPass;
 }
 
-// Le texte d'un échec au journal, que le MCP rend à Claude : composé par le code, il ne recopie
-// jamais une valeur reçue (ADR 0003, « Pseudos, données non fiables »). Le message d'une erreur
-// du fournisseur ou du tirage est composé par le code ; d'une erreur de la base, seuls son code et
-// sa contrainte se gardent — le message d'une erreur de requête Drizzle recopie la requête et ses
-// paramètres, donc les pseudos de la page ; d'une autre erreur, son nom seul.
-function failureText(error: unknown): string {
+/**
+ * Le texte d'un échec, au journal — que le MCP rend à Claude — ou au compte rendu d'un tic : composé
+ * par le code, il ne recopie jamais une valeur reçue (ADR 0003, « Pseudos, données non fiables »).
+ * Le message d'une erreur du fournisseur ou du tirage est composé par le code ; d'une erreur de la
+ * base, seuls son code et sa contrainte se gardent — le message d'une erreur de requête Drizzle
+ * recopie la requête et ses paramètres, donc les pseudos de la page ; d'une autre erreur, son nom
+ * seul.
+ */
+export function failureText(error: unknown): string {
 	if (error instanceof ProviderError || error instanceof RangeError) {
 		return error.message;
 	}
