@@ -129,7 +129,7 @@ def pose_figure(model, lift):
 
 
 def build_pedestal(pedestal):
-    """Le socle de `PEDESTALS` : base tronconique au dessus en y = 0, et disque du dessus."""
+    """Le socle de `PEDESTALS` : base tronconique, son dessus en y = 0, et disque du dessus."""
     base, top = pedestal["base"], pedestal["top"]
     trunk = cylinder(
         "socle", base["topRadius"], base["bottomRadius"], base["height"], PEDESTAL_SEGMENTS

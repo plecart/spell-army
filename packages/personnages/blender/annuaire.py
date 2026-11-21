@@ -13,7 +13,7 @@ from workshop import SIDES, anchor, cylinder, part, sphere
 
 # Les têtes du prototype ont de 0,23 à 0,26 de rayon : agrandies de 1,25, elles approchent celle du
 # magicien, de 0,3, et les personnages les 2 unités du contrat (direction artistique § 7,
-# « Repère »).
+# « Repère ») ; la fée, réduite (`fairy.SIZE`), reste en deçà.
 SCALE = 1.25
 
 EYES = "#1b1a20"

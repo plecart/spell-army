@@ -20,8 +20,6 @@ const OUT = fileURLToPath(new URL("../out/", import.meta.url));
 const MODELS = join(OUT, "modeles");
 const RENDERS = join(OUT, "rendus");
 
-const USAGE = `Usage : pnpm --filter personnages modeles|rendus [classe…] ; classes : ${CLASS_KEYS.join(", ")}, toutes si aucune n'est nommée.`;
-
 /**
  * Les classes que nomment `args`, dans l'ordre de `CLASS_KEYS` et une fois chacune ; toutes quand
  * `args` est vide. Lève une erreur qui nomme chaque argument qui n'est pas une classe.
@@ -133,17 +131,22 @@ function renderPreviews(classKeys: readonly ClassKey[]): void {
 	console.log(`Rendus écrits dans ${RENDERS}.`);
 }
 
+/** Les commandes, par nom ; chacune agit sur les classes que `classKeysOf` tire de ses arguments. */
+const COMMANDS = new Map<string, (classKeys: readonly ClassKey[]) => void>([
+	["modeles", buildModels],
+	["rendus", renderPreviews],
+]);
+
 if (import.meta.main) {
 	try {
-		const [command, ...args] = process.argv.slice(2);
-		const classKeys = classKeysOf(args);
-		if (command === "modeles") {
-			buildModels(classKeys);
-		} else if (command === "rendus") {
-			renderPreviews(classKeys);
-		} else {
-			throw new Error(USAGE);
+		const [command = "", ...args] = process.argv.slice(2);
+		const run = COMMANDS.get(command);
+		if (run === undefined) {
+			throw new Error(
+				`Usage : pnpm --filter personnages ${[...COMMANDS.keys()].join("|")} [classe…] ; classes : ${CLASS_KEYS.join(", ")}, toutes si aucune n'est nommée.`,
+			);
 		}
+		run(classKeysOf(args));
 	} catch (error) {
 		console.error(error instanceof Error ? error.message : String(error));
 		process.exitCode = 1;
