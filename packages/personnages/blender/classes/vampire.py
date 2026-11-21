@@ -25,7 +25,7 @@ def build(color):
     legs(0.5, 0.09, secondaire, sol)
     part(cylinder("pourpoint", 0.17, 0.22, 0.6), secondaire, sol, (0, 0.78, 0))
 
-    tete = head(0.23, peau, fixe, poils, (0, 1.1, 0))
+    tete = head(0.23, peau, fixe, poils, (0, 1.1, 0), nose=False)  # le col le cacherait
     part(dome("cheveux", 0.245), poils, tete, (0, 0.27, -0.02), scale=(1, 0.85, 1))
     anchor("chapeau", tete, (0, 0.46, 0))
 

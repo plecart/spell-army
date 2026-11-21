@@ -2,11 +2,13 @@
 Le guerrier, brouillon porté du prototype `annuaire-bd.html` de la direction artistique (fonction
 `buildCharacter`, cas « Guerrier ») : casque à nasal, épée et bouclier rond. Son tronc est une seule
 révolution arrondie, cotte de sa couleur ; la cuirasse d'acier en épouse le haut. Le casque coiffe
-le crâne au-dessus des sourcils ; le bouclier se tient par son centre, la main derrière, et l'épée
-monte droit de la main, garde et lame sur un même axe.
+le crâne, basculé vers l'arrière au-dessus des sourcils ; le bouclier se tient par son centre, la
+main derrière, et l'épée monte droit de la main, garde et lame sur un même axe.
 """
 
 import math
+
+from mathutils import Matrix, Vector
 
 from annuaire import EYES, SCALE, STEEL, dome, hand, head, legs
 from workshop import (
@@ -27,6 +29,7 @@ from workshop import (
 )
 
 TORSO = rounded(0.27, 0.22, 0.62, 0.04, 0.12)  # du bas de la cotte aux épaules
+HELMET_TILT = 0.35  # le casque bascule d'autant vers l'arrière, en radians
 WAIST = 0.42  # hauteur, sur le tronc, du bas de la cuirasse
 SHIELD = 0.27  # rayon du bouclier
 TURN = 0.5  # le bouclier se tourne d'autant vers l'extérieur, autour de l'axe vertical
@@ -51,11 +54,15 @@ def build(color):
     part(lathe("plastron", cuirass, 48), secondaire, sol, (0, 0.4, 0))
 
     tete = head(0.23, peau, fixe, poils, (0, 1.08, 0))
-    # Le casque, un peu plus large que le crâne, en coiffe le haut au-dessus des sourcils.
-    chapeau = anchor("chapeau", tete, (0, 0.385, 0))
-    part(dome("casque", 0.245), coiffe, chapeau, scale=(1, 0.95, 1))
-    part(torus("bordure", 0.24, 0.02, 10, 40), coiffe, chapeau, rotation=(math.pi / 2, 0, 0))
-    part(box("nasal", 0.045, 0.09, 0.025), coiffe, chapeau, (0, -0.03, 0.235))
+    # Le casque, basculé vers l'arrière : son bord avant passe au-dessus des sourcils, l'arrière
+    # descend sur la nuque. Le nasal suit la bascule, d'équerre sur le bord, pas sur le sol.
+    chapeau = anchor("chapeau", tete, (0, 0.28, -0.01))
+    part(dome("casque", 0.25), coiffe, chapeau, rotation=(-HELMET_TILT, 0, 0))
+    rim = torus("bordure", 0.245, 0.02, 10, 40)
+    part(rim, coiffe, chapeau, rotation=(math.pi / 2 - HELMET_TILT, 0, 0))
+    hang = Matrix.Rotation(-HELMET_TILT, 3, "X") @ Vector((0, -0.06, 0.25))  # sous le bord avant
+    nasal = box("nasal", 0.045, 0.12, 0.025)
+    part(nasal, coiffe, chapeau, tuple(hang), (-HELMET_TILT, 0, 0))
 
     # L'épée : poignée dans la main, garde au-dessus, lame tranchante, pommeau en dessous.
     main_droite = hand(RIGHT, (0.42, 0.72, 0.14), peau)

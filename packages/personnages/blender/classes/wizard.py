@@ -55,8 +55,7 @@ def build(color):
 
     tete = anchor("tete", position=(0, 0.99, 0))
     part(sphere("visage", 0.3, 40, 30), peau, tete, (0, 0.25, 0))
-    part(sphere("nez", 0.065, 20, 16), peau, tete, (0, 0.21, 0.3))
-    face(tete, (0, 0.25, 0), 0.3, fixe, poils)
+    face(tete, (0, 0.25, 0), 0.3, fixe, poils, peau)
     # Calotte ouverte de 0,9 rad de part et d'autre du visage, du chapeau jusqu'au bas des oreilles.
     hair = sphere(
         "cheveux",
