@@ -43,6 +43,13 @@
       "when": 1795211823579,
       "tag": "0005_fichiers_3d",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795255792165,
+      "tag": "0006_joueurs",
+      "breakpoints": true
     }
   ]
 }
