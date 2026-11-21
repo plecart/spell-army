@@ -165,10 +165,12 @@ export const classDefaultModels = pgTable("class_default_models", {
 
 /**
  * La forme d'un identifiant Instagram reçu du fournisseur : un entier décimal positif, sans zéro de
- * tête (« 007 » et « 0 » sont hors forme, jamais normalisés). Contrôlée sur `players` et
- * `excluded_players`, et lue par le tri des entrées du paquet `joueurs`.
+ * tête (« 007 » et « 0 » sont hors forme, jamais normalisés), de 20 chiffres au plus, la largeur
+ * d'un entier de 64 bits : un identifiant démesuré dépasserait la taille d'une entrée d'index et
+ * ferait échouer sa page à chaque passe. Contrôlée sur `players` et `excluded_players`, et lue par
+ * le tri des entrées du paquet `joueurs`.
  */
-export const INSTAGRAM_ID_PATTERN = /^[1-9][0-9]*$/;
+export const INSTAGRAM_ID_PATTERN = /^[1-9][0-9]{0,19}$/;
 
 /**
  * La forme d'un pseudo Instagram reçu du fournisseur : 1 à 30 lettres ASCII, chiffres, `.` ou `_`

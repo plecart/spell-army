@@ -5,12 +5,13 @@
 /** 30 caractères, la borne haute, avec chacun des signes admis. */
 export const LONGEST_USERNAME = `Ab.9_${"z".repeat(25)}`;
 
-/** 2^64, hors de tout entier de 64 bits et pourtant dans la forme : aucune borne de longueur. */
-export const LONG_ID = "18446744073709551616";
+/** 20 chiffres, la borne haute : la largeur d'un entier de 64 bits. */
+export const LONGEST_ID = "9".repeat(20);
 
-/** Hors de la forme `^[1-9][0-9]*$` : chaque cas, nommé. */
+/** Hors de la forme `^[1-9][0-9]{0,19}$` : chaque cas, nommé. */
 export const MALFORMED_IDS: [name: string, id: string][] = [
 	["un identifiant à zéro de tête", "007"],
+	["un identifiant de 21 chiffres", `${LONGEST_ID}9`],
 	["l'identifiant 0", "0"],
 	["un identifiant non numérique", "abc"],
 	["un identifiant vide", ""],
