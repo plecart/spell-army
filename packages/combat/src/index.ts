@@ -11,6 +11,11 @@ export {
 	type UnreachedForced,
 } from "./log.ts";
 export {
+	measureSpell,
+	type SpellMeasure,
+	type SpellTrial,
+} from "./measure.ts";
+export {
 	type Monster,
 	type MonsterAttack,
 	NEUTRAL_PROFILE,
