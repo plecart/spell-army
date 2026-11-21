@@ -1,4 +1,6 @@
-"""L'atelier commun des classes : matériaux, primitives, ancres et pièces, scène vide, export GLB.
+"""
+L'atelier commun des classes : matériaux, primitives, ancres et pièces, agrandissement, scène vide,
+export GLB.
 
 Une classe s'écrit dans le repère du fichier 3D (direction artistique § 7, « Repère ») : Y vers le
 haut, personnage tourné vers +Z. Les primitives reprennent les géométries de three.js, paramètres
@@ -49,6 +51,15 @@ def linear(color):
     return Color(srgb(color)).from_srgb_to_scene_linear()
 
 
+def shade(color, factor):
+    """
+    `color` assombrie, ou éclaircie, de `factor`, en `#rrggbb` : `shade` du prototype
+    `annuaire-bd.html`, qui multiplie la couleur linéaire (three.js r160).
+    """
+    channels = (linear(color) * factor).from_scene_linear_to_srgb()
+    return "#" + "".join(f"{round(min(max(c, 0), 1) * 255):02x}" for c in channels)
+
+
 def material(name, color, finish=PAINT):
     """Le matériau `name`, couleur unie `color` en `#rrggbb` et finition `finish`."""
     result = bpy.data.materials.new(name)
@@ -75,6 +86,9 @@ def lathe(name, points, segments=12, phi_start=0.0, phi_length=math.tau):
     LatheGeometry de three.js : `phi` part de +Z vers +X. Un profil décrit du bas vers le haut
     tourne ses faces vers l'extérieur ; un point sur l'axe ferme la surface en pointe.
     """
+    # Un point répété, comme le pôle d'un cône, ne fait qu'un anneau : deux laisseraient un sommet
+    # isolé.
+    points = [point for point, before in zip(points, [None, *points]) if point != before]
     closed = phi_length >= math.tau
     columns = segments if closed else segments + 1
     angles = [phi_start + phi_length * i / segments for i in range(columns)]
@@ -175,6 +189,17 @@ def torus(name, radius, tube, radial_segments=12, tubular_segments=48):
     return mesh_object(name, build)
 
 
+def box(name, width, height, depth):
+    """Un pavé centré, `width` en X, `height` en Y, `depth` en Z, comme BoxGeometry de three.js."""
+
+    def build(bm):
+        # Y du glTF est Z de Blender ; pas `to_blender`, dont le signe retournerait les faces.
+        size = Matrix.Diagonal((width, depth, height, 1))
+        bmesh.ops.create_cube(bm, size=1, matrix=size)
+
+    return mesh_object(name, build)
+
+
 def octahedron(name, radius):
     """Un octaèdre, sommets sur les axes, comme OctahedronGeometry de three.js."""
 
@@ -218,6 +243,18 @@ def part(
     basis = GLTF_TO_BLENDER.to_4x4()
     piece.matrix_basis = basis @ local @ basis.transposed()
     return piece
+
+
+def enlarge(factor):
+    """
+    Agrandit de `factor`, autour de l'origine, ce que compose la scène : la position de chaque pièce
+    et de chaque ancre dans son parent, et les sommets de chaque maillage. L'échelle des nœuds n'est
+    pas touchée : une ancre reste à l'échelle 1, et ce qu'on y accrochera plus tard garde la sienne.
+    """
+    for obj in bpy.context.scene.objects:
+        obj.location *= factor
+        if obj.type == "MESH":
+            obj.data.transform(Matrix.Scale(factor, 4))
 
 
 def empty_scene():

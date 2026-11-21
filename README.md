@@ -131,8 +131,9 @@ la main dans les réglages Vercel et dans les secrets GitHub Actions du filet (A
 
 Le fichier 3D de chaque classe (direction artistique § 7) se fabrique dans Blender, lancé sans
 fenêtre, par le code Python de `packages/personnages/blender/` : l'atelier commun, `workshop.py`,
-puis un fichier par classe, `classes/<classe>.py`, nommé par sa clé : `wizard`, `golem`,
-`warrior`, `dwarf`, `vampire`, `druid`, `peasant`, `fairy`. Prérequis : **Blender 5.3** sur le
+les pièces communes aux classes portées du prototype `annuaire-bd.html`, `annuaire.py`, puis un
+fichier par classe, `classes/<classe>.py`, nommé par sa clé : `wizard`, `golem`, `warrior`,
+`dwarf`, `vampire`, `druid`, `peasant`, `fairy`. Prérequis : **Blender 5.3** sur le
 poste, que les commandes trouvent par la variable `BLENDER`, le chemin de `blender.exe`, écrite
 dans le `.env` de la racine (gabarit : `.env.example`), sinon par `blender` dans le `PATH`.
 
