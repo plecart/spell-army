@@ -69,12 +69,19 @@ describe("les dés d'une graine", () => {
 
 describe("le tirage sans remise", () => {
 	test("chaque élément sort une fois avant qu'un autre ne ressorte, et le sac vidé se remplit", () => {
-		const items = ["a", "b", "c", "d", "e"];
+		// Gelée : le sac qui écrirait dans la liste reçue lèverait une erreur.
+		const items = Object.freeze(["a", "b", "c", "d", "e"]);
 		const draw = bagOf(items, diceOf("army", "1"));
 		const rounds = Array.from({ length: 3 }, () =>
 			Array.from({ length: items.length }, draw).toSorted(),
 		);
 
 		expect(rounds).toEqual([items, items, items]);
+	});
+
+	test("un sac vide lève une erreur au premier tirage", () => {
+		const draw = bagOf([], diceOf("army", "1"));
+
+		expect(draw).toThrow(RangeError);
 	});
 });

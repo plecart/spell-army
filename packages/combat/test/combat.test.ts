@@ -152,6 +152,8 @@ describe("la fin du combat", () => {
 			[4, 1],
 			[1, 0],
 		]);
+		// Le journal garde les dégâts du sort, avant le plancher : 3, là où le monstre n'a perdu que 1.
+		expect(armyActions(log).at(-1)?.damage).toBe(3);
 		expect(log.summary).toMatchObject({ outcome: "victory", monsterLife: 0 });
 	});
 
