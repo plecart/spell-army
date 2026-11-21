@@ -1,3 +1,4 @@
+import { CLASS_KEYS } from "personnages";
 import { describe, expect, test } from "vitest";
 import {
 	CLASS_NAMES,
@@ -5,96 +6,89 @@ import {
 	directoryHref,
 	readDirectoryQuery,
 } from "../app/annuaire/address.ts";
+import { NO_QUERY } from "./annuaire.ts";
 
 type SearchParams = Parameters<typeof readDirectoryQuery>[0];
-
-// L'adresse de l'annuaire, sans recherche, sans filtre, à la page 1.
-const NONE: DirectoryQuery = { search: "", page: 1 };
 
 describe("lecture de l'adresse", () => {
 	// Chaque champ (`q`, `classe`, `page`) balayé en une passe : absent, vide, répété, hors forme.
 	test.each<[string, SearchParams, DirectoryQuery]>([
-		["une adresse nue", {}, NONE],
-		["un paramètre inconnu, ignoré", { tri: "nom" }, NONE],
-		["une recherche", { q: "wizard_army" }, { ...NONE, search: "wizard_army" }],
-		["une recherche vide", { q: "" }, NONE],
+		["une adresse nue", {}, NO_QUERY],
+		["un paramètre inconnu, ignoré", { tri: "nom" }, NO_QUERY],
+		[
+			"une recherche",
+			{ q: "wizard_army" },
+			{ ...NO_QUERY, search: "wizard_army" },
+		],
+		["une recherche vide", { q: "" }, NO_QUERY],
 		[
 			"une recherche entourée de blancs",
 			{ q: "  arm  " },
-			{ ...NONE, search: "arm" },
+			{ ...NO_QUERY, search: "arm" },
 		],
 		[
 			"une recherche précédée de « @ »",
 			{ q: "@arm" },
-			{ ...NONE, search: "arm" },
+			{ ...NO_QUERY, search: "arm" },
 		],
 		[
 			"une recherche répétée : la première",
 			{ q: ["arm", "golem"] },
-			{ ...NONE, search: "arm" },
+			{ ...NO_QUERY, search: "arm" },
 		],
 		[
 			"une recherche de 31 caractères, tronquée à 30",
 			{ q: "a".repeat(31) },
-			{ ...NONE, search: "a".repeat(30) },
+			{ ...NO_QUERY, search: "a".repeat(30) },
 		],
 		[
 			"la classe « golem »",
 			{ classe: "golem" },
-			{ ...NONE, classKey: "golem" },
+			{ ...NO_QUERY, classKey: "golem" },
 		],
-		["la classe « fee »", { classe: "fee" }, { ...NONE, classKey: "fairy" }],
+		[
+			"la classe « fee »",
+			{ classe: "fee" },
+			{ ...NO_QUERY, classKey: "fairy" },
+		],
 		[
 			"une classe répétée : la première",
 			{ classe: ["nain", "golem"] },
-			{ ...NONE, classKey: "dwarf" },
+			{ ...NO_QUERY, classKey: "dwarf" },
 		],
-		["une classe vide", { classe: "" }, NONE],
-		["une classe accentuée", { classe: "fée" }, NONE],
-		["une classe en majuscules", { classe: "Golem" }, NONE],
-		["une classe sous son nom du modèle", { classe: "wizard" }, NONE],
+		["une classe vide", { classe: "" }, NO_QUERY],
+		["une classe accentuée", { classe: "fée" }, NO_QUERY],
+		["une classe en majuscules", { classe: "Golem" }, NO_QUERY],
+		["une classe sous son nom du modèle", { classe: "wizard" }, NO_QUERY],
 		[
 			"une classe qui nomme une propriété d'objet",
 			{ classe: "toString" },
-			NONE,
+			NO_QUERY,
 		],
-		["la page 2", { page: "2" }, { ...NONE, page: 2 }],
-		["la page 007", { page: "007" }, { ...NONE, page: 7 }],
+		["la page 2", { page: "2" }, { ...NO_QUERY, page: 2 }],
+		["la page 007", { page: "007" }, { ...NO_QUERY, page: 7 }],
 		[
 			"une page répétée : la première",
 			{ page: ["3", "4"] },
-			{ ...NONE, page: 3 },
+			{ ...NO_QUERY, page: 3 },
 		],
-		["une page vide", { page: "" }, NONE],
-		["la page 0", { page: "0" }, NONE],
-		["une page négative", { page: "-2" }, NONE],
-		["une page décimale", { page: "2.5" }, NONE],
-		["une page en notation scientifique", { page: "1e3" }, NONE],
-		["une page entourée de blancs", { page: " 2 " }, NONE],
-		["une page non numérique", { page: "deux" }, NONE],
+		["une page vide", { page: "" }, NO_QUERY],
+		["la page 0", { page: "0" }, NO_QUERY],
+		["une page négative", { page: "-2" }, NO_QUERY],
+		["une page décimale", { page: "2.5" }, NO_QUERY],
+		["une page en notation scientifique", { page: "1e3" }, NO_QUERY],
+		["une page entourée de blancs", { page: " 2 " }, NO_QUERY],
+		["une page non numérique", { page: "deux" }, NO_QUERY],
 	])("%s", (_, params, expected) => {
 		expect(readDirectoryQuery(params)).toEqual(expected);
 	});
 
 	test("chaque classe a son nom dans l'adresse, et chacun se relit", () => {
 		expect(
-			Object.values(CLASS_NAMES).map(({ slug }) =>
-				readDirectoryQuery({ classe: slug }),
+			CLASS_KEYS.map((classKey) =>
+				readDirectoryQuery({ classe: CLASS_NAMES[classKey].slug }),
 			),
-		).toEqual(
-			(
-				[
-					"wizard",
-					"golem",
-					"warrior",
-					"dwarf",
-					"vampire",
-					"druid",
-					"peasant",
-					"fairy",
-				] as const
-			).map((classKey) => ({ ...NONE, classKey })),
-		);
+		).toEqual(CLASS_KEYS.map((classKey) => ({ ...NO_QUERY, classKey })));
 	});
 });
 
