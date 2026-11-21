@@ -13,7 +13,7 @@ import {
 } from "./passes.ts";
 import type { FollowerProvider } from "./provider.ts";
 
-/** Ce dont un tic a besoin. */
+/** Ce dont un tic ou une relance a besoin. */
 export interface ImportOptions {
 	/**
 	 * Le client de la base, jamais une transaction : le verrou se voit des autres tics dès sa prise,
@@ -99,6 +99,32 @@ export async function runTic(
 				passes.some(({ status }) => status === "failed"),
 		};
 	});
+}
+
+/**
+ * Relance une passe (outil `relancer_passe`, ADR 0003, « Journal ») sous le verrou de l'import,
+ * comme le tic : après avoir interrompu les passes restées en cours, sous le même budget. Une
+ * rapide part sous le déclencheur du MCP ; une complète reprend la complète non terminée à son
+ * curseur, sous son déclencheur d'origine, et sinon en démarre une sous le déclencheur du MCP.
+ *
+ * @param options la base, le fournisseur, l'horloge et le budget.
+ * @param kind le type de la passe.
+ * @returns la passe telle que le journal la rend, une fois close ; `null`, sans attendre, sans rien
+ * lire ni journaliser, quand le verrou est pris : une passe est en cours.
+ * @throws toute erreur de la base, telle quelle, le verrou rendu.
+ */
+export async function relaunchPass(
+	options: ImportOptions,
+	kind: ImportPass["kind"],
+): Promise<PassLogEntry | null> {
+	return underImportLock(options, async (context) =>
+		logEntry(
+			kind === "quick"
+				? await runQuickPass(context, "mcp")
+				: ((await resumeFullPass(context)) ??
+						(await startFullPass(context, "mcp"))),
+		),
+	);
 }
 
 // Prend le verrou de l'import à l'instant de l'horloge et rend `null` s'il est pris. Sinon, sous le
