@@ -30,6 +30,10 @@ export function Directory({
 	result: VisiblePlayersPage;
 	instagramHandle?: string;
 }) {
+	// Sans recherche, le nombre par classe compte toutes les recrues visibles : tout à zéro, l'armée
+	// est vide, filtre de classe ou non.
+	const emptyArmy =
+		!query.search && CLASS_KEYS.every((key) => result.classCounts[key] === 0);
 	return (
 		<main className="directory">
 			<p className="banderole">
@@ -73,9 +77,9 @@ export function Directory({
 				</>
 			) : (
 				<p className="empty">
-					{query.search || query.classKey
-						? "Aucune recrue ne porte ce pseudo."
-						: "L'armée attend ses premières recrues."}
+					{emptyArmy
+						? "L'armée attend ses premières recrues."
+						: "Aucune recrue ne porte ce pseudo."}
 				</p>
 			)}
 		</main>

@@ -222,26 +222,37 @@ describe("pages", () => {
 });
 
 describe("états vides", () => {
-	test.each<[string, string, DirectoryQuery]>([
+	// Sans recherche, le nombre par classe compte toutes les recrues visibles : tout à zéro, l'armée
+	// est vide, filtre ou non.
+	test.each<[string, string, DirectoryQuery, Partial<VisiblePlayersPage>]>([
 		[
-			"ni recherche ni filtre",
+			"ni recherche ni filtre, armée vide",
 			"L'armée attend ses premières recrues.",
 			NO_QUERY,
+			{},
+		],
+		[
+			"un filtre, armée vide",
+			"L'armée attend ses premières recrues.",
+			{ ...NO_QUERY, classKey: "golem" },
+			{},
 		],
 		[
 			"une recherche",
 			"Aucune recrue ne porte ce pseudo.",
 			{ ...NO_QUERY, search: "zzz" },
+			{},
 		],
 		[
-			"un filtre",
+			"un filtre sur une classe sans recrue, armée non vide",
 			"Aucune recrue ne porte ce pseudo.",
 			{ ...NO_QUERY, classKey: "golem" },
+			{ classCounts: classCounts({ fairy: 1 }) },
 		],
 	])(
 		"aucune recrue, sous %s : « %s », sans compteur ni pages",
-		(_, message, query) => {
-			const html = renderDirectory(query, {});
+		(_, message, query, result) => {
+			const html = renderDirectory(query, result);
 			expect(elementsOf(html, "p", "empty").map(textOf)).toEqual([message]);
 			expect(elementsOf(html, "p", "counter")).toEqual([]);
 			expect(elementsOf(html, "nav", "pagination")).toEqual([]);
