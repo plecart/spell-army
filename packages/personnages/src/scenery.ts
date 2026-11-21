@@ -184,8 +184,8 @@ const SCENES: Readonly<Record<ClassKey, Scene>> = {
 			rect(2, GROUND - 9, 1.6, 9, 0) +
 			rect(12, GROUND - 9, 1.6, 9, 0) +
 			rect(22, GROUND - 9, 1.6, 9, 0) +
-			rect(1, GROUND - 7.6, 24, 1.4, 0.5) +
-			rect(1, GROUND - 3.8, 24, 1.4, 0.5),
+			rect(1, GROUND - 7.6, 23.6, 1.4, 0.5) +
+			rect(1, GROUND - 3.8, 23.6, 1.4, 0.5),
 		openings: rect(79, GROUND - 11, 7, 11, 0),
 		lights: rect(80.5, GROUND - 22, 4, 3, 0.5),
 	},
