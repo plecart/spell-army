@@ -190,6 +190,11 @@ describe("confirmation par code d'un outil destructeur", () => {
 				return `${Number(expiration) + 1}.${mac}`;
 			},
 		],
+		[
+			// `Number` lit la même expiration : le message signé serait le même.
+			"à l'expiration écrite avec un zéro de tête",
+			async ({ client }) => `0${await codeFor(client, "effacer", ARGS)}`,
+		],
 		["mal formé", async () => "abc"],
 		[
 			"émis sous un autre jeton",
