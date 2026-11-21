@@ -32,6 +32,9 @@ importers:
       donnees:
         specifier: workspace:*
         version: link:../../packages/donnees
+      joueurs:
+        specifier: workspace:*
+        version: link:../../packages/joueurs
       next:
         specifier: ^16.4.6
         version: 16.4.6(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
