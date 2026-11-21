@@ -76,17 +76,22 @@ export function confirmationKey(token: string): Buffer {
  * Limite : rien n'est stocké, et un code n'est pas à usage unique. Rejoué avant son expiration, il
  * exécute de nouveau l'appel : le mécanisme suppose un outil idempotent.
  *
- * Précondition : l'entrée de l'outil ne déclare pas de champ `code`, que celui de la confirmation
- * remplacerait.
- *
  * @param tool un outil du registre.
  * @param key la clé des codes (`confirmationKey`). Absente, un outil confirmable refuse tout appel
  * par une erreur, sans appeler ni `confirmation` ni `run` : la confirmation se refuse par défaut.
+ * @throws une erreur qui nomme l'outil quand il est confirmable et que son entrée déclare un champ
+ * `code` : `extend` le remplacerait par celui de la confirmation sans rien dire, et `run` ne le
+ * recevrait jamais.
  */
 export function servedTool(tool: McpTool, key?: Uint8Array): McpTool {
 	const { confirmation } = tool;
 	if (confirmation === undefined) {
 		return tool;
+	}
+	if ("code" in tool.input.shape) {
+		throw new Error(
+			`L'outil ${tool.name} déclare un champ code, que sa confirmation réserve.`,
+		);
 	}
 	const input = tool.input.extend({ code: CODE_FIELD });
 	const served: McpTool<typeof input> = {

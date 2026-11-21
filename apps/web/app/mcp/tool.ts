@@ -42,7 +42,7 @@ export interface McpTool<Input extends z.ZodObject = z.ZodObject> {
 	 * Présente pour un outil destructeur au sens de l'ADR 0004 (« Durcissement MCP ») : ce que fera
 	 * l'appel confirmé, dit pour le mainteneur d'après l'état présent, sans rien changer. L'enrobage
 	 * exige alors un code de confirmation avant `run` (`servedTool`) et ajoute à l'entrée un champ
-	 * `code` : l'entrée de l'outil n'en déclare donc pas.
+	 * `code` : l'entrée de l'outil n'en déclare donc pas, sans quoi `servedTool` lève.
 	 */
 	confirmation?(executor: Executor, input: z.output<Input>): Promise<string>;
 	run(executor: Executor, input: z.output<Input>): Promise<ToolOutcome>;
@@ -93,7 +93,9 @@ export function listTools(tools: readonly McpTool[]): Tool[] {
  * - Un outil confirmable (`confirmation`) suit les mêmes étapes tel que `servedTool` le sert sous
  *   `confirmationKey` : son `run` ne s'exécute que sur un code valide ; sans code valide, rien ne
  *   change, et la sortie rend la description de l'appel et un code. Sans `confirmationKey`, il est
- *   refusé comme un outil qui lève, `run` jamais appelé.
+ *   refusé comme un outil qui lève, `run` jamais appelé. S'il déclare un champ `code`, `servedTool`
+ *   lève, et `callTool` avec lui, sans ligne d'audit : une erreur du registre, que `tools/list` lève
+ *   de même.
  *
  * L'entrée auditée est l'entrée reçue, `{}` quand `args` manque, dont `writeAuditEntry` remplace
  * les octets par leur taille et leur empreinte. Si la ligne en erreur ne peut pas s'écrire, une
