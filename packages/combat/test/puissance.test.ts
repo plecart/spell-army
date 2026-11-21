@@ -27,9 +27,10 @@ function stats(
 	return { life, strength, magic, speed };
 }
 
-// Une armée de dix personnages aux stats égales, à moitié blessée, contre un monstre aux trois
-// quarts de sa Vie et dont le dernier coup valait 10 : une stat de l'armée vaut 100 selon toute
-// recette, donc un coup normal (×1,0) vaut 0,2 × 100 = 20 avant l'efficacité.
+// Une armée de dix personnages aux stats égales, blessée aux trois quarts, contre un monstre aux
+// trois quarts de sa Vie et dont le dernier coup valait 10 : une stat de l'armée vaut 100 selon
+// toute recette, donc un coup normal (×1,0) vaut 0,2 × 100 = 20 avant l'efficacité. Aucune jauge
+// exercée ne vaut 0,5, seul point où x = 1 − x : lue à l'envers, elle changerait la valeur attendue.
 const ARMY: ArmySummary = {
 	size: 10,
 	stats: stats(100, 100, 100, 100),
@@ -37,7 +38,7 @@ const ARMY: ArmySummary = {
 };
 const SITUATION: Situation = {
 	army: ARMY,
-	armyLife: 50,
+	armyLife: 25,
 	monsterLife: 75,
 	monsterStartLife: 100,
 	monsterLastHit: 10,
@@ -126,9 +127,9 @@ const POOL_VALUES = [
 	[10, "Tornade", 10, 0],
 	[11, "Soin", 0, 24],
 	[12, "Prière", 7.2, 10.8], // efficacité 0,5 + 0,5 × (80 % × 15) / 15 = 0,9
-	[13, "Soin des blessés graves", 0, 22], // armée blessée à 50 % : ×(0,6 + 0,5)
+	[13, "Soin des blessés graves", 0, 27], // armée blessée à 75 % : ×(0,6 + 0,75)
 	[14, "Cri de ralliement", 0, 20], // 20 % de la Vie maximale, 100
-	[15, "Rage du désespoir", 10, 0], // ×(0,5 + 0,5), efficacité 0,5
+	[15, "Rage du désespoir", 12.5, 0], // ×(0,5 + 0,75), efficacité 0,5
 	[16, "Le Barbare ignorant", 10, 0],
 	[17, "Les golems se relèvent", 0, 28], // 20 % de golems : ×(0,6 + 4 × 0,2)
 	[18, "Appel du clan", 29, 0], // meilleure stat la Vie ; 30 % de magiciens : ×(0,4 + 3,5 × 0,3)

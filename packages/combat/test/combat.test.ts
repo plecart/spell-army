@@ -7,6 +7,7 @@ import {
 	type Monster,
 	type MonsterAction,
 } from "../src/index.ts";
+import { bagOf, type DiceStream, diceOf } from "../src/dice.ts";
 import { fighterOf, harmless, monsterOf } from "./combattants.ts";
 
 // Un monstre que l'armée n'entame pas en quelques dizaines d'actions.
@@ -25,6 +26,11 @@ function rounds(drawn: string[], size: number): string[][] {
 	return Array.from({ length: drawn.length / size }, (_, round) =>
 		drawn.slice(round * size, (round + 1) * size).toSorted(),
 	);
+}
+
+/** Les `count` premiers tirages sans remise de `items` dans le flux `stream` de la graine « 1 ». */
+function draws<T>(items: readonly T[], stream: DiceStream, count: number): T[] {
+	return Array.from({ length: count }, bagOf(items, diceOf(stream, "1")));
 }
 
 function armyActions(log: CombatLog): ArmyAction[] {
@@ -86,6 +92,24 @@ describe("l'initiative", () => {
 		]);
 	});
 
+	test("R = 0,1, non dyadique : au 5e tour, le compteur atteint 1 tout juste et l'armée joue avant le monstre", () => {
+		// Le personnage 25 a une Vitesse de 5 : R = 5 / 50. Cumulé en flottant, 0,5 + 5 × 0,1 vaut
+		// 0,9999999999999999 et l'armée perdrait l'action d'égalité.
+		const log = run(
+			[fighterOf("25", 6)],
+			monsterOf({ life: ENDLESS_LIFE, speed: 50 }),
+		);
+
+		expect(sides(log, 6)).toEqual([
+			"monster",
+			"monster",
+			"monster",
+			"monster",
+			"army",
+			"monster",
+		]);
+	});
+
 	test.each([
 		[
 			"de l'armée",
@@ -138,6 +162,27 @@ describe("les tirages sans remise", () => {
 			.map(({ attack }) => attack);
 
 		expect(rounds(drawn, names.length)).toEqual([names, names, names]);
+	});
+
+	test("l'armée tire dans le flux « army », le monstre dans le flux « monster »", () => {
+		const ids = ["1", "2", "3", "4", "5"];
+		const names = ["Griffe", "Morsure", "Souffle"];
+		const log = run(
+			ids.map((id) => fighterOf(id, 11)),
+			monsterOf({ life: 10 }, names.map(harmless)),
+		);
+		const fighters = armyActions(log)
+			.slice(0, 10)
+			.map(({ fighter }) => fighter.id);
+		const attacks = monsterActions(log)
+			.slice(0, 6)
+			.map(({ attack }) => attack);
+
+		expect(fighters).toEqual(draws(ids, "army", 10));
+		expect(attacks).toEqual(draws(names, "monster", 6));
+		// L'autre flux tire autrement : la comparaison distingue bien les flux.
+		expect(draws(ids, "monster", 10)).not.toEqual(fighters);
+		expect(draws(names, "army", 6)).not.toEqual(attacks);
 	});
 });
 
@@ -200,6 +245,42 @@ describe("la fin du combat", () => {
 			monsterLife: 0,
 		});
 	});
+
+	// Des coups dont la somme couvre la Vie tout juste, en réels : soustraits un à un en flottant,
+	// ils laissaient un résidu de l'ordre de 1e-16, et il fallait un coup de plus.
+	test.each([
+		[
+			"la Vie du monstre : 4 coups de 1,6666666666666665", // Boule de feu, Magie 10
+			[fighterOf("3", 6)],
+			monsterOf({ life: 4 * 1.6666666666666665 }),
+			"army",
+			1.6666666666666665,
+			4,
+			"victory",
+		],
+		[
+			"la Vie de l'armée : 10 coups de 0,1", // le personnage 63 a une Vie de 1
+			[fighterOf("63", 6)],
+			monsterOf({ life: ENDLESS_LIFE }, [
+				{ name: "Pichenette", recipe: { strength: 100 }, coefficient: 0.5 },
+			]),
+			"monster",
+			0.1,
+			10,
+			"defeat",
+		],
+	] as const)(
+		"%s la font tomber à 0, sans résidu d'arrondi",
+		(_, army, monster, side, hit, hits, outcome) => {
+			const log = run(army, monster);
+			const blows = log.actions.filter((action) => action.side === side);
+
+			expect(blows.map(({ damage }) => damage)).toEqual(Array(hits).fill(hit));
+			// Le dernier coup clôt le combat : aucune action de l'autre camp n'efface un résidu.
+			expect(log.actions.at(-1)).toBe(blows.at(-1));
+			expect(log.summary.outcome).toBe(outcome);
+		},
+	);
 
 	test("au-delà de 10 000 actions : défaite par épuisement, signalée au journal", () => {
 		// Des soins seuls contre un monstre inoffensif : personne ne perd de Vie.
