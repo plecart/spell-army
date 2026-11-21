@@ -202,7 +202,7 @@ def box(name, width, height, depth):
     """Un pavé centré, `width` en X, `height` en Y, `depth` en Z, comme BoxGeometry de three.js."""
 
     def build(bm):
-        # Y du glTF est Z de Blender ; pas `to_blender`, dont le signe retournerait les faces.
+        # Y du glTF est Z de Blender : la taille s'écrit (largeur, profondeur, hauteur).
         size = Matrix.Diagonal((width, depth, height, 1))
         bmesh.ops.create_cube(bm, size=1, matrix=size)
 

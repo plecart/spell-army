@@ -7,9 +7,11 @@ se pose ensuite d'un seul tenant, à l'opacité du groupe (SVG 1.1, « Group opa
 formes qui se chevauchent ne foncent. L'importeur SVG de Blender ignore l'opacité (`io_curve_svg`,
 Blender 5.3), d'où ce tramage. Le sous-ensemble lu est celui qu'écrit `scenery.ts` : des `<g>` sous
 la racine, des `<rect>` (coins `rx`), `<circle>` et `<path>` aux commandes absolues M L H V Q C A Z,
-remplis selon la règle « nonzero » ; tout autre élément ou commande lève ValueError.
+remplis selon la règle « nonzero » ; tout autre élément ou commande, et tout chemin mal formé,
+lèvent ValueError.
 
-Sans Blender, avec le Python qu'il embarque (numpy compris), ce fichier se vérifie lui-même :
+Ce fichier se vérifie lui-même (`self_check`) : en tête de `rendus`, et sans Blender, avec le Python
+qu'il embarque (numpy compris) :
 
     "<dossier de Blender>/5.3/python/bin/python.exe" packages/personnages/blender/backdrop.py
 """
@@ -78,15 +80,29 @@ def _arc(start, rx, ry, angle, large, sweep, end):
 
 
 def _path(d):
-    """Les sous-chemins de l'attribut `d` d'un `<path>`, en polygones."""
+    """
+    Les sous-chemins de l'attribut `d` d'un `<path>`, en polygones. Un `d` mal formé lève
+    ValueError : caractère que `TOKEN` ne lit pas, commande hors de `ARITY`, nombres sans commande,
+    commande privée de ses nombres.
+    """
+    stray = re.sub(r"[\s,]", "", TOKEN.sub("", d))
+    if stray:
+        raise ValueError(f"Caractères « {stray} » hors grammaire dans le chemin SVG « {d} »")
     tokens = TOKEN.findall(d)
     subpaths, points, command, i = [], [], None, 0
     while i < len(tokens):
         if tokens[i].isalpha():
             command, i = tokens[i], i + 1
             if command not in ARITY:
-                raise ValueError(f"Commande de chemin SVG non prise en charge : {command}")
-        args = [float(token) for token in tokens[i : i + ARITY[command]]]
+                raise ValueError(
+                    f"Commande {command} non prise en charge dans le chemin SVG « {d} »"
+                )
+        elif command is None or ARITY[command] == 0:
+            raise ValueError(f"Nombres sans commande dans le chemin SVG « {d} »")
+        numbers = tokens[i : i + ARITY[command]]
+        if len(numbers) < ARITY[command] or any(token.isalpha() for token in numbers):
+            raise ValueError(f"Commande {command} incomplète dans le chemin SVG « {d} »")
+        args = [float(token) for token in numbers]
         i += ARITY[command]
         here = points[-1] if points else (0.0, 0.0)
         if command == "M":
@@ -189,9 +205,14 @@ def layers(document, size):
         yield layer.get("fill"), float(layer.get("opacity", 1)), coverage
 
 
-if __name__ == "__main__":
+def self_check():
+    """Vérifie le tramage sur des décors de 100 × 100 ; lève AssertionError sur un écart."""
+
+    def document(groups):
+        return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">{groups}</svg>'
+
     # Chaque calque, seul de sa forme, couvre l'aire de la forme, à 1 % près (polygones inscrits).
-    AREAS = {
+    areas = {
         # Deux carrés qui se chevauchent, tracés en sens contraires : leur union, sans trou.
         '<rect x="10" y="10" width="40" height="40"/><path d="M30 30 V70 H70 V30Z"/>': 2800,
         # Les mêmes, deux sous-chemins d'un seul chemin dans le même sens : « nonzero », sans trou.
@@ -205,10 +226,31 @@ if __name__ == "__main__":
         '<path d="M0 100 C0 80 20 80 20 100Z"/>': 400 * 3 / 5,
         '<path d="M30 100 Q40 80 50 100Z"/>': 400 / 3,
     }
-    groups = "".join(f'<g fill="#000" opacity="0.5">{shapes}</g>' for shapes in AREAS)
-    document = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">{groups}</svg>'
-    for (fill, opacity, coverage), (shapes, area) in zip(layers(document, 100), AREAS.items()):
+    groups = "".join(f'<g fill="#000" opacity="0.5">{shapes}</g>' for shapes in areas)
+    rasters = layers(document(groups), 100)
+    for (fill, opacity, coverage), (shapes, area) in zip(rasters, areas.items()):
         assert (fill, opacity) == ("#000", 0.5)
         covered = coverage.sum()
         assert abs(covered - area) < area / 100, f"{shapes} : {covered} au lieu de {area}"
+
+    # Les formes d'un chemin mal formé, chacune avec ce qu'en dit l'erreur qui nomme le chemin.
+    malformed = {
+        "M0 0 H10 V10 H0 % Z": "hors grammaire",  # caractère que `TOKEN` ne lit pas
+        "M0 0 H10 V10Z 5 5": "sans commande",  # après Z
+        "10 10 L20 20 L0 20Z": "sans commande",  # avant toute commande
+        "M0 0 L10": "incomplète",  # coupée par la fin du chemin
+        "M0 0 L10 H5 V5Z": "incomplète",  # coupée par la commande suivante
+        "M0 0 l10 10 l0 10z": "non prise en charge",  # commande relative
+    }
+    for d, reason in malformed.items():
+        try:
+            list(layers(document(f'<g fill="#000"><path d="{d}"/></g>'), 10))
+        except ValueError as error:
+            assert reason in str(error) and f"« {d} »" in str(error), f"{d} : {error}"
+        else:
+            raise AssertionError(f"Le chemin « {d} » passe sans erreur")
+
+
+if __name__ == "__main__":
+    self_check()
     print("backdrop.py : tramage vérifié.")
