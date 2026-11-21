@@ -44,6 +44,8 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - migration    : `pnpm --filter donnees run migrate`   # applique les migrations à la base de `DATABASE_URL` (shell ou `.env` racine)
 - dérive du schéma : `pnpm --filter donnees run drift`   # sort en 1 quand `drizzle-kit generate` produirait une migration ; laisse alors dans `packages/donnees/migrations` ce qu'il a écrit
 - run local    : `pnpm --filter web dev`   # Next.js en développement, sur 127.0.0.1 seulement ; lit le `.env` racine, sans écraser une variable déjà posée
+- modèles 3D   : `pnpm --filter personnages modeles`   # Blender 5.3 sur le poste, hors CI
+- rendus 3D    : `pnpm --filter personnages rendus`   # Blender 5.3 sur le poste, hors CI
 
 ## Qualité
 - seuil de couverture : aucun

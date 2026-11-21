@@ -126,3 +126,31 @@ Ses réponses :
 `CRON_SECRET` se crée comme le jeton MCP, à l'étape 2 de « Serveur MCP local » :
 `openssl rand -base64 32` dans un terminal hors de l'app Claude, rangé dans KeePassXC, puis saisi à
 la main dans les réglages Vercel et dans les secrets GitHub Actions du filet (ADR 0004, « Saisie »).
+
+## Fabriquer les modèles 3D
+
+Le fichier 3D de chaque classe (direction artistique § 7) se fabrique dans Blender, lancé sans
+fenêtre, par le code Python de `packages/personnages/blender/` : l'atelier commun, `workshop.py`,
+puis un fichier par classe, `classes/<classe>.py`, nommé par sa clé : `wizard`, `golem`,
+`warrior`, `dwarf`, `vampire`, `druid`, `peasant`, `fairy`. Prérequis : **Blender 5.3** sur le
+poste, que les commandes trouvent par la variable `BLENDER`, le chemin de `blender.exe`, écrite
+dans le `.env` de la racine (gabarit : `.env.example`), sinon par `blender` dans le `PATH`.
+
+```bash
+pnpm --filter personnages modeles wizard
+pnpm --filter personnages rendus wizard
+```
+
+Sans classe nommée, chaque commande les prend toutes ; une clé inconnue est refusée.
+
+- `modeles` écrit `packages/personnages/out/modeles/<classe>.glb`, puis juge chaque fichier contre
+  le contrat du fichier 3D : un écart arrête la commande, sortie 1, avec les écarts de chaque
+  fichier. Une classe sans fichier Python l'arrête aussi, avant toute fabrication.
+- `rendus` part de ces GLB, à fabriquer d'abord : par classe, le personnage sur son socle, devant
+  son décor, en `packages/personnages/out/rendus/<classe>.png`, puis toutes les classes rendues en
+  grille de 4 × 2 dans `planche.png`.
+
+Un GLB conforme se dépose ensuite par `deposer-3d` (« Déposer un fichier 3D », ci-dessus), sous le
+nom d'outil de sa classe :
+`pnpm --filter web deposer-3d packages/personnages/out/modeles/wizard.glb --classe magicien`. Ces
+commandes ne tournent pas en CI, où Blender n'est pas installé.
