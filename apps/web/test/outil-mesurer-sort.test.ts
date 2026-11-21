@@ -34,10 +34,11 @@ const MODEL_CANDIDATE: Spell = {
 	description: "Dégâts selon 50 % de la Vie et 50 % de la Magie.",
 };
 
-// Les seuls sorts tirables de la réserve en base, Coup d'épée et Boule de feu, pour qu'elle diffère
-// de la réserve de départ. `drawSpell` range les sorts par numéro en texte : le n° 25 du candidat se
-// tire entre eux (« 1 » < « 25 » < « 6 »), là où un n° 0 se tirerait avant.
-const DRAWABLE = [1, 6];
+// Les seuls sorts tirables de la réserve en base, Coup d'épée, Boule de feu et Le Sacrifice, pour
+// qu'elle diffère de la réserve de départ. Le n° 24, le plus grand, se tire : un candidat qui
+// prendrait son numéro l'ôterait des deux mesures. `drawSpell` range les sorts par numéro en texte :
+// le n° 25 du candidat se tire entre eux (« 24 » < « 25 » < « 6 »), là où un n° 0 se tirerait avant.
+const DRAWABLE = [1, 6, 24];
 
 // L'échantillon réduit des tests : les graines 1 à 20, contre 2 000 dans le registre.
 const LAST_SEED = 20;
@@ -64,7 +65,7 @@ describe("mesurer_sort : tools/list", () => {
 	});
 });
 
-describe("mesurer_sort sur une réserve en base où seuls Coup d'épée et Boule de feu se tirent", () => {
+describe("mesurer_sort sur une réserve en base où seuls Coup d'épée, Boule de feu et Le Sacrifice se tirent", () => {
 	let db: ReturnType<typeof createClient>;
 	let reserve: SpellRecord[];
 	let result: CallToolResult;
@@ -85,7 +86,7 @@ describe("mesurer_sort sur une réserve en base où seuls Coup d'épée et Boule
 	});
 	afterAll(() => db.$client.end());
 
-	test("rend les parts et l'écart de la mesure de combat sur la réserve en base, le candidat sous le n° 25", () => {
+	test("rend les parts et l'écart de la mesure de combat sur la réserve en base entière, le candidat sous le n° 25", () => {
 		const drawable = STARTING_POOL.map((spell) =>
 			DRAWABLE.includes(spell.number) ? spell : { ...spell, weight: 0 },
 		);
