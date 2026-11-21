@@ -298,13 +298,18 @@ h1 a:hover {
 	padding: 0.375rem 0.375rem 0.625rem;
 }
 
-/* La vignette : le décor de la classe sur une teinte de sa couleur ; le personnage s'y posera. */
+/* La vignette : le décor de la classe sur une teinte de sa couleur, le personnage par-dessus. */
 .vignette {
 	aspect-ratio: 1;
 	border-radius: 8px;
 	background-color: color-mix(in srgb, var(--class-color) 18%, var(--surface));
 	background-position: center bottom;
 	background-size: cover;
+}
+
+.vignette img {
+	display: block;
+	width: 100%;
 }
 
 .handle {

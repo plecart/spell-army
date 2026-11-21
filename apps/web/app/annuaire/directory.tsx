@@ -4,10 +4,12 @@ import {
 	CLASS_COLORS,
 	CLASS_KEYS,
 	type ClassKey,
+	PEDESTALS,
 	perClass,
 } from "personnages";
 import type { CSSProperties } from "react";
 import { instagramUrl } from "../site.ts";
+import { Figure } from "../vignettes/figure.tsx";
 import {
 	CLASS_NAMES,
 	type DirectoryQuery,
@@ -218,15 +220,18 @@ function Counter({
 	);
 }
 
-// Une carte : la vignette — le décor de la classe, où le personnage se posera —, le pseudo, la
-// pastille et le nom de la classe. Pas de clic au MVP de l'annuaire : il vient avec la fiche (#18).
+// Une carte : la vignette — le personnage sur son socle, posé sur le décor de sa classe quand il est
+// rendu —, le pseudo, la pastille et le nom de la classe. Pas de clic au MVP de l'annuaire : il
+// vient avec la fiche (#18).
 function Card({ player: { username, classKey } }: { player: VisiblePlayer }) {
 	return (
 		<li className="card" style={classColor(classKey)}>
 			<div
 				className="vignette"
 				style={{ backgroundImage: BACKDROP_IMAGES[classKey] }}
-			/>
+			>
+				<Figure classKey={classKey} pedestal={PEDESTALS[classKey]} />
+			</div>
 			<p className="handle">@{username}</p>
 			<p className="class-name">
 				<span className="dot" />

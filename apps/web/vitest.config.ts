@@ -13,4 +13,5 @@ export default databaseTestConfig([
 	"test/jeton.test.ts",
 	"test/route-du-tic.test.ts",
 	"test/route.test.ts",
+	"test/vignettes.test.ts",
 ]);
