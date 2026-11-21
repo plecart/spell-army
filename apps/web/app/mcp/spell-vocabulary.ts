@@ -127,7 +127,7 @@ export const toolSpellSchema = z.strictObject({
 		"La forme du sort : sûr ; coûteux, l'armée perdant part_perdue des dégâts infligés, entre 0 et 1 ; conditionnel, selon sa jauge de 0 à 1, qui nomme une classe si et seulement si elle est part_d_une_classe ; inversé, plus fort quand la stat du lanceur est basse.",
 	),
 	effet: effect.describe(
-		"Des dégâts, du soin ou les deux, chacun constante + par_jauge × jauge, par_jauge à 0 hors forme conditionnelle. Les coefficients sont des multiplicateurs (×1,0 = un coup normal) de la base : la stat de l'armée selon la recette, sa Vie maximale ou le dernier coup du monstre. Dégâts + soin d'un sort mixte valent au plus 1 aux deux bouts de la jauge.",
+		"Des dégâts, du soin ou les deux, chacun constante + par_jauge × jauge, par_jauge à 0 hors forme conditionnelle. Les coefficients multiplient la base : la stat de l'armée selon la recette (×1,0 = un coup normal), sa Vie maximale ou le dernier coup du monstre, telles quelles. Un sort mixte (dégâts et soin) ne prend que la stat de l'armée, et dégâts + soin y valent au plus 1 aux deux bouts de la jauge.",
 	),
 	categorie: z
 		.enum(CATEGORIES)

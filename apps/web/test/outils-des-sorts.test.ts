@@ -350,7 +350,8 @@ describe("ajouter_sort", () => {
 	});
 
 	// Le dénombrement des refus d'un ajout : chaque règle de validité de l'issue #12 (« Règles de
-	// validité », « Sort mixte au plus ×1,0 »), puis le schéma strict.
+	// validité », « Sort mixte au plus ×1,0 ») et de l'issue #19 (sort mixte sur la seule stat de
+	// l'armée), puis le schéma strict.
 	test.each<[string, Record<string, unknown>, string]>([
 		[
 			"une part de recette non entière",
@@ -389,6 +390,18 @@ describe("ajouter_sort", () => {
 				},
 			},
 			"dégâts + soin d'un sort mixte doivent rester au plus 1",
+		],
+		[
+			"un sort mixte sur la Vie maximale de l'armée",
+			{
+				...NEW_SPELL,
+				effet: {
+					base: "vie_maximale_de_l_armee",
+					degats: { constante: 0.1, par_jauge: 0 },
+					soin: { constante: 0.1, par_jauge: 0 },
+				},
+			},
+			"un sort mixte (dégâts et soin) ne prend que la base « armyStat », reçu : « armyMaxLife »",
 		],
 		[
 			"un nom de plus de 100 caractères",
