@@ -1,10 +1,10 @@
 import { sha256 } from "./sha256.ts";
 
 /**
- * Un flux de dés par usage : le tirage des personnages ne décale pas celui des attaques du
- * monstre, ni l'inverse.
+ * Un flux de dés par usage : le tirage des personnages, celui des attaques du monstre et le rang
+ * des forcés au milieu ne se décalent pas l'un l'autre.
  */
-export type DiceStream = "army" | "monster";
+export type DiceStream = "army" | "monster" | "forced";
 
 /** Un dé : un rang tiré à chances égales. */
 export interface Dice {
@@ -65,26 +65,40 @@ export function diceOf(stream: DiceStream, seed: string): Dice {
 	};
 }
 
+/** Un tirage sans remise. */
+export interface Bag<T> {
+	/**
+	 * L'élément suivant : chacun sort une fois avant qu'un autre ne ressorte, et le sac vidé se
+	 * remplit. Chaque tirage coûte un rang du dé, quelle que soit la taille du sac.
+	 *
+	 * @throws {RangeError} si le sac ne compte aucun élément.
+	 */
+	draw(): T;
+	/** Fait entrer `item` au tirage comme s'il venait de sortir : il attend que le sac se remplisse. */
+	add(item: T): void;
+}
+
 /**
- * Un tirage sans remise de `items`, qui ne sont jamais modifiés : chacun sort une fois avant qu'un
- * autre ne ressorte, et le sac vidé se remplit (game design § 3, « Tirage sans remise » ; § 4,
- * « Tirage »). Chaque tirage coûte un rang du dé, quelle que soit la taille du sac.
- *
- * @returns la fonction qui tire l'élément suivant.
- * @throws {RangeError} au premier tirage, si `items` est vide.
+ * Un tirage sans remise de `items`, qui ne sont jamais modifiés (game design § 3, « Tirage sans
+ * remise » ; § 4, « Tirage »).
  */
-export function bagOf<T>(items: readonly T[], dice: Dice): () => T {
+export function bagOf<T>(items: readonly T[], dice: Dice): Bag<T> {
 	const bag = [...items];
-	// Le sac est le début du tableau, jusqu'à `left` ; les tirés du tour sont rangés derrière.
-	let left = 0;
-	return () => {
-		if (left === 0) left = bag.length;
-		const drawn = dice.index(left);
-		left -= 1;
-		const item = bag[drawn] as T;
-		bag[drawn] = bag[left] as T;
-		bag[left] = item;
-		return item;
+	// Le sac est le début du tableau, jusqu'à `left` ; les sortis du tour sont rangés derrière.
+	let left = bag.length;
+	return {
+		draw() {
+			if (left === 0) left = bag.length;
+			const drawn = dice.index(left);
+			left -= 1;
+			const item = bag[drawn] as T;
+			bag[drawn] = bag[left] as T;
+			bag[left] = item;
+			return item;
+		},
+		add(item) {
+			bag.push(item);
+		},
 	};
 }
 

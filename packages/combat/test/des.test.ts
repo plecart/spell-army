@@ -71,17 +71,31 @@ describe("le tirage sans remise", () => {
 	test("chaque élément sort une fois avant qu'un autre ne ressorte, et le sac vidé se remplit", () => {
 		// Gelée : le sac qui écrirait dans la liste reçue lèverait une erreur.
 		const items = Object.freeze(["a", "b", "c", "d", "e"]);
-		const draw = bagOf(items, diceOf("army", "1"));
+		const bag = bagOf(items, diceOf("army", "1"));
 		const rounds = Array.from({ length: 3 }, () =>
-			Array.from({ length: items.length }, draw).toSorted(),
+			Array.from({ length: items.length }, bag.draw).toSorted(),
 		);
 
 		expect(rounds).toEqual([items, items, items]);
 	});
 
-	test("un sac vide lève une erreur au premier tirage", () => {
-		const draw = bagOf([], diceOf("army", "1"));
+	test.each([0, 1, 2])(
+		"un élément ajouté après %i tirage(s) attend la fin du tour : il compte comme sorti",
+		(drawnBefore) => {
+			const bag = bagOf(["a", "b", "c"], diceOf("army", "1"));
+			const before = Array.from({ length: drawnBefore }, bag.draw);
+			bag.add("x");
+			const rest = Array.from({ length: 3 - drawnBefore }, bag.draw);
+			const next = Array.from({ length: 4 }, bag.draw);
 
-		expect(draw).toThrow(RangeError);
+			expect([...before, ...rest].toSorted()).toEqual(["a", "b", "c"]);
+			expect(next.toSorted()).toEqual(["a", "b", "c", "x"]);
+		},
+	);
+
+	test("un sac vide lève une erreur au premier tirage", () => {
+		const bag = bagOf([], diceOf("army", "1"));
+
+		expect(bag.draw).toThrow(RangeError);
 	});
 });

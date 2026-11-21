@@ -30,7 +30,7 @@ function rounds(drawn: string[], size: number): string[][] {
 
 /** Les `count` premiers tirages sans remise de `items` dans le flux `stream` de la graine « 1 ». */
 function draws<T>(items: readonly T[], stream: DiceStream, count: number): T[] {
-	return Array.from({ length: count }, bagOf(items, diceOf(stream, "1")));
+	return Array.from({ length: count }, bagOf(items, diceOf(stream, "1")).draw);
 }
 
 function armyActions(log: CombatLog): ArmyAction[] {

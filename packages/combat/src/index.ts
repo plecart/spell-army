@@ -8,6 +8,7 @@ export {
 	type MonsterAction,
 	RULES_VERSION,
 	serializeLog,
+	type UnreachedForced,
 } from "./log.ts";
 export type { Monster, MonsterAttack } from "./monster.ts";
 export {

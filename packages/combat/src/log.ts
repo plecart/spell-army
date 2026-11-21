@@ -10,13 +10,16 @@ export const RULES_VERSION = 1;
 
 /**
  * Un personnage forcé (game design § 5) : son identifiant, sa position — premier, dernier ou au
- * milieu — et son motif, extérieur au jeu.
+ * milieu — et son motif, extérieur au jeu. Sa place dans le combat : `lineup.ts`.
  */
 export interface Forced {
 	id: string;
 	position: "first" | "last" | "middle";
 	reason: string;
 }
+
+/** Un forcé dont le combat n'a pas atteint la place : son identifiant et sa position. */
+export type UnreachedForced = Pick<Forced, "id" | "position">;
 
 /** La Vie d'un camp avant → après une action. */
 export type LifeChange = [before: number, after: number];
@@ -66,7 +69,8 @@ export type Outcome = "victory" | "defeat" | "exhaustion";
  *   stats, part de chaque classe) et forcés ;
  * - actions, dans l'ordre ;
  * - bilan : issue, nombre d'actions, Vie restante des deux camps, identifiants des tirés dans
- *   l'ordre de leur première action, et forcés que le combat n'a pas atteints.
+ *   l'ordre de leur première action, forcés compris, et forcés que le combat n'a pas atteints,
+ *   dans l'ordre donné.
  */
 export interface CombatLog {
 	header: {
@@ -84,7 +88,7 @@ export interface CombatLog {
 		armyLife: number;
 		monsterLife: number;
 		drawn: string[];
-		unreachedForced: string[];
+		unreachedForced: UnreachedForced[];
 	};
 }
 
