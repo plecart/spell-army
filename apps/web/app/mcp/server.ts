@@ -1,12 +1,16 @@
 import { createMcpHandler, Server } from "@modelcontextprotocol/server";
 import type { Executor } from "donnees";
 import { requireBearer } from "../token.ts";
+import { confirmationKey } from "./confirmation.ts";
 import { callTool, listTools, type McpTool } from "./tool.ts";
 
 const SERVER_INFO = { name: "wizard-army", version: "1.0.0" };
 
 export interface McpEndpointOptions {
-	/** Le jeton configuré, lu à chaque requête. */
+	/**
+	 * Le jeton configuré, lu à chaque requête, puis à chaque appel d'outil, une fois la requête
+	 * admise, pour en dériver la clé des codes de confirmation (`confirmationKey`).
+	 */
 	token: () => string | undefined;
 	/** Le client de la base, demandé à chaque appel d'outil. */
 	database: () => Executor;
@@ -30,9 +34,16 @@ export function createMcpEndpoint({
 			server.setRequestHandler("tools/list", () => ({
 				tools: listTools(tools),
 			}));
-			server.setRequestHandler("tools/call", ({ params }) =>
-				callTool(tools, database(), params.name, params.arguments),
-			);
+			server.setRequestHandler("tools/call", ({ params }) => {
+				const configured = token();
+				return callTool(
+					tools,
+					database(),
+					params.name,
+					params.arguments,
+					configured === undefined ? undefined : confirmationKey(configured),
+				);
+			});
 			return server;
 		},
 		{ responseMode: "json", legacy: "reject", maxSubscriptions: 0 },

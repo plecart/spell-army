@@ -8,6 +8,7 @@ import {
 import type { Executor } from "donnees";
 import { z } from "zod";
 import { writeAuditEntry } from "./audit.ts";
+import { servedTool } from "./confirmation.ts";
 
 /** Ce que rend un outil : sa sortie et, pour un changement, l'état avant et après. */
 export interface ToolOutcome {
@@ -37,6 +38,13 @@ export interface McpTool<Input extends z.ZodObject = z.ZodObject> {
 	 * Faux ou absent : `run` reçoit la transaction de l'enrobage.
 	 */
 	ownsTransactions?: boolean;
+	/**
+	 * Présente pour un outil destructeur au sens de l'ADR 0004 (« Durcissement MCP ») : ce que fera
+	 * l'appel confirmé, dit pour le mainteneur d'après l'état présent, sans rien changer. L'enrobage
+	 * exige alors un code de confirmation avant `run` (`servedTool`) et ajoute à l'entrée un champ
+	 * `code` : l'entrée de l'outil n'en déclare donc pas.
+	 */
+	confirmation?(executor: Executor, input: z.output<Input>): Promise<string>;
 	run(executor: Executor, input: z.output<Input>): Promise<ToolOutcome>;
 }
 
@@ -50,21 +58,22 @@ const UNNAMED_ERROR = "Erreur sans message";
 const AUDIT_FAILED = "Audit impossible : l'appel n'a pas été enregistré.";
 
 /**
- * `tools/list` : chaque outil, avec les schémas JSON tirés de ses schémas Zod. Celui d'un
- * `ZodObject` est un schéma `object`, que le type de Zod ne sait pas dire en valeurs JSON : d'où la
- * conversion.
+ * `tools/list` : chaque outil tel que l'enrobage le sert (`servedTool`) — un outil confirmable avec
+ * sa description, son entrée et sa sortie de confirmation —, avec les schémas JSON tirés de ses
+ * schémas Zod. Celui d'un `ZodObject` est un schéma `object`, que le type de Zod ne sait pas dire en
+ * valeurs JSON : d'où la conversion.
  */
 export function listTools(tools: readonly McpTool[]): Tool[] {
-	return tools.map(
-		({ name, title, description, annotations, input, output }) => ({
+	return tools
+		.map((tool) => servedTool(tool))
+		.map(({ name, title, description, annotations, input, output }) => ({
 			name,
 			title,
 			description,
 			annotations,
 			inputSchema: z.toJSONSchema(input) as Tool["inputSchema"],
 			outputSchema: z.toJSONSchema(output) as Tool["outputSchema"],
-		}),
-	);
+		}));
 }
 
 /**
@@ -81,6 +90,10 @@ export function listTools(tools: readonly McpTool[]): Tool[] {
  *   client racine, hors de toute transaction de l'enrobage : sa ligne en succès s'écrit après
  *   l'appel, une fois sa sortie validée. Si une étape échoue, la ligne en erreur s'écrit de même ; ce
  *   que l'outil a déjà validé dans ses transactions reste.
+ * - Un outil confirmable (`confirmation`) suit les mêmes étapes tel que `servedTool` le sert sous
+ *   `confirmationKey` : son `run` ne s'exécute que sur un code valide ; sans code valide, rien ne
+ *   change, et la sortie rend la description de l'appel et un code. Sans `confirmationKey`, il est
+ *   refusé comme un outil qui lève, `run` jamais appelé.
  *
  * L'entrée auditée est l'entrée reçue, `{}` quand `args` manque, dont `writeAuditEntry` remplace
  * les octets par leur taille et leur empreinte. Si la ligne en erreur ne peut pas s'écrire, une
@@ -89,20 +102,25 @@ export function listTools(tools: readonly McpTool[]): Tool[] {
  * Limite : une requête que le SDK refuse comme malformée n'atteint pas cette fonction, et n'a donc
  * ni exécution ni ligne d'audit. Ainsi d'`arguments` qui n'est pas un objet : le SDK 2.4.0 répond
  * l'erreur `-32602` « Invalid tools/call request ».
+ *
+ * @param confirmationKey la clé des codes de confirmation (`confirmationKey`), dérivée du jeton ;
+ * absente, tout outil confirmable est refusé.
  */
 export async function callTool(
 	tools: readonly McpTool[],
 	executor: Executor,
 	name: string,
 	args: Record<string, unknown> | undefined,
+	confirmationKey?: Uint8Array,
 ): Promise<CallToolResult> {
 	const input = args ?? {};
-	const tool = tools.find((candidate) => candidate.name === name);
-	if (!tool) {
+	const registered = tools.find((candidate) => candidate.name === name);
+	if (!registered) {
 		const message = `Tool ${name} not found`;
 		await auditError(executor, name, input, message);
 		throw new ProtocolError(ProtocolErrorCode.InvalidParams, message);
 	}
+	const tool = servedTool(registered, confirmationKey);
 	const parsed = tool.input.safeParse(input);
 	if (!parsed.success) {
 		return refuse(executor, name, input, errorMessage(parsed.error));
