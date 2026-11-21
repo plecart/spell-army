@@ -1,9 +1,9 @@
 import type { Fighter } from "./army.ts";
-import { armyWins, shareOf } from "./scale.ts";
+import { armyWins, shareOf } from "./simulation.ts";
 import type { Spell } from "./spell.ts";
 
 /** Les entrées d'une mesure : la réserve, le sort candidat, les graines et l'armée de chacune. */
-export interface SpellTrial {
+export interface SpellMeasureInput {
 	pool: readonly Spell[];
 	candidate: Spell;
 	seeds: readonly string[];
@@ -43,7 +43,7 @@ export function measureSpell({
 	candidate,
 	seeds,
 	armyOf,
-}: SpellTrial): SpellMeasure {
+}: SpellMeasureInput): SpellMeasure {
 	const without = pool.filter(({ number }) => number !== candidate.number);
 	const withCandidate = [...without, candidate];
 	const outcomes = seeds.map((seed) => ({
