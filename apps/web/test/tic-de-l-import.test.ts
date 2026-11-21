@@ -143,8 +143,8 @@ describe("tic de l'import, sur la base de test", () => {
 		expect(await db.$count(importPasses)).toBe(0);
 	});
 
-	// Le dénombrement des configurations du fournisseur que l'adaptateur refuse : la clé ou le compte
-	// absent, le compte hors de sa forme.
+	// Une configuration que l'adaptateur refuse, par réglage : la clé absente, le compte absent ou hors
+	// de sa forme. Les formes refusées se dénombrent dans `joueurs` (`test/hikerapi.test.ts`).
 	test.each<[string, string | undefined, string | undefined]>([
 		["sans clé HikerAPI", undefined, "17841400000000000"],
 		["sans compte lu", "cle-factice", undefined],

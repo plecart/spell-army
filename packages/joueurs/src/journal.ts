@@ -4,8 +4,8 @@ import type { ImportPass } from "./passes.ts";
 
 /**
  * Une passe telle que le journal la rend (ADR 0003, « Journal ») : type, déclencheur, état, début,
- * fin, pages, ajouts, écartés par motif et erreur. Jamais son curseur, texte du fournisseur sans
- * borne, que le MCP renverrait à Claude (ADR 0003, « Pseudos, données non fiables ») ; ni son
+ * fin, pages, ajouts, écartés par motif et erreur. Jamais son curseur, texte opaque reçu du
+ * fournisseur, que le MCP renverrait à Claude (ADR 0003, « Pseudos, données non fiables ») ; ni son
  * identifiant, propre à la base.
  */
 export type PassLogEntry = Omit<ImportPass, "id" | "cursor">;

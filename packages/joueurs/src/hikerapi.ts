@@ -129,8 +129,9 @@ export function createHikerApiProvider({
 
 // L'entrée d'un élément de `response.users` : l'identifiant en texte — `pk_id`, sinon `id`, jamais
 // `pk`, que les exemples de la spec donnent en nombre JSON, arrondi au-delà de 2^53 (#13, décision
-// « Identifiant reçu ») — et le pseudo. Un champ absent ou non textuel arrive vide (`FollowerEntry`) ; rien d'autre n'est
-// lu, ni photo ni nom complet (ADR 0003, « Données stockées »).
+// « Identifiant reçu ») — et le pseudo. Un champ absent ou non textuel arrive vide
+// (`FollowerEntry`) ; rien d'autre n'est lu, ni photo ni nom complet (ADR 0003, « Données
+// stockées »).
 function entryOf(user: unknown): FollowerEntry {
 	return {
 		id: text(field(user, "pk_id")) ?? text(field(user, "id")) ?? "",
