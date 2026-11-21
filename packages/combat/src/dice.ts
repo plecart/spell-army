@@ -31,7 +31,7 @@ const INTEGER_RANGE = BYTE_VALUES ** INTEGER_BYTES;
  * gros-boutiste ; un entier de la dernière tranche incomplète se rejette et le dé passe au suivant,
  * pour que le modulo reste uniforme.
  *
- * Changer cette dérivation change chaque combat déjà joué.
+ * Changer cette dérivation change chaque combat déjà joué, donc `RULES_VERSION` (`log.ts`).
  *
  * @throws {RangeError} si la graine n'est pas un texte non vide.
  */

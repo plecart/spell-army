@@ -47,13 +47,14 @@ export interface Cast {
 }
 
 /**
- * La puissance d'un sort lancé par `caster` dans `situation` (game design § 2, « Puissance d'un sort
- * lancé par l'armée » ; annexe B) :
+ * La puissance d'un sort lancé par `caster` dans `situation` (game design § 2, « Puissance d'un
+ * sort lancé par l'armée » ; annexe B) :
  *
  * - la stat de l'armée selon la recette est la somme de ses stats pondérée par les parts ; la
  *   meilleure stat est la plus haute du lanceur, l'égalité départagée dans l'ordre Vie, Force,
  *   Magie, Vitesse, et l'armée y donne sa somme de cette stat ;
- * - efficacité = 0,5 + 0,5 × stat du lanceur selon la recette / 15 ; un sort inversé lit 15 − stat ;
+ * - efficacité = 0,5 + 0,5 × stat du lanceur selon la recette / 15 ; un sort inversé lit
+ *   15 − stat ;
  * - chaque part vaut coefficient × base × efficacité, le coefficient lu à la jauge d'une forme
  *   conditionnelle (`constant + perGauge × jauge`). La base : 0,2 × stat de l'armée (×1,0 = un coup
  *   normal) ; la Vie maximale de l'armée ; le dernier coup du monstre.
