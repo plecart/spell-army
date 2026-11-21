@@ -1,10 +1,10 @@
 """
 Entrée Blender : rend l'image de validation de chaque classe, puis leur planche. Lancé par
-`pnpm --filter personnages rendus`, qui écrit le fichier de scène :
+`pnpm --filter personnages rendus`, qui écrit le fichier des classes :
 
-    blender --background --factory-startup --python render_previews.py -- <scène> <GLB> <sortie>
+    blender --background --factory-startup --python render_previews.py -- <classes> <GLB> <sortie>
 
-`<scène>`, un JSON, donne par classe à rendre, dans l'ordre des classes, son décor (`backdrop`, le
+`<classes>`, un JSON, donne par classe à rendre, dans l'ordre des classes, son décor (`backdrop`, le
 SVG de `BACKDROPS`) et son socle (`pedestal`, de `PEDESTALS`). Chaque classe se rend depuis son GLB
 fabriqué, `<GLB>/<classe>.glb` — ce qu'on juge est ce qui sera déposé —, posé au-dessus de son socle
 et devant son décor, en `<sortie>/<classe>.png` ; puis toutes en `<sortie>/planche.png`. Cadrage et
@@ -202,9 +202,9 @@ def sheet(images):
     return board
 
 
-def render_previews(scene_file, models_dir, out_dir):
-    """Rend chaque classe de `scene_file` depuis `models_dir`, puis la planche, dans `out_dir`."""
-    settings = json.loads(scene_file.read_text(encoding="utf-8"))
+def render_previews(classes_file, models_dir, out_dir):
+    """Rend chaque classe de `classes_file` depuis `models_dir`, puis la planche, dans `out_dir`."""
+    settings = json.loads(classes_file.read_text(encoding="utf-8"))
     missing = [key for key in settings if not (models_dir / f"{key}.glb").is_file()]
     if missing:
         sys.exit(

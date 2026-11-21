@@ -1,8 +1,11 @@
+import { readdirSync, readFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { classKeysOf, deviationReport } from "../scripts/blender.ts";
+import { CLASS_COLORS } from "../src/index.ts";
 import { glb } from "./glb.ts";
 
 /** Un fichier conforme : les cinq ancres, vides, `chapeau` sous `tete`, `sol` à l'origine. */
@@ -88,4 +91,18 @@ describe("les classes d'une commande", () => {
 			"Classe(s) inconnue(s) : magicien. Classes : wizard, golem, warrior, dwarf, vampire, druid, peasant, fairy.",
 		);
 	});
+});
+
+test("aucun script Blender ne recopie une couleur de classe : la commande la lui passe", () => {
+	const folder = fileURLToPath(new URL("../blender/", import.meta.url));
+	const copies = readdirSync(folder, { recursive: true, encoding: "utf8" })
+		.filter((file) => file.endsWith(".py"))
+		.flatMap((file) => {
+			const code = readFileSync(join(folder, file), "utf8").toLowerCase();
+			return Object.values(CLASS_COLORS)
+				.filter((color) => code.includes(color))
+				.map((color) => `${file} : ${color}`);
+		});
+
+	expect(copies).toEqual([]);
 });

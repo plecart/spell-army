@@ -19,8 +19,6 @@ from workshop import (
     torus,
 )
 
-CLASS_COLOR = "#2e4a7d"  # couleur du magicien, direction artistique § 2
-
 ROBE = [
     (0, 0),
     (0.47, 0),
@@ -33,13 +31,13 @@ ROBE = [
 ]
 
 
-def build():
-    """Compose le magicien dans la scène vide."""
-    corps = material("corps", CLASS_COLOR)
+def build(color):
+    """Compose le magicien dans la scène vide, `color` la couleur de sa classe."""
+    corps = material("corps", color)
     secondaire = material("secondaire", "#b8893a", METAL)
     peau = material("peau", "#e8b892")
     poils = material("poils", "#d8d2c6", MATTE)
-    coiffe = material("coiffe", CLASS_COLOR)
+    coiffe = material("coiffe", color)
     accessoire = material("accessoire", "#6e4b2e", MATTE)
     fixe = material("fixe", "#1c1a22")
 

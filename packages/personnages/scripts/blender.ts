@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
 	BACKDROPS,
+	CLASS_COLORS,
 	CLASS_KEYS,
 	type ClassKey,
 	checkModel,
@@ -82,10 +83,38 @@ function runBlender(script: string, args: readonly string[]): void {
 	}
 }
 
-/** Fabrique `out/modeles/<classe>.glb` pour chaque classe, puis juge chaque fichier. */
+/**
+ * Écrit `out/classes.json`, ce que les scripts Blender savent de chaque classe de `classKeys`, dans
+ * cet ordre : sa couleur (`CLASS_COLORS`), son décor (`BACKDROPS`) et son socle (`PEDESTALS`). Rend
+ * le chemin du fichier.
+ */
+function writeClasses(classKeys: readonly ClassKey[]): string {
+	const file = join(OUT, "classes.json");
+	writeFileSync(
+		file,
+		JSON.stringify(
+			Object.fromEntries(
+				classKeys.map((key) => [
+					key,
+					{
+						color: CLASS_COLORS[key],
+						backdrop: BACKDROPS[key],
+						pedestal: PEDESTALS[key],
+					},
+				]),
+			),
+		),
+	);
+	return file;
+}
+
+/**
+ * Fabrique `out/modeles/<classe>.glb` pour chaque classe, de la couleur de sa classe, puis juge
+ * chaque fichier.
+ */
 function buildModels(classKeys: readonly ClassKey[]): void {
 	mkdirSync(MODELS, { recursive: true });
-	runBlender("build_models.py", [MODELS, ...classKeys]);
+	runBlender("build_models.py", [writeClasses(classKeys), MODELS]);
 	const files = classKeys.map((key) => join(MODELS, `${key}.glb`));
 	const report = deviationReport(files);
 	if (report !== "") {
@@ -95,24 +124,12 @@ function buildModels(classKeys: readonly ClassKey[]): void {
 }
 
 /**
- * Rend `out/rendus/<classe>.png` pour chaque classe, depuis son GLB fabriqué, puis la planche :
- * décor et socle de chaque classe passent à Blender par le fichier de scène `out/scene.json`.
+ * Rend `out/rendus/<classe>.png` pour chaque classe, depuis son GLB fabriqué, sur son socle et
+ * devant son décor, puis la planche.
  */
 function renderPreviews(classKeys: readonly ClassKey[]): void {
 	mkdirSync(RENDERS, { recursive: true });
-	const scene = join(OUT, "scene.json");
-	writeFileSync(
-		scene,
-		JSON.stringify(
-			Object.fromEntries(
-				classKeys.map((key) => [
-					key,
-					{ backdrop: BACKDROPS[key], pedestal: PEDESTALS[key] },
-				]),
-			),
-		),
-	);
-	runBlender("render_previews.py", [scene, MODELS, RENDERS]);
+	runBlender("render_previews.py", [writeClasses(classKeys), MODELS, RENDERS]);
 	console.log(`Rendus écrits dans ${RENDERS}.`);
 }
 
