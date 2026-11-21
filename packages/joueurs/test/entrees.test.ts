@@ -1,5 +1,5 @@
 import {
-	LONG_ID,
+	LONGEST_ID,
 	LONGEST_USERNAME,
 	MALFORMED_IDS,
 	MALFORMED_USERNAMES,
@@ -11,7 +11,7 @@ describe("tri des entrées d'une page", () => {
 	test("une entrée bien formée est gardée telle que reçue, aux bornes de la forme comprises", () => {
 		const entries = [
 			{ id: "12", username: "a" },
-			{ id: LONG_ID, username: LONGEST_USERNAME },
+			{ id: LONGEST_ID, username: LONGEST_USERNAME },
 		];
 		expect(screenEntries(entries)).toEqual({
 			entries,

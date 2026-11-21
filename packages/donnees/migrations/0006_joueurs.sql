@@ -1,6 +1,6 @@
 CREATE TABLE "excluded_players" (
 	"instagram_id" text PRIMARY KEY NOT NULL,
-	CONSTRAINT "excluded_players_instagram_id_check" CHECK ("excluded_players"."instagram_id" ~ '^[1-9][0-9]*$')
+	CONSTRAINT "excluded_players_instagram_id_check" CHECK ("excluded_players"."instagram_id" ~ '^[1-9][0-9]{0,19}$')
 );
 --> statement-breakpoint
 CREATE TABLE "players" (
@@ -9,7 +9,7 @@ CREATE TABLE "players" (
 	"arrived_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"spell_number" integer NOT NULL,
 	"model_file_id" integer,
-	CONSTRAINT "players_instagram_id_check" CHECK ("players"."instagram_id" ~ '^[1-9][0-9]*$'),
+	CONSTRAINT "players_instagram_id_check" CHECK ("players"."instagram_id" ~ '^[1-9][0-9]{0,19}$'),
 	CONSTRAINT "players_username_check" CHECK ("players"."username" ~ '^[A-Za-z0-9._]{1,30}$')
 );
 --> statement-breakpoint

@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import { excludedPlayers, players, storeModelFile } from "../src/index.ts";
 import { freshDatabase } from "./base-neuve.ts";
 import {
-	LONG_ID,
+	LONGEST_ID,
 	LONGEST_USERNAME,
 	MALFORMED_IDS,
 	MALFORMED_USERNAMES,
@@ -44,7 +44,7 @@ describe("joueurs", () => {
 		});
 		const rows = await db.transaction(async (tx) => {
 			await tx.insert(players).values({
-				instagramId: LONG_ID,
+				instagramId: LONGEST_ID,
 				username: LONGEST_USERNAME,
 				spellNumber: 1,
 				modelFileId: id,

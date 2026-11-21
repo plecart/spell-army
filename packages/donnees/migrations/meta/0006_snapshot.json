@@ -1,5 +1,5 @@
 {
-  "id": "84601bcb-ba79-4e3f-bf89-42cbe9281673",
+  "id": "33df2fe1-3dcc-44ba-923a-399602d79dfa",
   "prevId": "46f37b19-d62a-4aff-abd8-522256aaaa01",
   "version": "7",
   "dialect": "postgresql",
@@ -244,7 +244,7 @@
       "checkConstraints": {
         "excluded_players_instagram_id_check": {
           "name": "excluded_players_instagram_id_check",
-          "value": "\"excluded_players\".\"instagram_id\" ~ '^[1-9][0-9]*$'"
+          "value": "\"excluded_players\".\"instagram_id\" ~ '^[1-9][0-9]{0,19}$'"
         }
       },
       "isRLSEnabled": false
@@ -400,7 +400,7 @@
       "checkConstraints": {
         "players_instagram_id_check": {
           "name": "players_instagram_id_check",
-          "value": "\"players\".\"instagram_id\" ~ '^[1-9][0-9]*$'"
+          "value": "\"players\".\"instagram_id\" ~ '^[1-9][0-9]{0,19}$'"
         },
         "players_username_check": {
           "name": "players_username_check",
