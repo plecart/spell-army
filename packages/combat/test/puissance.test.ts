@@ -43,6 +43,10 @@ const SITUATION: Situation = {
 	monsterLastHit: 10,
 };
 
+// Un magicien de Vie 15, Force 0, Magie 15, Vitesse 0 : son efficacité vaut 1 sur la Vie et la
+// Magie, 0,5 sur la Force et la Vitesse — l'inverse pour un sort inversé.
+const CASTER_STATS = stats(15, 0, 15, 0);
+
 describe("la puissance d'un sort lancé par l'armée", () => {
 	test("la stat de l'armée est la somme de ses stats, pondérée par les parts de la recette", () => {
 		const army = { ...ARMY, stats: stats(10, 20, 30, 40) };
@@ -97,12 +101,18 @@ describe("la puissance d'un sort lancé par l'armée", () => {
 	])("la meilleure stat à égalité : %s", (_, casterStats, recipe) => {
 		expect(cast(casterOf(19, casterStats), SITUATION).recipe).toEqual(recipe);
 	});
+
+	test("une classe absente de l'armée compte pour une part nulle", () => {
+		// Les golems se relèvent, dans une armée sans golem : soin ×0,6, efficacité 1 sur la Vie.
+		const army = { ...ARMY, classShares: { wizard: 1 } };
+		const { heal } = cast(casterOf(17, CASTER_STATS), { ...SITUATION, army });
+
+		expect(heal).toBeCloseTo(0.6 * 20, PRECISION);
+	});
 });
 
-// Chaque sort de la réserve de départ, lancé dans la situation ci-dessus par un magicien de Vie 15,
-// Force 0, Magie 15, Vitesse 0 : son efficacité vaut 1 sur la Vie et la Magie, 0,5 sur la Force et
-// la Vitesse — l'inverse pour un sort inversé. Les valeurs se calculent à la main, sur l'annexe B.
-const CASTER_STATS = stats(15, 0, 15, 0);
+// Chaque sort de la réserve de départ, lancé dans la situation ci-dessus par le magicien de
+// `CASTER_STATS`. Les valeurs se calculent à la main, sur l'annexe B.
 const POOL_VALUES = [
 	[1, "Coup d'épée", 10, 0],
 	[2, "Lancer de rocher", 14, 0], // efficacité 0,5 + 0,5 × (40 % × 15) / 15 = 0,7
