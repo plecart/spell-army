@@ -102,6 +102,31 @@ function erase(client: Client, code: string) {
 	return client.callTool({ name: "effacer", arguments: { ...ARGS, code } });
 }
 
+// Les voies par lesquelles un outil confirmable pourrait s'exécuter sans code valide, recensées
+// d'après l'ADR 0005 (« Décisions », ligne « Confirmation ») et les décisions de la PR #41 : 13
+// voies, 11 fermées par un test de ce `describe`, une par l'usage, une laissée ouverte.
+// - (a) sans code : « sans code : rien n'est exécuté… » ;
+// - (b) un code mal formé : « un code mal formé : refusé… » ;
+// - (c) l'HMAC modifié, voisin base64url qui se décode en les mêmes octets compris : « un code au
+//   premier caractère de l'HMAC changé… », « un code au dernier caractère de l'HMAC changé… » ;
+// - (d) un code périmé, ou à l'expiration repoussée : « une milliseconde après, il est refusé »,
+//   « un code à l'expiration repoussée d'une milliseconde… » ;
+// - (e) l'expiration écrite avec un zéro de tête : « un code à l'expiration écrite avec un zéro de
+//   tête… » ;
+// - (f) d'autres paramètres, ou les mêmes aux clés dans un autre ordre : « un code obtenu pour
+//   d'autres paramètres… », « les mêmes paramètres, aux clés dans un autre ordre… » ;
+// - (g) un autre outil : « un code obtenu pour un autre outil confirmable… » ;
+// - (h) une autre clé : « un code émis sous un autre jeton… » ;
+// - (i) sans clé : « callTool sans clé… » ;
+// - (j) l'enrobage contourné dans `callTool` : il n'exécute que l'outil servi, sur ses deux
+//   branches — dans sa transaction, chaque test par le point d'entrée ; sur le client racine, « un
+//   outil confirmable qui gère ses transactions… » ;
+// - (k) un appel direct de `tool.run` : fermée par l'usage, sans test —
+//   `git grep "\.run(" -- apps packages ":!**/test/**"` rend 2 appels le 2026-11-21, celui de
+//   `callTool` sur l'outil servi et celui de `servedTool` après un code valide ;
+// - (l) un code rejoué avant son expiration : ouverte, la limite assumée — « limite assumée… » ;
+// - (m) un outil qui déclare son propre `code` : « un outil confirmable dont l'entrée déclare son
+//   propre code… ».
 describe("confirmation par code d'un outil destructeur", () => {
 	test("sans code : rien n'est exécuté ; la sortie rend la description, un code et son expiration, 5 minutes plus tard ; une ligne d'audit en succès, sans avant ni après", async () => {
 		freezeDate(NOW);
@@ -313,6 +338,44 @@ describe("confirmation par code d'un outil destructeur", () => {
 			});
 		},
 	);
+
+	test("un outil confirmable qui gère ses transactions : sa description, puis son run sur le code rendu, reçoivent le client racine, jamais une transaction", async () => {
+		const db = await freshDatabase();
+		const tool = { ...confirmableTool("effacer"), ownsTransactions: true };
+		const key = confirmationKey(TOKEN);
+		const { code } = confirmationOf(
+			await callTool([tool], db, "effacer", ARGS, key),
+		);
+		expect(
+			outputOf(await callTool([tool], db, "effacer", { ...ARGS, code }, key)),
+		).toEqual({ resultat: { effacee: "c" } });
+		expect(tool.confirmation).toHaveBeenCalledOnce();
+		expect(tool.confirmation.mock.calls[0]?.[0]).toBe(db);
+		expect(tool.run).toHaveBeenCalledOnce();
+		expect(tool.run.mock.calls[0]?.[0]).toBe(db);
+	});
+
+	test("un outil confirmable dont l'entrée déclare son propre code : tools/list et tools/call lèvent une erreur qui le nomme, sans ligne d'audit, ni la description ni l'outil appelés", async () => {
+		const db = await freshDatabase();
+		const tool = {
+			...confirmableTool("effacer"),
+			input: erasure.extend({ code: z.string() }),
+		};
+		const message = "L'outil effacer déclare un champ code";
+		expect(() => listTools([tool])).toThrow(message);
+		await expect(
+			callTool(
+				[tool],
+				db,
+				"effacer",
+				{ ...ARGS, code: "c" },
+				confirmationKey(TOKEN),
+			),
+		).rejects.toThrow(message);
+		expect(await auditRows(db)).toEqual([]);
+		expect(tool.confirmation).not.toHaveBeenCalled();
+		expect(tool.run).not.toHaveBeenCalled();
+	});
 });
 
 describe("confirmation : tools/list", () => {
