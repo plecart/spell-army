@@ -9,8 +9,9 @@ ensuite chaque GLB :
 classe (`color`, de `CLASS_COLORS`). Une classe est le fichier `classes/<classe>.py`, nommé par sa
 ClassKey, dont la fonction `build(color)` compose le personnage dans une scène vide, écrite ensuite
 en `<sortie>/<classe>.glb`. Une classe sans fichier arrête tout, avant la première fabrication, sur
-un message qui la nomme. Une classe dont une main est du mauvais côté n'est pas écrite : les autres
-le sont, puis la commande sort en erreur en la nommant.
+un message qui la nomme. Une classe dont une main est du mauvais côté n'est pas écrite et son GLB
+d'une fabrication antérieure est retiré ; les autres classes sont écrites, puis la commande sort en
+erreur en la nommant.
 """
 
 import json
@@ -54,6 +55,9 @@ def build_models(classes_file, out_dir):
         sys.exit(f"Classe(s) sans fichier dans {HERE / 'classes'} : {', '.join(missing)}.")
     misplaced = []
     for key, file in files.items():
+        # Le fichier d'une fabrication antérieure part d'abord : une classe refusée n'en laisse
+        # aucun que `rendus` ou `deposer-3d` prendraient pour celui du code actuel.
+        (out_dir / f"{key}.glb").unlink(missing_ok=True)
         workshop.empty_scene()
         runpy.run_path(str(file))["build"](settings[key]["color"])
         if hands := misplaced_hands():
