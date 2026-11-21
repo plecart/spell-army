@@ -108,6 +108,7 @@ describe("aucun paramètre de requête libre", () => {
 			"lister_sorts",
 			"ajouter_sort",
 			"modifier_sort",
+			"mesurer_sort",
 			"deposer_fichier_3d",
 			"regler_modele_classe",
 			"lister_passes",

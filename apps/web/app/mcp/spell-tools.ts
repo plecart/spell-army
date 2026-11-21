@@ -1,4 +1,4 @@
-import { spellKey, validateSpell } from "combat";
+import { measureSpell, spellKey, validateSpell } from "combat";
 import {
 	findSpellByKey,
 	insertSpell,
@@ -7,6 +7,7 @@ import {
 	type SpellImage,
 	updateSpell,
 } from "donnees";
+import { simulationArmies } from "personnages";
 import { z } from "zod";
 import { boundedBase64, grouped } from "./bounds.ts";
 import { readImageInfo } from "./image.ts";
@@ -50,6 +51,34 @@ const modification = z
 	)
 	// Le `refine` ne passe pas dans le schéma JSON : outre le numéro, un des trois champs au moins.
 	.meta({ minProperties: 2 });
+
+// L'échantillon de mesurer_sort : les graines 1 à 2 000, comme l'équilibre (issue #19, critère
+// « Équilibre »). Relevé le 2026-11-21 sur le poste de développement (Node 24.3), deux appels par
+// `callTool` : 13,3 et 12,6 s, de l'ordre de la dizaine de secondes, loin des 300 s de
+// `maxDuration` de la route MCP même sur une fonction trois fois plus lente ; un pic de mémoire de
+// l'ordre de 0,8 Go.
+const MEASURED_SEEDS = 2000;
+
+const share = z.number().min(0).max(1);
+
+const measurement = z.strictObject({
+	part_avec: share.describe(
+		"La part des combats que l'armée gagne, de 0 à 1, le sort candidat ajouté à la réserve.",
+	),
+	part_sans: share.describe(
+		"La part des combats que l'armée gagne, de 0 à 1, sur la réserve en base.",
+	),
+	ecart: z
+		.number()
+		.describe(
+			"L'écart en points, (part_avec − part_sans) × 100 : positif, le sort fait gagner l'armée plus souvent.",
+		),
+	graines: z
+		.strictObject({ premiere: z.int(), derniere: z.int() })
+		.describe(
+			"L'échantillon : les graines de premiere à derniere, chacune un combat avec le sort et un sans.",
+		),
+});
 
 /** Refuse l'appel par les messages de `errors`, un par ligne, s'il y en a. */
 function refuseIfAny(errors: string[]): void {
@@ -166,3 +195,55 @@ export const updateSpellTool: McpTool<typeof modification> = {
 		};
 	},
 };
+
+/**
+ * `mesurer_sort` (issue #19, « Décisions ») : la mesure de `combat` (`measureSpell`) d'un sort
+ * candidat contre la réserve en base, sur les graines 1 à `lastSeed`, chaque armée construite par
+ * `simulationArmies` de `personnages`. Le candidat prend le numéro qu'ajouter_sort lui donnerait
+ * (`insertSpell` : le plus grand + 1) : `drawSpell` tirant par numéro, les armées « avec lui » sont
+ * celles de la réserve une fois le sort ajouté.
+ *
+ * L'outil gère ses transactions (ADR 0005, « Conséquences ») : il lit la réserve, puis simule sans
+ * tenir de transaction, et sa ligne d'audit s'écrit après. Il n'écrit rien d'autre.
+ */
+export function measureSpellTool(
+	lastSeed = MEASURED_SEEDS,
+): McpTool<typeof newSpellSchema> {
+	const seeds = Array.from({ length: lastSeed }, (_, index) =>
+		String(index + 1),
+	);
+	return {
+		name: "mesurer_sort",
+		title: "Mesurer un sort candidat",
+		description: `Mesure un sort candidat sans l'ajouter : la part des combats que l'armée gagne contre le monstre de référence égal à elle, avec le sort dans la réserve en base et sans lui, sur les graines 1 à ${grouped(lastSeed)}, et leur écart en points. Le candidat se donne et se valide comme pour ajouter_sort ; il se tire sous le numéro qu'ajouter_sort lui donnerait. N'écrit que sa ligne d'audit.`,
+		annotations: {
+			readOnlyHint: true,
+			destructiveHint: false,
+			idempotentHint: true,
+			openWorldHint: false,
+		},
+		input: newSpellSchema,
+		output: measurement,
+		ownsTransactions: true,
+		run: async (executor, input) => {
+			const candidate = toModelSpell(input);
+			refuseIfAny(validateSpell(candidate));
+			const pool = (await listSpells(executor)).map(spellOf);
+			const number = Math.max(0, ...pool.map((spell) => spell.number)) + 1;
+			const { withSpell, withoutSpell, gap } = measureSpell({
+				pool,
+				candidate: { ...candidate, number },
+				seeds,
+				armyOf: simulationArmies(),
+			});
+			return {
+				output: {
+					part_avec: withSpell,
+					part_sans: withoutSpell,
+					ecart: gap,
+					graines: { premiere: 1, derniere: lastSeed },
+				},
+			};
+		},
+	};
+}
