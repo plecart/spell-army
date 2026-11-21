@@ -9,9 +9,12 @@ export {
 	releaseImportLock,
 } from "./lock.ts";
 export {
+	closeStalePasses,
 	type ImportPass,
 	type PassContext,
+	resumeFullPass,
 	runQuickPass,
+	startFullPass,
 } from "./passes.ts";
 export {
 	type FollowerPage,
