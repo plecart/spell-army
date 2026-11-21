@@ -14,6 +14,9 @@
 **/.vitest/
 .turbo/
 
+# Python des scripts Blender
+**/__pycache__/
+
 # Secrets
 .env
 .env.*

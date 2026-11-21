@@ -7,6 +7,8 @@
 		"./test/glb": "./test/glb.ts"
 	},
 	"scripts": {
+		"modeles": "node --env-file-if-exists=../../.env scripts/blender.ts modeles",
+		"rendus": "node --env-file-if-exists=../../.env scripts/blender.ts rendus",
 		"test": "vitest run",
 		"typecheck": "tsc"
 	},
