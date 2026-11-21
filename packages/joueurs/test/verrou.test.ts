@@ -2,15 +2,7 @@ import { importLock } from "donnees";
 import { freshDatabase } from "donnees/test/base-neuve";
 import { describe, expect, test } from "vitest";
 import { acquireImportLock, releaseImportLock } from "../src/index.ts";
-
-// Le bail : 300 s, la durée maximale d'une fonction (ADR 0002, « Verrou à bail »).
-const LEASE_MS = 300_000;
-const T0 = new Date("2026-11-21T10:00:00Z");
-
-/** L'instant `ms` millisecondes après `T0`. */
-function after(ms: number): Date {
-	return new Date(T0.getTime() + ms);
-}
+import { after, LEASE_MS, T0 } from "./horloge.ts";
 
 describe("verrou à bail de l'import", () => {
 	test("deux prises simultanées : une seule réussit, pour un bail de 300 s", async () => {

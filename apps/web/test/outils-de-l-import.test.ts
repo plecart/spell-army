@@ -2,7 +2,11 @@ import { setTimeout as sleep } from "node:timers/promises";
 import type { Client } from "@modelcontextprotocol/client";
 import { type Executor, importPasses } from "donnees";
 import { acquireImportLock, listPasses, runTick, writePage } from "joueurs";
-import { FakeFollowerProvider, followers } from "joueurs/test/faux-fournisseur";
+import {
+	FakeFollowerProvider,
+	followers,
+	heldProvider,
+} from "joueurs/test/faux-fournisseur";
 import { describe, expect, test } from "vitest";
 import {
 	auditRows,
@@ -357,17 +361,10 @@ describe("relancer_passe", () => {
 	);
 
 	test("hors de la transaction de l'enrobage : pendant qu'une relance lit sa page, sa passe se lit en cours au journal et un tic concurrent trouve le verrou pris sans attendre ; la ligne d'audit s'écrit après l'appel", async () => {
-		const reading = Promise.withResolvers<void>();
-		const release = Promise.withResolvers<void>();
-		const held = new FakeFollowerProvider(followers(3), {
-			onPageRead: () => {
-				reading.resolve();
-				return release.promise;
-			},
-		});
-		const { db, client } = await connectToRegistry(held);
+		const held = heldProvider(followers(3));
+		const { db, client } = await connectToRegistry(held.provider);
 		const call = relaunch(client, "rapide");
-		await reading.promise;
+		await held.reading;
 		try {
 			const tick = runTick({
 				db,
@@ -381,7 +378,7 @@ describe("relancer_passe", () => {
 			]);
 			expect(await auditOf(db, "relancer_passe")).toEqual([]);
 		} finally {
-			release.resolve();
+			held.release();
 		}
 		const output = outputOf(await call);
 		expect(await auditOf(db, "relancer_passe")).toEqual([

@@ -18,15 +18,12 @@ import {
 	startFullPass,
 	writePage,
 } from "../src/index.ts";
-import { FakeFollowerProvider, followers } from "./faux-fournisseur.ts";
-
-const T0 = new Date("2026-11-21T10:00:00Z");
-const MINUTE_MS = 60_000;
-
-/** L'instant `minutes` minutes après `from`, `T0` par défaut. */
-function after(minutes: number, from = T0): Date {
-	return new Date(from.getTime() + minutes * MINUTE_MS);
-}
+import {
+	type FakeFollowerProvider,
+	followers,
+	pacedProvider,
+} from "./faux-fournisseur.ts";
+import { after, HOUR_MS, MINUTE_MS, T0 } from "./horloge.ts";
 
 /**
  * Un faux fournisseur de `list`, en pages de `pageSize`, et le contexte d'une passe sur `db` : son
@@ -39,17 +36,14 @@ function passOver(
 	{
 		pageSize,
 		start = T0,
-		deadline = after(60, start),
+		deadline = after(HOUR_MS, start),
 	}: { pageSize?: number; start?: Date; deadline?: Date } = {},
 ): { provider: FakeFollowerProvider; context: PassContext } {
-	let now = start.getTime();
-	const provider = new FakeFollowerProvider(list, {
+	const { provider, clock } = pacedProvider(list, {
 		pageSize,
-		onPageRead: () => {
-			now += MINUTE_MS;
-		},
+		start,
+		pageMs: MINUTE_MS,
 	});
-	const clock = () => new Date(now);
 	return { provider, context: { db, provider, clock, deadline } };
 }
 
@@ -92,7 +86,7 @@ describe("passe rapide", () => {
 			trigger: "tick",
 			status: "done",
 			startedAt: T0,
-			finishedAt: after(2),
+			finishedAt: after(2 * MINUTE_MS),
 			pages: 2,
 			added: 10,
 			invalidIds: 0,
@@ -137,7 +131,10 @@ describe("passe complète", () => {
 	test("interrompue par le budget après la page 2 sur 5 : notée interrompue, sans erreur, à son curseur ; la reprise lit les pages 3 à 5 seulement et la termine, sur la même ligne du journal", async () => {
 		const db = await freshDatabase();
 		const list = followers(10);
-		const first = passOver(db, list, { pageSize: 2, deadline: after(2) });
+		const first = passOver(db, list, {
+			pageSize: 2,
+			deadline: after(2 * MINUTE_MS),
+		});
 		const interrupted = await startFullPass(first.context, "weekly");
 		expect(first.provider.cursors).toEqual([null, first.provider.cursorOf(2)]);
 		expect(interrupted).toEqual({
@@ -146,7 +143,7 @@ describe("passe complète", () => {
 			trigger: "weekly",
 			status: "interrupted",
 			startedAt: T0,
-			finishedAt: after(2),
+			finishedAt: after(2 * MINUTE_MS),
 			pages: 2,
 			added: 4,
 			invalidIds: 0,
@@ -155,7 +152,7 @@ describe("passe complète", () => {
 			cursor: first.provider.cursorOf(3),
 		});
 
-		const next = passOver(db, list, { pageSize: 2, start: after(60) });
+		const next = passOver(db, list, { pageSize: 2, start: after(HOUR_MS) });
 		const done = await resumeFullPass(next.context);
 		expect(next.provider.cursors).toEqual(
 			[3, 4, 5].map((page) => next.provider.cursorOf(page)),
@@ -163,7 +160,7 @@ describe("passe complète", () => {
 		expect(done).toEqual({
 			...interrupted,
 			status: "done",
-			finishedAt: after(63),
+			finishedAt: after(HOUR_MS + 3 * MINUTE_MS),
 			pages: 5,
 			added: 10,
 			cursor: null,
@@ -261,7 +258,7 @@ describe("passes restées en cours", () => {
 				{ kind: "full", trigger: "weekly", ...running, cursor: "c" },
 				done,
 			]);
-		await closeStalePasses(db, after(10));
+		await closeStalePasses(db, after(10 * MINUTE_MS));
 		expect(
 			(await readPasses(db)).map(({ kind, status, finishedAt, cursor }) => ({
 				kind,
@@ -273,13 +270,13 @@ describe("passes restées en cours", () => {
 			{
 				kind: "quick",
 				status: "interrupted",
-				finishedAt: after(10),
+				finishedAt: after(10 * MINUTE_MS),
 				cursor: null,
 			},
 			{
 				kind: "full",
 				status: "interrupted",
-				finishedAt: after(10),
+				finishedAt: after(10 * MINUTE_MS),
 				cursor: "c",
 			},
 			{ kind: "quick", status: "done", finishedAt: T0, cursor: null },
@@ -294,7 +291,7 @@ describe("passe en échec", () => {
 		provider.failingPage = 3;
 		expect(await startFullPass(context, "weekly")).toMatchObject({
 			status: "failed",
-			finishedAt: after(3),
+			finishedAt: after(3 * MINUTE_MS),
 			error: "panne injectée à la page 3",
 			pages: 2,
 			added: 4,
