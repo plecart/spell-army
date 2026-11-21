@@ -57,8 +57,9 @@ export const listPassesTool: McpTool<typeof listing> = {
  * relance. L'outil gère ses transactions (ADR 0005, « Conséquences ») : le verrou de l'import se
  * voit des tics dès sa prise, et chaque page s'écrit dans la sienne. Les indices suivent leurs
  * définitions MCP : une relance inscrit des joueurs sans toucher aux présents, et ouvre une passe
- * au journal ou, pour une complète non terminée, poursuit sa ligne ; deux relances relisent deux
- * fois la liste, chez le fournisseur.
+ * au journal ou, pour une complète non terminée, poursuit sa ligne — elle en réécrit l'état et en
+ * efface l'erreur, une mise à jour qui n'est pas purement additive : `destructiveHint` (ADR 0005,
+ * « Conséquences ») ; deux relances relisent deux fois la liste, chez le fournisseur.
  */
 export function relaunchPassTool(
 	provider: () => FollowerProvider,
@@ -70,7 +71,7 @@ export function relaunchPassTool(
 			"Lance une passe de l'import des abonnés sous le verrou de l'import, comme le tic horaire : rapide, ou complète — une complète non terminée reprend alors à son curseur, sous son déclencheur d'origine. Attend la fin de la passe, qui ne commence plus de page passé 240 s, et la rend comme lister_passes. Si une passe est déjà en cours, répond « passe en cours » sans rien lancer.",
 		annotations: {
 			readOnlyHint: false,
-			destructiveHint: false,
+			destructiveHint: true,
 			idempotentHint: false,
 			openWorldHint: true,
 		},
