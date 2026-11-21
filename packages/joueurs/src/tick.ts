@@ -27,11 +27,6 @@ export interface ImportOptions {
 	 * défaut.
 	 */
 	clock?: () => Date;
-	/**
-	 * Le budget en millisecondes, compté depuis la prise du verrou : passé ce délai, aucune page ne
-	 * commence. 240 000 par défaut, sous les 300 s d'une fonction (ADR 0002, « Verrou à bail »).
-	 */
-	budgetMs?: number;
 }
 
 /** Le compte rendu d'un tic qui a tourné. */
@@ -47,10 +42,11 @@ export interface TickReport {
 	failed: boolean;
 }
 
-// Le budget d'un tic : 240 s, sous les 300 s d'une fonction ; la marge couvre la page commencée en
-// dernier, dont l'appel au fournisseur se borne à 30 s (`createHikerApiProvider` ; briefing de la
-// PR #37, « Budget »).
-const DEFAULT_BUDGET_MS = 240_000;
+// Le budget d'un tic ou d'une relance, compté depuis la prise du verrou : passé ce délai, aucune
+// page ne commence. 240 s, sous les 300 s d'une fonction (ADR 0002, « Verrou à bail ») ; la marge
+// couvre la page commencée en dernier, dont l'appel au fournisseur se borne à 30 s
+// (`createHikerApiProvider` ; briefing de la PR #37, « Budget »).
+const BUDGET_MS = 240_000;
 // La réserve de la passe rapide : la suite d'une complète s'arrête autant avant l'échéance du tic,
 // pour que la passe rapide lise au moins sa première page — un appel au fournisseur borné à 30 s,
 // l'écriture de la page, et de la marge.
@@ -77,7 +73,7 @@ const SELF_CHECK_INTERVAL_MS = DAY_MS;
  * Une lecture du nombre d'abonnés qui échoue ne fait partir aucune passe ni n'écrit au journal :
  * elle se rend au compte rendu.
  *
- * @param options la base, le fournisseur, l'horloge et le budget.
+ * @param options la base, le fournisseur et l'horloge.
  * @returns le compte rendu du tic ; `null`, sans rien lire ni journaliser, quand le verrou est
  * pris par un autre.
  * @throws toute erreur de la base, telle quelle, le verrou rendu ; si son rendu échoue aussi,
@@ -117,7 +113,7 @@ export async function runTick(
  * rapide part sous le déclencheur du MCP ; une complète reprend la complète non terminée à son
  * curseur, sous son déclencheur d'origine, et sinon en démarre une sous le déclencheur du MCP.
  *
- * @param options la base, le fournisseur, l'horloge et le budget.
+ * @param options la base, le fournisseur et l'horloge.
  * @param kind le type de la passe.
  * @returns la passe telle que le journal la rend, une fois close ; `null`, sans attendre, sans rien
  * lire ni journaliser, quand le verrou est pris : une passe est en cours.
@@ -143,12 +139,7 @@ export async function relaunchPass(
 // et rend le verrou quoi qu'il arrive. Quand `run` lève, son erreur remonte telle quelle : un rendu
 // qui échoue alors s'ignore, et le bail expire seul ; quand `run` réussit, l'erreur du rendu remonte.
 async function underImportLock<T>(
-	{
-		db,
-		provider,
-		clock = () => new Date(),
-		budgetMs = DEFAULT_BUDGET_MS,
-	}: ImportOptions,
+	{ db, provider, clock = () => new Date() }: ImportOptions,
 	run: (context: PassContext) => Promise<T>,
 ): Promise<T | null> {
 	const start = clock();
@@ -159,7 +150,7 @@ async function underImportLock<T>(
 	let result: T;
 	try {
 		await closeStalePasses(db, start);
-		const deadline = new Date(start.getTime() + budgetMs);
+		const deadline = new Date(start.getTime() + BUDGET_MS);
 		result = await run({ db, provider, clock, deadline });
 	} catch (error) {
 		await releaseImportLock(db, holder).catch(() => undefined);

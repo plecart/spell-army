@@ -32,7 +32,7 @@ function after(ms: number): Date {
 
 /**
  * Un tic sur `db` et un faux fournisseur de `list`, en pages de `pageSize` : son horloge part de
- * `start` et avance de `pageMs` à chaque page lue, sous le budget par défaut.
+ * `start` et avance de `pageMs` à chaque page lue, sous le budget du tic.
  */
 function tickOver(
 	db: Executor,
@@ -168,7 +168,7 @@ describe("tic de l'import", () => {
 		const list = followers(10);
 		await writePage(db, list);
 		// 80 s par page lue : la passe rapide lit sa page à 0 s, la complète ses pages 1 et 2 à 80 s
-		// et 160 s ; sa page 3 commencerait à 240 s, l'échéance du budget par défaut.
+		// et 160 s ; sa page 3 commencerait à 240 s, l'échéance du budget.
 		const first = tickOver(db, list, { pageSize: 2, pageMs: 80_000 });
 		expect(await runTick(first.options)).toMatchObject({
 			passes: [
@@ -451,7 +451,7 @@ describe("relance d'une passe", () => {
 	test("complète : sans complète non terminée, une part sous le déclencheur du MCP ; interrompue par le budget après sa page 2 sur 5, la relance suivante la reprend à la page 3, sans rendre son curseur", async () => {
 		const db = await freshDatabase();
 		const list = followers(10);
-		// 120 s par page lue : la page 3 commencerait à 240 s, l'échéance du budget par défaut.
+		// 120 s par page lue : la page 3 commencerait à 240 s, l'échéance du budget.
 		const first = tickOver(db, list, { pageSize: 2, pageMs: 120_000 });
 		const interrupted = await relaunchPass(first.options, "full");
 		expect(interrupted).toMatchObject({

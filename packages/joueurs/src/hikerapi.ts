@@ -14,15 +14,14 @@ export interface HikerApiOptions {
 	accountId: string;
 	/** Le `fetch` appelé : celui de Node par défaut, un faux dans les tests. */
 	fetch?: (url: URL, init: RequestInit) => Promise<Response>;
-	/** L'origine de l'API : `https://api.hikerapi.com` par défaut. */
-	baseUrl?: string;
 	/** Le délai d'un appel, lecture du corps comprise, en millisecondes : 30 000 par défaut. */
 	timeoutMs?: number;
 }
 
+const ORIGIN = "https://api.hikerapi.com";
 const FOLLOWERS_ROUTE = "/g2/user/followers";
 const USER_ROUTE = "/v1/user/by/id";
-// Le délai d'un appel que suppose le budget du tic (`tick.ts`, `DEFAULT_BUDGET_MS`).
+// Le délai d'un appel que suppose le budget du tic (`tick.ts`, `BUDGET_MS`).
 const DEFAULT_TIMEOUT_MS = 30_000;
 // Un curseur reçu est gardé tel quel au journal et renvoyé dans l'URL de la page suivante : plus
 // long, il est refusé. En base64, comme l'exemple de la spec 1.8.4, il garde l'URL sous les
@@ -51,7 +50,6 @@ export function createHikerApiProvider({
 	accessKey,
 	accountId,
 	fetch: send = fetch,
-	baseUrl = "https://api.hikerapi.com",
 	timeoutMs = DEFAULT_TIMEOUT_MS,
 }: HikerApiOptions): FollowerProvider {
 	if (accessKey.trim() === "") {
@@ -71,7 +69,7 @@ export function createHikerApiProvider({
 		let body: string;
 		try {
 			response = await send(
-				new URL(`${route}?${new URLSearchParams(params)}`, baseUrl),
+				new URL(`${route}?${new URLSearchParams(params)}`, ORIGIN),
 				{
 					headers: { "x-access-key": accessKey, accept: "application/json" },
 					redirect: "manual",
