@@ -1,14 +1,13 @@
 import { describe, expect, test } from "vitest";
 import { diceOf } from "../src/dice.ts";
 import {
-	type ArmyAction,
 	type CombatLog,
 	type Fighter,
 	type Forced,
 	fight,
 	type Monster,
 } from "../src/index.ts";
-import { fighterOf, monsterOf } from "./combattants.ts";
+import { armyActions, fighterOf, monsterOf } from "./combattants.ts";
 
 const SEED = "1";
 // Un monstre inoffensif que l'armée n'entame pas : le combat va jusqu'au garde-fou.
@@ -26,12 +25,6 @@ function run(
 
 function forcedOf(id: string, position: Forced["position"]): Forced {
 	return { id, position, reason: "commentaire du jour" };
-}
-
-function armyActions(log: CombatLog): ArmyAction[] {
-	return log.actions.filter(
-		(action): action is ArmyAction => action.side === "army",
-	);
 }
 
 /** Les identifiants des actions de l'armée, des rangs `from` à `to` compris, dans l'ordre. */

@@ -7,7 +7,7 @@ import {
 	RULES_VERSION,
 	serializeLog,
 } from "../src/index.ts";
-import { fighterOf, monsterOf } from "./combattants.ts";
+import { armyActions, fighterOf, monsterOf } from "./combattants.ts";
 
 // Un magicien, un guerrier et deux golems (personnages 1, 2, 7 et 16), chacun avec son sort.
 function smallArmy(): Fighter[] {
@@ -111,9 +111,7 @@ describe("le journal du combat", () => {
 		// Sur la graine « 42 », le monstre l'emporte en 23 actions.
 		const log = fight(input("42"));
 		const lastAction = log.actions.at(-1);
-		const drawnInOrder = log.actions.flatMap((action) =>
-			action.side === "army" ? [action.fighter.id] : [],
-		);
+		const drawnInOrder = armyActions(log).map(({ fighter }) => fighter.id);
 
 		expect(log.summary).toEqual({
 			outcome: "defeat",
