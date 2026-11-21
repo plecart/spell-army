@@ -236,13 +236,17 @@ def crooked(name, radius_bottom, radius_top, height, kinks, radial_segments=12):
     return rod(name, radius_bottom, radius_top, height, offset, 24, radial_segments, knots)
 
 
-def face(tete, center, radius, eyes, brows=None):
+def face(tete, center, radius, eyes, brows=None, nose=None):
     """
-    Les yeux, et les sourcils si `brows` les colore, du visage sphérique de rayon `radius` centré
-    en `center` sous l'ancre `tete`, mis à l'échelle du rayon. L'œil, celui du magicien, s'aplatit
-    dans la peau ; le sourcil, horizontal et arqué, se pose haut pour ne pas froncer.
+    Les yeux, les sourcils si `brows` les colore et le nez si `nose` le colore, du visage sphérique
+    de rayon `radius` centré en `center` sous l'ancre `tete`, mis à l'échelle du rayon. L'œil et le
+    nez sont ceux du magicien, l'œil aplati dans la peau ; le sourcil, horizontal et arqué, se pose
+    haut pour ne pas froncer.
     """
     cx, cy, cz = center
+    if nose:
+        snout = sphere("nez", radius * 0.217, 20, 16)
+        part(snout, nose, tete, (cx, cy - radius * 0.133, cz + radius))
     for side in SIDES:
         x = cx + side.sign * radius / 3
         eye = sphere(f"oeil_{side.masculine}", radius * 0.117, 16, 12)

@@ -26,15 +26,15 @@ PALM = 0.068  # rayon d'une main, 0,085 une fois agrandie : celui des mains du m
 hand = partial(workshop.hand, radius=PALM)
 
 
-def head(radius, skin, eyes, brows, base):
+def head(radius, skin, eyes, brows, base, nose=True):
     """
     La tête : l'ancre `tete` en `base`, au bas du crâne, la sphère de peau `skin` de rayon `radius`
-    posée dessus, ses yeux `eyes` et ses sourcils `brows`, ceux du magicien (`workshop.face`).
-    Rend l'ancre.
+    posée dessus, ses yeux `eyes`, ses sourcils `brows` et, si `nose`, son nez de peau, ceux du
+    magicien (`workshop.face`). Rend l'ancre.
     """
     tete = anchor("tete", position=base)
     part(sphere("visage", radius, 32, 24), skin, tete, (0, radius, 0))
-    face(tete, (0, radius, 0), radius, eyes, brows)
+    face(tete, (0, radius, 0), radius, eyes, brows, skin if nose else None)
     return tete
 
 
