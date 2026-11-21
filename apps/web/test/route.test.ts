@@ -76,6 +76,7 @@ describe("route /api/mcp", () => {
 			"regler_modele_classe",
 			"lister_passes",
 			"relancer_passe",
+			"chercher_joueur",
 		]);
 	});
 });

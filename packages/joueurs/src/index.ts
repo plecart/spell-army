@@ -17,6 +17,11 @@ export {
 } from "./provider.ts";
 export { writePage } from "./registration.ts";
 export {
+	type FoundPlayer,
+	MAX_FOUND_PLAYERS,
+	searchPlayers,
+} from "./search.ts";
+export {
 	type ImportOptions,
 	relaunchPass,
 	runTick,
