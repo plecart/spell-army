@@ -38,6 +38,8 @@ export interface PassContext {
  * @param context la base, le fournisseur, l'horloge et l'échéance du budget.
  * @param trigger ce qui la lance : le tic ou le MCP.
  * @returns la ligne de la passe au journal, telle qu'elle s'est close.
+ * @throws toute erreur de la base sur le journal de la passe, telle quelle : une passe qui n'a pu
+ * se clore y reste en cours, et `closeStalePasses` l'interrompt.
  */
 export async function runQuickPass(
 	context: PassContext,
@@ -58,7 +60,9 @@ export async function runQuickPass(
  * @param trigger ce qui la lance : la semaine, l'auto-contrôle ou le MCP.
  * @returns la ligne de la passe au journal, telle qu'elle s'est close.
  * @throws l'erreur de l'index `import_passes_one_unfinished_full` quand une complète n'est pas
- * terminée : elle se reprend, elle ne se double pas.
+ * terminée : elle se reprend, elle ne se double pas ; et toute erreur de la base sur le journal
+ * de la passe, telle quelle : une passe qui n'a pu se clore y reste en cours, et
+ * `closeStalePasses` l'interrompt.
  */
 export async function startFullPass(
 	context: PassContext,
@@ -78,6 +82,8 @@ export async function startFullPass(
  * @param context la base, le fournisseur, l'horloge et l'échéance du budget.
  * @returns la ligne de la passe au journal, telle qu'elle s'est close ; `null`, sans rien lire,
  * quand aucune complète n'est à reprendre.
+ * @throws toute erreur de la base sur le journal de la passe, telle quelle : une passe qui n'a pu
+ * se clore y reste en cours, et `closeStalePasses` l'interrompt.
  */
 export async function resumeFullPass(
 	context: PassContext,
