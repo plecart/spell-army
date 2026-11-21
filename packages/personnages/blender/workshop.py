@@ -173,6 +173,113 @@ def bent_cone(name, radius, height, bend, radial_segments=32, height_segments=24
     return cone
 
 
+def rounded(radius_bottom, radius_top, height, hem, shoulder, steps=6):
+    """
+    Le profil, du bas vers le haut, d'un tronc de cône aux bords arrondis, à faire tourner par
+    `lathe` : un ourlet de rayon `hem` au bas, une épaule de rayon `shoulder` au haut, comme la robe
+    du magicien. Rend des (rayon, hauteur).
+    """
+    quarter = [math.pi / 2 * k / steps for k in range(steps + 1)]
+    bottom = [(radius_bottom - hem * (1 - math.sin(a)), hem * (1 - math.cos(a))) for a in quarter]
+    top = [
+        (radius_top - shoulder * (1 - math.cos(a)), height - shoulder * (1 - math.sin(a)))
+        for a in quarter
+    ]
+    return [(0, 0), *bottom, *top, (0, height)]
+
+
+def between(profile, low, high, grow=1.0):
+    """
+    La part du profil `profile` comprise entre les hauteurs `low` et `high`, bouts interpolés, son
+    rayon multiplié par `grow` : la pièce qui habille ce morceau du corps, plastron ou salopette.
+    """
+
+    def at(height):
+        for (r0, y0), (r1, y1) in zip(profile, profile[1:]):
+            if y0 <= height <= y1 and y1 > y0:
+                return r0 + (r1 - r0) * (height - y0) / (y1 - y0)
+        raise ValueError(f"hauteur {height} hors du profil")
+
+    inside = [(r, y) for r, y in profile if low < y < high and r > POLE]
+    return [(at(low) * grow, low), *((r * grow, y) for r, y in inside), (at(high) * grow, high)]
+
+
+def rod(name, radius_bottom, radius_top, length, offset, rings=24, radial_segments=12, knots=()):
+    """
+    Une tige d'une pièce le long de Y, base en y = 0, son rayon passant de `radius_bottom` à
+    `radius_top`, chaque anneau décalé en x de `offset(y)` : branche, sourcil arqué. Ses anneaux,
+    `rings` réguliers, passent aussi par les hauteurs `knots`, où la tige peut faire un coude.
+    """
+    heights = sorted({length * k / rings for k in range(rings + 1)} | set(knots))
+    profile = [(radius_bottom + (radius_top - radius_bottom) * y / length, y) for y in heights]
+    shape = lathe(name, [(0, 0), *profile, (0, length)], radial_segments)
+    for vertex in shape.data.vertices:
+        vertex.co.x += offset(vertex.co.z)  # Y du glTF est Z de Blender
+    shape.data.update()
+    return shape
+
+
+def crooked(name, radius_bottom, radius_top, height, kinks, radial_segments=12):
+    """
+    Un bâton d'une pièce, base en y = 0, dont l'axe passe par les coudes `kinks`, des (hauteur,
+    écart en x) : entre deux coudes il file droit, comme une branche cassée.
+    """
+    path = [(0.0, 0.0), *kinks, (height, kinks[-1][1])]
+
+    def offset(y):
+        for (y0, x0), (y1, x1) in zip(path, path[1:]):
+            if y0 <= y <= y1 and y1 > y0:
+                return x0 + (x1 - x0) * (y - y0) / (y1 - y0)
+        return path[-1][1]
+
+    knots = [y for y, _ in kinks]
+    return rod(name, radius_bottom, radius_top, height, offset, 24, radial_segments, knots)
+
+
+def face(tete, center, radius, eyes, brows=None):
+    """
+    Les yeux, et les sourcils si `brows` les colore, du visage sphérique de rayon `radius` centré
+    en `center` sous l'ancre `tete`, mis à l'échelle du rayon. L'œil, celui du magicien, s'aplatit
+    dans la peau ; le sourcil, horizontal et arqué, se pose haut pour ne pas froncer.
+    """
+    cx, cy, cz = center
+    for side in SIDES:
+        x = cx + side.sign * radius / 3
+        eye = sphere(f"oeil_{side.masculine}", radius * 0.117, 16, 12)
+        part(eye, eyes, tete, (x, cy + radius / 6, cz + radius * 0.907), scale=(1, 1.3, 0.6))
+        if brows:
+            # Un sourcil arqué de 0,07 rayon, couché par un quart de tour autour de Z : sa base part
+            # vers +X, d'une demi-longueur, et la bosse de sa tige, en +X, monte.
+            length = radius * 0.38
+
+            def arch(y, length=length):
+                return radius * 0.07 * (1 - (2 * y / length - 1) ** 2)
+
+            brow = rod(f"sourcil_{side.masculine}", radius / 17, radius / 17, length, arch, 8)
+            position = (x + length / 2, cy + radius * 0.43, cz + radius * 0.9)
+            part(brow, brows, tete, position, (0, 0, math.pi / 2))
+
+
+def hair(name, radius, surface, parent, center, below, hairline=math.pi * 0.3):
+    """
+    Une coiffe à la manière des cheveux du magicien, sphère de rayon `radius` centrée en `center`
+    sous `parent` : une calotte de `hairline` sous le sommet, au-dessus des sourcils, puis, hors du
+    visage, l'arrière et les côtés jusqu'à `below` sous le sommet (angles en radians).
+    """
+    part(sphere(name, radius, 40, 10, theta_length=hairline), surface, parent, center)
+    back = sphere(
+        f"{name}_arriere",
+        radius,
+        40,
+        14,
+        phi_start=math.pi / 2 + 0.75,
+        phi_length=math.tau - 1.5,
+        theta_start=hairline,
+        theta_length=below - hairline,
+    )
+    part(back, surface, parent, center)
+
+
 def torus(name, radius, tube, radial_segments=12, tubular_segments=48):
     """Un tore dans le plan XY, face à +Z, comme TorusGeometry de three.js."""
 

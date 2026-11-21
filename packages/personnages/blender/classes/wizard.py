@@ -10,10 +10,10 @@ from workshop import (
     MATTE,
     METAL,
     RIGHT,
-    SIDES,
     anchor,
     bent_cone,
     cylinder,
+    face,
     hand,
     lathe,
     material,
@@ -56,12 +56,7 @@ def build(color):
     tete = anchor("tete", position=(0, 0.99, 0))
     part(sphere("visage", 0.3, 40, 30), peau, tete, (0, 0.25, 0))
     part(sphere("nez", 0.065, 20, 16), peau, tete, (0, 0.21, 0.3))
-    for side in SIDES:
-        eye = sphere(f"oeil_{side.masculine}", 0.035, 16, 12)
-        part(eye, fixe, tete, (side.sign * 0.1, 0.3, 0.272), scale=(1, 1.3, 0.6))
-        brow = cylinder(f"sourcil_{side.masculine}", 0.02, 0.02, 0.11, 12)
-        tilt = (0, 0, math.pi / 2 + side.sign * 0.25)  # le sourcil remonte vers l'extérieur
-        part(brow, poils, tete, (side.sign * 0.1, 0.365, 0.275), tilt)
+    face(tete, (0, 0.25, 0), 0.3, fixe, poils)
     # Calotte ouverte de 0,9 rad de part et d'autre du visage, du chapeau jusqu'au bas des oreilles.
     hair = sphere(
         "cheveux",
@@ -83,4 +78,6 @@ def build(color):
     hand(LEFT, (0.5, 0.56, 0.1), peau, PALM)
     main_droite = hand(RIGHT, (0.52, 0.66, 0.14), peau, PALM)
     part(cylinder("baton", 0.03, 0.035, 1.62, 16), accessoire, main_droite, (0, 0.1, 0))
-    part(octahedron("gemme", 0.11), secondaire, main_droite, (0, 1.0, 0))
+    # Le sertissage évase le haut du bâton jusqu'à la gemme, posée dessus sur sa pointe basse.
+    part(cylinder("sertissage", 0.06, 0.03, 0.07, 16), secondaire, main_droite, (0, 0.945, 0))
+    part(octahedron("gemme", 0.07), secondaire, main_droite, (0, 1.075, 0), scale=(1, 1.5, 1))

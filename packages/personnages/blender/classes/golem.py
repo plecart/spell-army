@@ -1,12 +1,45 @@
 """
 Le golem, brouillon porté du prototype `annuaire-bd.html` de la direction artistique (fonction
-`buildCharacter`, cas « Golem ») : tout de pierre, de la mousse sur la tête ; ses gros poings de
-pierre sont ses mains. Le prototype enfonçait tête et poings dans le tronc : ils flottent ici à côté
-(direction artistique § 6, « Construction »).
+`buildCharacter`, cas « Golem ») : tout de pierre, de la mousse sur les épaules et un brin sur la
+tête ; ses gros poings de pierre sont ses mains. Le prototype enfonçait tête et poings dans le tronc : ils flottent ici à côté
+(direction artistique § 6, « Construction »). Ses pieds sont deux cloches flottantes, sans jambes.
 """
 
+import math
+
 from annuaire import SCALE
-from workshop import MATTE, SIDES, anchor, cylinder, enlarge, material, part, sphere
+from workshop import MATTE, SIDES, anchor, enlarge, face, lathe, material, part, sphere
+
+# Un pied en cloche, patte d'éléphant : large au sol, resserré puis bombé en haut.
+FOOT = [
+    (0, 0),
+    (0.2, 0),
+    (0.21, 0.03),
+    (0.18, 0.09),
+    (0.14, 0.15),
+    (0.12, 0.19),
+    (0.08, 0.215),
+    (0, 0.225),
+]
+TRUNK, TRUNK_SHAPE, TRUNK_CENTER = 0.6, (1, 0.95, 0.78), (0, 0.86, 0)
+SKULL, SKULL_SHAPE = 0.26, (1.1, 0.85, 1)
+
+
+def moss_cap(name, theta, wave):
+    """
+    Une calotte de mousse, part de sphère unité ouverte de `theta` sous le pôle, dont le bord ondule
+    de `wave` (0 : bord droit).
+    """
+    cap = sphere(name, 1, 40, 12, theta_length=theta)
+    for vertex in cap.data.vertices:
+        x, y, z = vertex.co
+        t = math.acos(max(-1, min(1, z)))
+        t *= 1 + wave * (t / theta) * math.sin(6 * math.atan2(y, x))
+        s = math.sin(t)
+        h = math.hypot(x, y) or 1
+        vertex.co = (x / h * s, y / h * s, math.cos(t))
+    cap.data.update()
+    return cap
 
 
 def build(color):
@@ -16,21 +49,25 @@ def build(color):
     fixe = material("fixe", "#f2c14e")  # les yeux, qui luisaient dans le prototype
 
     sol = anchor("sol")
-    part(sphere("tronc", 0.6, 10, 8), corps, sol, (0, 0.82, 0), scale=(1, 0.95, 0.78))
+    part(sphere("tronc", TRUNK, 28, 20), corps, sol, TRUNK_CENTER, scale=TRUNK_SHAPE)
     for side in SIDES:
-        foot = cylinder(f"pied_{side.masculine}", 0.15, 0.17, 0.24, 9)
-        part(foot, corps, sol, (side.sign * 0.24, 0.12, 0))
+        part(lathe(f"pied_{side.masculine}", FOOT, 28), corps, sol, (side.sign * 0.26, 0, 0.02))
 
-    tete = anchor("tete", position=(0, 1.42, 0.05))
-    part(sphere("crane", 0.26, 9, 7), corps, tete, (0, 0.22, 0), scale=(1.1, 0.85, 1))
-    for side in SIDES:
-        eye = sphere(f"oeil_{side.masculine}", 0.05, 10, 8)
-        part(eye, fixe, tete, (side.sign * 0.1, 0.24, 0.22))
-    part(sphere("mousse", 0.16, 10, 8), poils, tete, (0, 0.43, -0.05), scale=(1.3, 0.35, 1))
+    tete = anchor("tete", position=(0, 1.46, 0.05))
+    center = (0, 0.22, 0)
+    part(sphere("crane", SKULL, 28, 20), corps, tete, center, scale=SKULL_SHAPE)
+    face(tete, center, SKULL, fixe)
     anchor("chapeau", tete, (0, 0.44, 0))
 
+    # Une calotte festonnée sur les épaules, une plus petite sur le crâne, chacune un peu plus
+    # grande que la pierre qu'elle couvre.
+    shoulders = tuple(TRUNK * k * 1.02 for k in TRUNK_SHAPE)
+    part(moss_cap("mousse", 0.27 * math.pi, 0.3), poils, sol, TRUNK_CENTER, scale=shoulders)
+    crown = tuple(SKULL * k * 1.04 for k in SKULL_SHAPE)
+    part(moss_cap("brin", 0.18 * math.pi, 0.3), poils, tete, center, scale=crown)
+
     for side in SIDES:
-        main = anchor(f"main_{side.feminine}", position=(side.sign * 0.84, 0.72, 0.05))
-        part(sphere(f"poing_{side.masculine}", 0.2, 9, 7), corps, main, scale=(1, 1.9, 1))
+        main = anchor(f"main_{side.feminine}", position=(side.sign * 0.84, 0.76, 0.05))
+        part(sphere(f"poing_{side.masculine}", 0.2, 20, 14), corps, main, scale=(1, 1.9, 1))
 
     enlarge(SCALE)

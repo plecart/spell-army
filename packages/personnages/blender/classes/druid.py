@@ -1,46 +1,58 @@
 """
-Le druide, brouillon porté du prototype `annuaire-bd.html` de la direction artistique (fonction
-`buildCharacter`, cas « Druide ») : capuche, couronne de feuilles et bâton feuillu. Le prototype
-enfonçait tête et capuche dans la robe : elles flottent ici au-dessus.
+Le druide, brouillon d'après le prototype `annuaire-bd.html` de la direction artistique (fonction
+`buildCharacter`, cas « Druide »), redessiné : bois de cerf sur des cheveux blancs, robe arrondie
+au cou et à l'ourlet, et un bâton de branche cassée, sans feuillage. La tête flotte au-dessus de la
+robe.
 """
 
 import math
 
 from annuaire import EYES, SCALE, WOOD, hand, head
-from workshop import LEFT, MATTE, RIGHT, anchor, cylinder, enlarge, material, part, shade, sphere
+from workshop import (
+    LEFT,
+    MATTE,
+    RIGHT,
+    SIDES,
+    anchor,
+    crooked,
+    cylinder,
+    enlarge,
+    hair,
+    lathe,
+    material,
+    part,
+    rounded,
+)
 
-# Les feuilles du bâton, autour de son sommet, leur x compté vers l'extérieur de la main.
-STAFF_LEAVES = ((-0.04, 0.88, 0), (0.06, 0.86, 0.03), (0.01, 0.94, -0.05))
+HEAD = 0.23
+STAFF_KINKS = [(0.3, 0.035), (0.5, 0), (0.85, 0.05), (1.25, -0.01)]
 
 
 def build(color):
     """Compose le druide dans la scène vide, `color` la couleur de sa classe."""
     corps = material("corps", color)
-    secondaire = material("secondaire", "#7fae4f")  # les feuilles
     peau = material("peau", "#d9a27c")
-    coiffe = material("coiffe", shade(color, 0.85))  # la capuche
-    accessoire = material("accessoire", WOOD, MATTE)
+    poils = material("poils", "#e3ddd0", MATTE)
+    accessoire = material("accessoire", WOOD, MATTE)  # le bâton, et les bois de cerf
     fixe = material("fixe", EYES)
 
     sol = anchor("sol")
-    part(cylinder("robe", 0.18, 0.4, 0.95), corps, sol, (0, 0.475, 0))
+    part(lathe("robe", rounded(0.4, 0.2, 0.95, 0.04, 0.14), 48), corps, sol)
 
-    tete = head(0.23, peau, fixe, (0, 1.01, 0.09))
-    part(sphere("capuche", 0.31, 32, 24), coiffe, tete, (0, 0.27, -0.15))
-    chapeau = anchor("chapeau", tete, (0, 0.49, -0.09))
-    for i in range(5):
-        a = math.pi * (0.175 * i - 0.35)
-        leaf = sphere(f"couronne_{i + 1}", 0.07, 10, 8)
-        position = (math.sin(a) * 0.28, math.cos(a) * 0.05, math.cos(a) * 0.12)
-        part(leaf, secondaire, chapeau, position, scale=(1, 0.45, 1.6))
+    tete = head(HEAD, peau, fixe, poils, (0, 1.0, 0.03))
+    center = (0, HEAD, 0)
+    chapeau = anchor("chapeau", tete, (0, 2 * HEAD + 0.02, 0))
 
-    main_droite = hand(RIGHT, (0.47, 0.72, 0.05), peau)
-    outward = RIGHT.sign  # le bâton penche vers l'extérieur de la main
-    staff = cylinder("baton", 0.03, 0.035, 1.55)
-    part(staff, accessoire, main_droite, (0, 0.06, 0), (0, 0, -outward * 0.04))
-    for i, (x, y, z) in enumerate(STAFF_LEAVES, 1):
-        leaf = sphere(f"feuillage_{i}", 0.07, 10, 8)
-        part(leaf, secondaire, main_droite, (outward * x, y, z), scale=(1, 0.5, 1))
-    hand(LEFT, (0.45, 0.68, 0.08), peau)
+    hair("cheveux", HEAD * 1.06, poils, tete, center, math.pi * 0.62)
+    for side in SIDES:
+        beam = crooked(f"bois_{side.masculine}", 0.026, 0.012, 0.34, [(0.12, 0.04), (0.34, 0.1)], 8)
+        part(beam, accessoire, chapeau, (side.sign * 0.12, -0.06, 0), (0, 0, -side.sign * 0.55))
+        tine = cylinder(f"andouiller_{side.masculine}", 0.004, 0.012, 0.12, 8)
+        part(tine, accessoire, chapeau, (side.sign * 0.12, 0.13, 0.02), (0, 0, side.sign * 0.35))
+
+    main_droite = hand(RIGHT, (0.47, 0.7, 0.08), peau)
+    staff = crooked("baton", 0.036, 0.026, 1.62, STAFF_KINKS)
+    part(staff, accessoire, main_droite, (0, -0.5, 0))
+    hand(LEFT, (0.45, 0.66, 0.08), peau)
 
     enlarge(SCALE)
