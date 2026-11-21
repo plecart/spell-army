@@ -8,6 +8,7 @@ import {
 	doublePrecision,
 	integer,
 	jsonb,
+	type PgColumn,
 	pgTable,
 	smallint,
 	text,
@@ -161,6 +162,72 @@ export const classDefaultModels = pgTable("class_default_models", {
 		.notNull()
 		.references(() => modelFiles.id),
 });
+
+/**
+ * La forme d'un identifiant Instagram reçu du fournisseur : un entier décimal positif, sans zéro de
+ * tête (« 007 » et « 0 » sont hors forme, jamais normalisés). Contrôlée sur `players` et
+ * `excluded_players`.
+ */
+export const INSTAGRAM_ID_PATTERN = /^[1-9][0-9]*$/;
+
+/**
+ * La forme d'un pseudo Instagram reçu du fournisseur : 1 à 30 lettres ASCII, chiffres, `.` ou `_`
+ * (ADR 0003, « Pseudos, données non fiables »). Contrôlée sur `players`.
+ */
+export const INSTAGRAM_USERNAME_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
+
+// Le contrôle qu'une colonne suive `pattern`, dont la source, sans apostrophe, est recopiée en clair
+// dans la migration. `test/formes-instagram.ts` en éprouve les bornes côté base.
+function matches(column: PgColumn, pattern: RegExp): SQL {
+	return sql`${column} ~ ${sql.raw(`'${pattern.source}'`)}`;
+}
+
+/**
+ * Les joueurs (ADR 0003, « Données stockées », « Écriture » et « Sort à l'inscription ») : de
+ * l'abonné, l'identifiant et le pseudo du fournisseur, rien d'autre ; la date d'arrivée, l'instant
+ * de la transaction qui l'écrit ; le numéro du sort tiré à l'inscription ; le fichier du modèle 3D,
+ * nul tant que sa classe n'a pas de modèle par défaut. La classe et les statistiques se calculent
+ * depuis l'identifiant, jamais stockées.
+ */
+export const players = pgTable(
+	"players",
+	{
+		instagramId: text("instagram_id").primaryKey(),
+		username: text().notNull(),
+		arrivedAt: timestamp("arrived_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		spellNumber: integer("spell_number")
+			.notNull()
+			.references(() => spells.number),
+		modelFileId: integer("model_file_id").references(() => modelFiles.id),
+	},
+	(table) => [
+		check(
+			"players_instagram_id_check",
+			matches(table.instagramId, INSTAGRAM_ID_PATTERN),
+		),
+		check(
+			"players_username_check",
+			matches(table.username, INSTAGRAM_USERNAME_PATTERN),
+		),
+	],
+);
+
+/**
+ * Les identifiants Instagram exclus de l'import (ADR 0003, « RGPD ») : l'import n'en crée jamais le
+ * joueur.
+ */
+export const excludedPlayers = pgTable(
+	"excluded_players",
+	{ instagramId: text("instagram_id").primaryKey() },
+	(table) => [
+		check(
+			"excluded_players_instagram_id_check",
+			matches(table.instagramId, INSTAGRAM_ID_PATTERN),
+		),
+	],
+);
 
 /**
  * Journal d'audit des appels d'outils du serveur MCP : l'outil, l'entrée reçue (les octets d'une

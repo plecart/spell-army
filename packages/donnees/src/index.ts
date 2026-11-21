@@ -14,7 +14,11 @@ export {
 	auditLog,
 	calibrationSettings,
 	classDefaultModels,
+	excludedPlayers,
+	INSTAGRAM_ID_PATTERN,
+	INSTAGRAM_USERNAME_PATTERN,
 	modelFiles,
+	players,
 	spells,
 } from "./schema.ts";
 export {
