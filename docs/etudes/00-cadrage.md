@@ -1,6 +1,6 @@
 # Wizard Army — Cadrage
 
-État au 2026-11-17. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
+État au 2026-11-21. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
 le [game design](../game-design.md) et la [direction artistique](../direction-artistique.md) en détaillent des parties ; il sert de source au PRD.
 
 Trois statuts, à ne pas confondre :
@@ -98,7 +98,7 @@ Trois statuts, à ne pas confondre :
 | Stockage | En base, géré par le MCP. | Décidé |
 | Format | Un fichier GLB de référence par classe et par monstre, le même pour le site et la vidéo, qui respecte un contrat (ancres nommées, pièces rigides) : un designer peut le remplacer sans toucher au code ([direction artistique](../direction-artistique.md) § 7). Pas de variation par joueur au MVP : chaque classe a un modèle, un décor et un socle par défaut, que chaque personnage reçoit et qui pourront plus tard être changés personnage par personnage par le MCP ([direction artistique](../direction-artistique.md) § 5). | Décidé |
 | Fabrication | Blender, installé le 2026-11-16. Personnages en pièces rigides flottantes, animées par leurs ancres : ni fusion des volumes ni poids d'os, écartés par l'essai du même jour ([direction artistique](../direction-artistique.md) § 6). | Décidé |
-| Pilotage de Blender | Serveur MCP officiel de Blender (blender.org, projet « Lab ») en premier candidat ; l'essai s'en est passé, Blender piloté par un script Python. À essayer sur le premier modèle : quelques skills de `arjun988/blender-skills` (personnage, export), pas les 94. Le MCP Godot reste à regarder. | Ouvert |
+| Pilotage de Blender | **Script Python versionné**, lancé sans fenêtre par une commande du dépôt ; le serveur MCP officiel de Blender (blender.org, projet « Lab ») sert d'atelier, pour regarder et retoucher une pièce dans Blender ouvert. Tranché le 2026-11-21 par l'essai sur le magicien (#16) : même GLB par les deux voies, mais seul le script se refait depuis un clone et se lance par un sous-agent ; les skills `arjun988/blender-skills` essayés (personnage, export) visent des personnages à squelette et ne servent pas. Détail : [direction artistique](../direction-artistique.md) § 7. Le MCP Godot reste à regarder. | Décidé |
 
 ### Outils
 
