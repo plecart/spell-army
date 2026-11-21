@@ -31,6 +31,12 @@ export interface McpTool<Input extends z.ZodObject = z.ZodObject> {
 	input: Input;
 	/** Schéma de sortie strict, `z.strictObject(…)` : la sortie y passe avant d'être rendue. */
 	output: z.ZodObject;
+	/**
+	 * Vrai pour un outil qui gère ses propres transactions (ADR 0005, « Conséquences ») : `run`
+	 * reçoit le client racine, jamais une transaction, et la ligne d'audit s'écrit après l'appel.
+	 * Faux ou absent : `run` reçoit la transaction de l'enrobage.
+	 */
+	ownsTransactions?: boolean;
 	run(executor: Executor, input: z.output<Input>): Promise<ToolOutcome>;
 }
 
@@ -66,11 +72,15 @@ export function listTools(tools: readonly McpTool[]): Tool[] {
  *
  * - Outil inconnu : ligne en erreur, puis erreur de protocole `InvalidParams`, comme `McpServer`.
  * - Entrée invalide : ligne en erreur, outil jamais appelé, résultat `isError`.
- * - Entrée valide : l'outil, sa ligne en succès et la validation de sa sortie par son schéma dans
+ * - Entrée valide : l'outil, la validation de sa sortie par son schéma et sa ligne en succès, dans
  *   une même transaction. Le résultat porte la sortie validée en `structuredContent` et la répète en
  *   texte JSON, comme la spécification le demande. Si l'une des trois étapes échoue, la transaction
  *   s'annule, la ligne en erreur s'écrit hors d'elle et le résultat est `isError`, sans
  *   `structuredContent`.
+ * - Un outil qui gère ses transactions (`ownsTransactions`) suit les mêmes trois étapes sur le
+ *   client racine, hors de toute transaction de l'enrobage : sa ligne en succès s'écrit après
+ *   l'appel, une fois sa sortie validée. Si une étape échoue, la ligne en erreur s'écrit de même ; ce
+ *   que l'outil a déjà validé dans ses transactions reste.
  *
  * L'entrée auditée est l'entrée reçue, `{}` quand `args` manque, dont `writeAuditEntry` remplace
  * les octets par leur taille et leur empreinte. Si la ligne en erreur ne peut pas s'écrire, une
@@ -97,12 +107,16 @@ export async function callTool(
 	if (!parsed.success) {
 		return refuse(executor, name, input, errorMessage(parsed.error));
 	}
+	const call = async (target: Executor) => {
+		const { output, before, after } = await tool.run(target, parsed.data);
+		const validated = tool.output.parse(output);
+		await writeAuditEntry(target, { tool: name, input, before, after });
+		return validated;
+	};
 	try {
-		const validated = await executor.transaction(async (tx) => {
-			const { output, before, after } = await tool.run(tx, parsed.data);
-			await writeAuditEntry(tx, { tool: name, input, before, after });
-			return tool.output.parse(output);
-		});
+		const validated = tool.ownsTransactions
+			? await call(executor)
+			: await executor.transaction(call);
 		return {
 			content: [{ type: "text", text: JSON.stringify(validated) }],
 			structuredContent: validated,

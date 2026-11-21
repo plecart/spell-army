@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
-import { registry } from "../app/mcp/registry.ts";
 import { listTools } from "../app/mcp/tool.ts";
+import { registry } from "./montage.ts";
 
 type JsonSchema = Record<string, unknown>;
 
@@ -110,6 +110,8 @@ describe("aucun paramètre de requête libre", () => {
 			"modifier_sort",
 			"deposer_fichier_3d",
 			"regler_modele_classe",
+			"lister_passes",
+			"relancer_passe",
 		]);
 		expect(
 			tools.flatMap(({ name, inputSchema }) =>

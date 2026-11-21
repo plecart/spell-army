@@ -9,10 +9,15 @@ import {
 } from "@modelcontextprotocol/client";
 import { auditLog, type Executor } from "donnees";
 import { freshDatabase } from "donnees/test/base-neuve";
+import type { FollowerProvider } from "joueurs";
+import { FakeFollowerProvider } from "joueurs/test/faux-fournisseur";
 import { expect, onTestFinished } from "vitest";
-import { registry } from "../app/mcp/registry.ts";
+import { createRegistry } from "../app/mcp/registry.ts";
 import { createMcpEndpoint } from "../app/mcp/server.ts";
 import { listTools } from "../app/mcp/tool.ts";
+
+/** Le registre réel, sur un faux fournisseur d'une liste vide : de quoi le lister ou l'appeler. */
+export const registry = createRegistry(() => new FakeFollowerProvider([]));
 
 // Jeton factice de 32 octets, le minimum admis.
 export const TOKEN = "t".repeat(32);
@@ -70,24 +75,29 @@ export function auditRows(db: Executor) {
 // chaîne, que `JSON.parse` lit `Infinity`.
 export const INFINITE = "__infini__";
 
-/** Le point d'entrée du registre réel, sur une base migrée neuve, et cette base. */
-export async function registryEndpoint() {
+/**
+ * Le point d'entrée du registre réel, sur une base migrée neuve et le fournisseur `provider` — un
+ * faux d'une liste vide par défaut —, et cette base.
+ */
+export async function registryEndpoint(
+	provider: FollowerProvider = new FakeFollowerProvider([]),
+) {
 	const db = await freshDatabase();
 	const endpoint = createMcpEndpoint({
 		token: () => TOKEN,
 		database: () => db,
-		tools: registry,
+		tools: createRegistry(() => provider),
 	});
 	return { db, endpoint };
 }
 
 /**
- * Le client officiel, branché sur le point d'entrée du registre réel et une base migrée neuve. Il
- * liste les outils d'abord : il valide alors le `structuredContent` de chaque appel contre le
- * `outputSchema` publié.
+ * Le client officiel, branché sur le point d'entrée du registre réel, une base migrée neuve et le
+ * fournisseur `provider`. Il liste les outils d'abord : il valide alors le `structuredContent` de
+ * chaque appel contre le `outputSchema` publié.
  */
-export async function connectToRegistry() {
-	const { db, endpoint } = await registryEndpoint();
+export async function connectToRegistry(provider?: FollowerProvider) {
+	const { db, endpoint } = await registryEndpoint(provider);
 	const client = await connectClient(
 		rewritingBodies(endpoint, (body) =>
 			body.replaceAll(`"${INFINITE}"`, "1e999"),
