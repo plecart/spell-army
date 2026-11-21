@@ -1,6 +1,7 @@
 # ADR 0005 — Serveur MCP : SDK officiel v2, serveur bas niveau, sans état
 
-- **Statut** : accepté le 2026-11-17
+- **Statut** : accepté le 2026-11-17. Précisé le 2026-11-21 : un outil peut gérer ses propres
+  transactions (§ « Conséquences », `relancer_passe`, issue #13).
 - **Source** : ADR 0001 (« Back-office », « Services partagés », « File d'attente ») ; ADR 0004
   § « Serveur MCP et secrets » ; issue #11, « Décisions verrouillées » (la bibliothèque se choisit à
   l'implémentation et se trace dans un ADR)
@@ -33,8 +34,9 @@ réponses SSE, alors que Claude Code négocie la spécification 2026 (« Vérifi
 - Un outil s'ajoute au registre de `apps/web/app/mcp/` : un nom, un titre, une description, ses
   annotations (les quatre indices de la spécification, tous explicites), un schéma Zod strict
   d'entrée, un de sortie, et l'appel d'un service. L'enrobage lui donne la validation de l'entrée et
-  de la sortie, la transaction, l'audit, et la sortie structurée : `structuredContent`, répété en
-  texte JSON.
+  de la sortie, la transaction — sauf pour un outil qui gère les siennes, comme `relancer_passe`,
+  dont l'audit s'écrit après l'appel —, l'audit, et la sortie structurée : `structuredContent`,
+  répété en texte JSON.
 - `destructiveHint` suit la définition de la spécification MCP : un outil dont la mise à jour n'est
   pas purement additive le porte, comme `modifier_reglages`, qui écrase une valeur. Il ne désigne pas
   les outils « destructeurs » de l'ADR 0004 (« Durcissement MCP »), qui demandent une confirmation

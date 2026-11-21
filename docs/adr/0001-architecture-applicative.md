@@ -1,6 +1,7 @@
 # ADR 0001 — Architecture applicative : Next.js sur Vercel, MCP intégré, Neon, paquets par domaine
 
-- **Statut** : accepté le 2026-11-15
+- **Statut** : accepté le 2026-11-15. Précisé le 2026-11-21 : `packages/joueurs` dépend aussi de
+  `personnages` (§ « Paquets », issue #13).
 - **Source** : `docs/etudes/00-cadrage.md` § 2 « Architecture » ; étude `04-architecture.md`
 
 ## Contexte
@@ -31,7 +32,7 @@ possible, « pour y voir clair ».
 | `packages/combat` | Moteur de combat pur et déterministe, sans E/S | — |
 | `packages/personnages` | Personnage calculé à partir de l'identifiant Instagram (seed), sans E/S | — |
 | `packages/donnees` | Schéma Drizzle, migrations, client de base | — |
-| `packages/joueurs` | Import des abonnés : interface fournisseur, passes, journal (ADR 0003) | `donnees` |
+| `packages/joueurs` | Import des abonnés : interface fournisseur, passes, journal (ADR 0003) | `donnees`, `personnages` |
 | `apps/web` | Site public, serveur MCP (`app/mcp/`), route des tâches | tous |
 
 Les dépendances vont toujours vers un paquet pur ou vers `donnees`, jamais en sens inverse, et aucun
