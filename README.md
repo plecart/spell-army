@@ -38,7 +38,10 @@ Le CDN de Vercel garde `/` et `/informations` une heure au plus (`Vercel-CDN-Cac
 `apps/web/next.config.ts`) : une recrue importée au tic horaire y apparaît dans l'heure.
 
 `/api/modeles/<classe>` sert le GLB du modèle par défaut d'une classe (`wizard`…), lu en base et
-gardé une heure par le navigateur et le CDN ; une classe inconnue ou sans modèle rend 404.
+gardé une heure par le navigateur et le CDN ; une classe inconnue ou sans modèle rend 404. Les
+vignettes des cartes en sont rendues dans le navigateur par un seul moteur three.js, une image par
+classe de la page, posée sur le décor (`apps/web/app/vignettes/`) ; sans modèle ou sans WebGL, la
+carte garde son décor seul.
 
 ## Serveur MCP local
 
