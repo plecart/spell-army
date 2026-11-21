@@ -2,6 +2,8 @@
 
 - **Statut** : accepté le 2026-11-15. L'essai réel du fournisseur reste à faire : il a lieu en dernier.
   Précisé le 2026-11-16 : le sort est tiré et stocké à l'inscription (ligne « Sort à l'inscription »).
+  Précisé le 2026-11-21 : le retrait supprime la ligne entière du joueur, son pseudo avec (ligne
+  « RGPD », issue #14).
 - **Source** : `docs/etudes/00-cadrage.md` § 2 « Joueurs » et § 4 ; étude `06-abonnes-outils-tiers.md`
 
 ## Contexte
@@ -24,7 +26,7 @@ L'API officielle d'Instagram ne donne que le nombre d'abonnés, pas leur liste. 
 | Auto-contrôle | Notre nombre de joueurs doit rester supérieur ou égal au nombre d'abonnés affiché par Instagram. Sinon, une passe complète part seule, **au plus une fois par 24 h**, pour qu'une liste tronquée ne la relance pas à chaque heure. | Accepté le 2026-11-15 |
 | Journal | Chaque passe est journalisée : type, début, fin, pages, ajouts, erreur. Le journal se consulte et une passe se relance par le MCP. Le signal healthchecks.io (ADR 0002) sert d'alerte. | Accepté le 2026-11-15 |
 | Mode dégradé | En cas d'échec, on ne supprime rien et on garde ce qui est déjà écrit. Le tic suivant reprend au curseur. | Accepté le 2026-11-15 |
-| RGPD | Une page publique « Informations » : qui, quoi (identifiant et pseudo), pourquoi, base légale (intérêt légitime), contact par message privé sur le compte. Un outil MCP `retirer_joueur` efface le pseudo et place l'identifiant sur une liste d'exclusion, que l'import respecte à chaque passe. | Accepté le 2026-11-15 |
+| RGPD | Une page publique « Informations » : qui, quoi (identifiant et pseudo), pourquoi, base légale (intérêt légitime), contact par message privé sur le compte. Un outil MCP `retirer_joueur` efface le pseudo en supprimant la ligne entière du joueur, et place l'identifiant sur une liste d'exclusion, que l'import respecte à chaque passe. | Accepté le 2026-11-15 |
 | Pseudos, données non fiables | Les pseudos sont renvoyés à Claude par le MCP : ce sont des champs courts et nettoyés, jamais une bio, pour limiter l'injection. | Accepté le 2026-11-15 |
 
 ## Pourquoi c'est réparable seul
