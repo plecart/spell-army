@@ -10,6 +10,7 @@ export {
 } from "./client.ts";
 export {
 	type ModelTarget,
+	readClassDefaultModel,
 	type StoredModelFile,
 	setClassDefaultModel,
 	storeModelFile,

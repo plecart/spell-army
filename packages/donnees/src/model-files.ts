@@ -31,6 +31,19 @@ export async function storeModelFile(
 	return stored as StoredModelFile;
 }
 
+/** Les octets du modèle par défaut de `characterClass`, nuls quand la classe n'en a pas. */
+export async function readClassDefaultModel(
+	executor: Executor,
+	characterClass: string,
+): Promise<Uint8Array | null> {
+	const [model] = await executor
+		.select({ content: modelFiles.content })
+		.from(classDefaultModels)
+		.innerJoin(modelFiles, eq(modelFiles.id, classDefaultModels.modelFileId))
+		.where(eq(classDefaultModels.class, characterClass));
+	return model?.content ?? null;
+}
+
 /** Lève une erreur qui le dit si le fichier `fileId` n'est pas un fichier de `characterClass`. */
 async function assertFileOfClass(
 	executor: Executor,

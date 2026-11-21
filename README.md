@@ -36,6 +36,9 @@ Deux variables, non secrètes (gabarit : `.env.example`) :
 Le CDN de Vercel garde `/` et `/informations` une heure au plus (`Vercel-CDN-Cache-Control`,
 `apps/web/next.config.ts`) : une recrue importée au tic horaire y apparaît dans l'heure.
 
+`/api/modeles/<classe>` sert le GLB du modèle par défaut d'une classe (`wizard`…), lu en base et
+gardé une heure par le navigateur et le CDN ; une classe inconnue ou sans modèle rend 404.
+
 ## Serveur MCP local
 
 Le serveur MCP (`docs/adr/0005-serveur-mcp.md`) sert sur `/api/mcp` les outils de pilotage :
