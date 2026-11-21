@@ -6,6 +6,7 @@
 		".": "./src/index.ts",
 		"./test/base-de-test": "./test/base-de-test.ts",
 		"./test/base-neuve": "./test/base-neuve.ts",
+		"./test/formes-instagram": "./test/formes-instagram.ts",
 		"./test/global-setup": "./test/global-setup.ts",
 		"./test/vitest-config": "./test/vitest-config.ts"
 	},

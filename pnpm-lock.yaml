@@ -82,6 +82,12 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1
 
+  packages/joueurs:
+    dependencies:
+      donnees:
+        specifier: workspace:*
+        version: link:../donnees
+
   packages/personnages:
     dependencies:
       zod:
