@@ -48,7 +48,7 @@ def build(color):
     sol = anchor("sol")
     part(lathe("robe", rounded(0.33, 0.1, 0.72, 0.035, 0.1), 48), corps, sol, (0, 0.06, 0))
 
-    tete = head(HEAD, peau, fixe, poils, (0, 0.8, 0))
+    tete = head(HEAD, peau, fixe, poils, (0, 0.8, 0), nose=0.65)  # un nez fin
     # Les cheveux : une calotte jusqu'au-dessus des sourcils, puis, hors du visage, l'arrière et les
     # côtés jusqu'à la nuque, comme ceux du magicien ; le chignon au sommet, sur l'axe.
     center = (0, HEAD, 0)

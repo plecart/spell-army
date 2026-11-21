@@ -1,6 +1,6 @@
 """
 Le guerrier, brouillon porté du prototype `annuaire-bd.html` de la direction artistique (fonction
-`buildCharacter`, cas « Guerrier ») : casque à nasal, épée et bouclier rond. Son tronc est une seule
+`buildCharacter`, cas « Guerrier ») : casque, épée et bouclier rond. Son tronc est une seule
 révolution arrondie, cotte de sa couleur ; la cuirasse d'acier en épouse le haut. Le casque coiffe
 le crâne, basculé vers l'arrière au-dessus des sourcils ; le bouclier se tient par son centre, la
 main derrière, et l'épée monte droit de la main, garde et lame sur un même axe.
@@ -8,9 +8,7 @@ main derrière, et l'épée monte droit de la main, garde et lame sur un même a
 
 import math
 
-from mathutils import Matrix, Vector
-
-from annuaire import EYES, SCALE, STEEL, dome, hand, head, legs
+from annuaire import EYES, SCALE, STEEL, dome, hand, head, helmet, legs
 from workshop import (
     LEFT,
     METAL,
@@ -54,15 +52,7 @@ def build(color):
     part(lathe("plastron", cuirass, 48), secondaire, sol, (0, 0.4, 0))
 
     tete = head(0.23, peau, fixe, poils, (0, 1.08, 0))
-    # Le casque, basculé vers l'arrière : son bord avant passe au-dessus des sourcils, l'arrière
-    # descend sur la nuque. Le nasal suit la bascule, d'équerre sur le bord, pas sur le sol.
-    chapeau = anchor("chapeau", tete, (0, 0.28, -0.01))
-    part(dome("casque", 0.25), coiffe, chapeau, rotation=(-HELMET_TILT, 0, 0))
-    rim = torus("bordure", 0.245, 0.02, 10, 40)
-    part(rim, coiffe, chapeau, rotation=(math.pi / 2 - HELMET_TILT, 0, 0))
-    hang = Matrix.Rotation(-HELMET_TILT, 3, "X") @ Vector((0, -0.06, 0.25))  # sous le bord avant
-    nasal = box("nasal", 0.045, 0.12, 0.025)
-    part(nasal, coiffe, chapeau, tuple(hang), (-HELMET_TILT, 0, 0))
+    helmet(coiffe, anchor("chapeau", tete, (0, 0.28, -0.01)), 0.25, HELMET_TILT)
 
     # L'épée : poignée dans la main, garde au-dessus, lame tranchante, pommeau en dessous.
     main_droite = hand(RIGHT, (0.42, 0.72, 0.14), peau)
