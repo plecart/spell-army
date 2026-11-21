@@ -1,8 +1,9 @@
 """
 Le golem, brouillon porté du prototype `annuaire-bd.html` de la direction artistique (fonction
 `buildCharacter`, cas « Golem ») : tout de pierre, de la mousse sur les épaules et un brin sur la
-tête ; ses gros poings de pierre sont ses mains. Le prototype enfonçait tête et poings dans le tronc : ils flottent ici à côté
-(direction artistique § 6, « Construction »). Ses pieds sont deux cloches flottantes, sans jambes.
+tête ; ses gros poings de pierre sont ses mains. Le prototype enfonçait tête et poings dans le
+tronc : ils flottent ici à côté (direction artistique § 6, « Construction »). Ses pieds sont deux
+cloches flottantes, sans jambes.
 """
 
 import math

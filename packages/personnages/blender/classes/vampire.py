@@ -1,8 +1,8 @@
 """
 Le vampire, brouillon porté du prototype `annuaire-bd.html` de la direction artistique (fonction
 `buildCharacter`, cas « Vampire ») : teint pâle, cape à haut col, mains nues. Cape et col, ouverts
-dans le dos comme dans le prototype, pendent de l'ancre `dos` ; la cape s'arrondit à l'ourlet. Les cheveux du prototype laissaient
-percer le haut du crâne : ils le couvrent ici.
+dans le dos comme dans le prototype, pendent de l'ancre `dos` ; la cape s'arrondit à l'ourlet. Les
+cheveux du prototype laissaient percer le haut du crâne : ils le couvrent ici.
 """
 
 import math
