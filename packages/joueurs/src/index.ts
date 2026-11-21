@@ -7,6 +7,10 @@ export {
 	type ScreenedPage,
 	screenEntries,
 } from "./entries.ts";
+export {
+	createHikerApiProvider,
+	type HikerApiOptions,
+} from "./hikerapi.ts";
 export { listPasses, type PassLogEntry } from "./journal.ts";
 export {
 	acquireImportLock,
