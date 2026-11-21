@@ -15,12 +15,14 @@ export {
 	calibrationSettings,
 	classDefaultModels,
 	excludedPlayers,
+	type FullPassTrigger,
 	importLock,
 	importPasses,
 	INSTAGRAM_ID_PATTERN,
 	INSTAGRAM_USERNAME_PATTERN,
 	modelFiles,
 	players,
+	type QuickPassTrigger,
 	spells,
 } from "./schema.ts";
 export {
