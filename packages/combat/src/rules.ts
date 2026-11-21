@@ -99,9 +99,8 @@ function formKey(form: Form): string {
  * - Sort mixte (game design § 2, « Vol de vie » : « ne dépasse jamais ×1,0 ») : sur la seule base
  *   `armyStat`, où il vaut au plus ×1,0 en dégâts + soin aux deux bouts de sa jauge — l'effet étant
  *   linéaire, ses bouts suffisent. Ailleurs, un coup normal vaut un coefficient qui suit l'armée ou
- *   le monstre — mesuré sur les armées des graines 1 à 2 000 : de 0,18 à 0,21 de la Vie maximale
- *   selon la recette, de 0,90 à 2,09 du dernier coup selon l'attaque d'un monstre de moyenne
- *   ×0,78 —, et aucune borne fixe n'y tiendrait ce « jamais ».
+ *   le monstre, et aucune borne fixe n'y tiendrait ce « jamais » (relevé le 2026-11-21, Notes de
+ *   la PR #40).
  * - Poids : un nombre fini ≥ 0 ; 0, jamais tiré, est accepté.
  * - Nom et description : non vides une fois les blancs retirés.
  */
