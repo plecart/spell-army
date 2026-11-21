@@ -95,8 +95,9 @@ Chaque sort est une **carte à jouer**, au format 63 × 88.
 **Règles de dessin du décor** (Décidé) :
 
 - **Trois plans**, tous de la couleur de la classe : un lointain pâle (collines, ou montagnes chez le
-  nain) ; l'élément de la classe, plus marqué, sur **un côté** ; un sol plat. Le centre reste libre
-  pour le personnage.
+  nain) ; l'élément de la classe, plus marqué, **sur les côtés** : de part et d'autre du personnage,
+  ou d'un seul côté quand l'élément est seul, comme la tour du magicien (tranché le 2026-11-21 au vu
+  des décors portés du prototype) ; un sol plat. Le centre reste libre pour le personnage.
 - **Rien ne se chevauche.** Les formes d'un même plan se fondent en une silhouette. Rien ne
   s'enfonce dans le sol : tout ce qui le touche s'arrête sur sa ligne.
 - **Rien à main levée.** Les bâtiments sont construits et symétriques : une tour est un corps droit,
