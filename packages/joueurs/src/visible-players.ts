@@ -1,6 +1,7 @@
 import { type Executor, excludedPlayers, players } from "donnees";
-import { and, desc, eq, notExists, sql } from "drizzle-orm";
+import { and, desc, eq, notExists } from "drizzle-orm";
 import { type ClassKey, characterOf, perClass } from "personnages";
+import { containsIgnoringCase } from "./search.ts";
 
 /** Le nombre de joueurs d'une page de l'annuaire (direction artistique § 3, « Pagination »). */
 const DIRECTORY_PAGE_SIZE = 24;
@@ -42,9 +43,9 @@ export interface VisiblePlayersPage {
  * Lit une page des joueurs visibles : ceux dont l'identifiant n'est pas dans `excluded_players`
  * (ADR 0003, « RGPD »). C'est la seule voie par laquelle l'annuaire lit des joueurs.
  *
- * La recherche est un « contient » insensible à la casse sur le pseudo, par `strpos` et jamais par
- * `like` : `_` est un caractère de pseudo et un joker de `like`. Les joueurs se rangent du plus
- * récent au plus ancien par `arrived_at`, puis par identifiant croissant à arrivée égale.
+ * La recherche est un « contient » insensible à la casse sur le pseudo (`containsIgnoringCase`),
+ * où `_`, caractère de pseudo, est pris littéralement. Les joueurs se rangent du plus récent au
+ * plus ancien par `arrived_at`, puis par identifiant croissant à arrivée égale.
  *
  * La classe ne se stocke pas : la base rend les joueurs visibles qui portent la recherche, puis la
  * classe, les nombres par classe, le filtre et la page se calculent ici.
@@ -91,9 +92,7 @@ async function readVisiblePlayers(
 						.from(excludedPlayers)
 						.where(eq(excludedPlayers.instagramId, players.instagramId)),
 				),
-				needle
-					? sql`strpos(lower(${players.username}), lower(${needle})) > 0`
-					: undefined,
+				needle ? containsIgnoringCase(players.username, needle) : undefined,
 			),
 		)
 		.orderBy(desc(players.arrivedAt), players.instagramId);
