@@ -34,3 +34,10 @@ export {
 	runTick,
 	type TickReport,
 } from "./tick.ts";
+export {
+	DIRECTORY_PAGE_SIZE,
+	listVisiblePlayers,
+	type VisiblePlayer,
+	type VisiblePlayersPage,
+	type VisiblePlayersQuery,
+} from "./visible-players.ts";
