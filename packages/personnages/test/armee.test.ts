@@ -51,3 +51,19 @@ test("chaque personnage lance le sort que drawSpell lui tire dans la réserve do
 		);
 	}
 });
+
+// Ce qu'une fabrique garde se voit à l'identité des stats d'un personnage, un objet qu'elle calcule :
+// l'identifiant et la classe sont des textes, et le sort vient de la réserve.
+test("une fabrique garde les personnages de la dernière graine seulement, ou de toutes avec Infinity", () => {
+	const statsOf = (armyOf: ReturnType<typeof simulationArmies>, seed: string) =>
+		armyOf(seed, POOL)[0]?.stats;
+	const lastOnly = simulationArmies();
+	const all = simulationArmies(Number.POSITIVE_INFINITY);
+	const kept = [lastOnly, all].map((armyOf) => statsOf(armyOf, "2"));
+
+	expect(lastOnly("2", REWEIGHTED)[0]?.stats).toBe(kept[0]);
+	statsOf(lastOnly, "3");
+	statsOf(all, "3");
+	expect(statsOf(lastOnly, "2")).not.toBe(kept[0]);
+	expect(statsOf(all, "2")).toBe(kept[1]);
+});
