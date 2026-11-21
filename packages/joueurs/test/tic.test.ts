@@ -12,6 +12,7 @@ import {
 	type FollowerEntry,
 	type ImportOptions,
 	listPasses,
+	relaunchPass,
 	runTic,
 	writePage,
 } from "../src/index.ts";
@@ -358,4 +359,60 @@ describe("verrou du tic", () => {
 		await db.execute(sql.raw("drop trigger fail_on_pass on import_passes"));
 		expect(await runTic(tickOver(db, []).options)).not.toBeNull();
 	});
+});
+
+describe("relance d'une passe", () => {
+	test("rapide : une passe rapide part, sous le déclencheur du MCP", async () => {
+		const db = await freshDatabase();
+		const { options } = tickOver(db, followers(3));
+		expect(await relaunchPass(options, "quick")).toMatchObject({
+			kind: "quick",
+			trigger: "mcp",
+			status: "done",
+			added: 3,
+		});
+		expect(await db.$count(importPasses)).toBe(1);
+	});
+
+	test("complète : sans complète non terminée, une part sous le déclencheur du MCP ; interrompue par le budget après sa page 2 sur 5, la relance suivante la reprend à la page 3, sans rendre son curseur", async () => {
+		const db = await freshDatabase();
+		const list = followers(10);
+		// 120 s par page lue : la page 3 commencerait à 240 s, l'échéance du budget par défaut.
+		const first = tickOver(db, list, { pageSize: 2, pageMs: 120_000 });
+		const interrupted = await relaunchPass(first.options, "full");
+		expect(interrupted).toMatchObject({
+			kind: "full",
+			trigger: "mcp",
+			status: "interrupted",
+			pages: 2,
+		});
+		expect(interrupted).not.toHaveProperty("cursor");
+		const next = tickOver(db, list, { pageSize: 2, start: after(HOUR_MS) });
+		expect(await relaunchPass(next.options, "full")).toMatchObject({
+			kind: "full",
+			trigger: "mcp",
+			status: "done",
+			pages: 5,
+			added: 10,
+		});
+		expect(next.provider.cursors).toEqual(
+			[3, 4, 5].map((page) => next.provider.cursorOf(page)),
+		);
+		expect(await db.$count(importPasses)).toBe(1);
+	});
+
+	test.each([
+		["rapide", "quick"],
+		["complète", "full"],
+	] as const)(
+		"verrou pris : la relance %s rend « passe en cours » sans attendre, sans rien lire ni rien ajouter au journal",
+		async (_, kind) => {
+			const db = await freshDatabase();
+			await acquireImportLock(db, T0);
+			const { provider, options } = tickOver(db, followers(3));
+			expect(await relaunchPass(options, kind)).toBeNull();
+			expect(provider.cursors).toEqual([]);
+			expect(await db.$count(importPasses)).toBe(0);
+		},
+	);
 });
