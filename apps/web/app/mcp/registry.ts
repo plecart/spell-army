@@ -1,7 +1,11 @@
 import type { FollowerProvider } from "joueurs";
 import { depositModelTool, setClassModelTool } from "./model-tools.ts";
 import { listPassesTool, relaunchPassTool } from "./pass-tools.ts";
-import { giveSpellTool, searchPlayerTool } from "./player-tools.ts";
+import {
+	giveSpellTool,
+	removePlayerTool,
+	searchPlayerTool,
+} from "./player-tools.ts";
 import { readSettingsTool, updateSettingsTool } from "./settings-tools.ts";
 import {
 	addSpellTool,
@@ -30,5 +34,6 @@ export function createRegistry(
 		relaunchPassTool(provider),
 		searchPlayerTool,
 		giveSpellTool,
+		removePlayerTool,
 	];
 }

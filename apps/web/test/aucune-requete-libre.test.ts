@@ -114,6 +114,7 @@ describe("aucun paramètre de requête libre", () => {
 			"relancer_passe",
 			"chercher_joueur",
 			"donner_sort",
+			"retirer_joueur",
 		]);
 		expect(
 			tools.flatMap(({ name, inputSchema }) =>

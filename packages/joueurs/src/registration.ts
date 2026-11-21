@@ -25,9 +25,13 @@ export type WrittenPage = Omit<ScreenedPage, "entries"> & { added: number };
  * modèle par défaut de sa classe, nul sans défaut.
  *
  * Une transaction par appel, un point de sauvegarde quand `executor` en est déjà une : la page
- * s'écrit entière ou pas du tout. Elle verrouille d'abord `class_default_models` en mode partagé :
- * un réglage qui a déjà écrit son défaut la fait attendre son commit, et un réglage lancé pendant
- * l'écriture attend le sien, même pour une classe encore sans défaut, sans ligne à verrouiller.
+ * s'écrit entière ou pas du tout. Elle verrouille d'abord, en une instruction et en mode partagé,
+ * `class_default_models` et `excluded_players`. Un réglage du modèle par défaut qui a déjà écrit son
+ * défaut la fait attendre son commit, et un réglage lancé pendant l'écriture attend le sien, même
+ * pour une classe encore sans défaut, sans ligne à verrouiller. De même d'un retrait
+ * (`removePlayer`) : celui qui a déjà inscrit son exclusion la fait attendre son commit, puis elle
+ * voit l'exclusion ; celui lancé pendant l'écriture attend le sien, puis supprime le joueur qu'elle
+ * vient d'inscrire.
  *
  * @param executor le client, ou la transaction de l'appelant.
  * @param page les entrées de la page, telles que le fournisseur les rend.
@@ -41,7 +45,9 @@ export async function writePage(
 ): Promise<WrittenPage> {
 	const { entries, ...discarded } = screenEntries(page);
 	const added = await executor.transaction(async (tx) => {
-		await tx.execute(sql`lock table ${classDefaultModels} in share mode`);
+		await tx.execute(
+			sql`lock table ${classDefaultModels}, ${excludedPlayers} in share mode`,
+		);
 		const known = await knownIds(
 			tx,
 			entries.map(({ id }) => id),

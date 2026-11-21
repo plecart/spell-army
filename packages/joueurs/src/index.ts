@@ -17,6 +17,12 @@ export {
 } from "./provider.ts";
 export { writePage } from "./registration.ts";
 export {
+	previewRemoval,
+	type RemovalEffect,
+	type RemovalPreview,
+	removePlayer,
+} from "./removal.ts";
+export {
 	type FoundPlayer,
 	MAX_FOUND_PLAYERS,
 	searchPlayers,
