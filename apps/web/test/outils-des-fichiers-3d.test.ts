@@ -1,5 +1,13 @@
 import type { Client } from "@modelcontextprotocol/client";
-import { classDefaultModels, type Executor, modelFiles } from "donnees";
+import {
+	classDefaultModels,
+	type Executor,
+	modelFiles,
+	players,
+} from "donnees";
+import { writePage } from "joueurs";
+import { followers } from "joueurs/test/faux-fournisseur";
+import { characterOf } from "personnages";
 import { glb } from "personnages/test/glb";
 import { describe, expect, test } from "vitest";
 import { CLASS } from "./classes.ts";
@@ -21,6 +29,14 @@ async function stored(db: Executor) {
 		files: await db.select({ id: modelFiles.id }).from(modelFiles),
 		defaults: await db.select().from(classDefaultModels),
 	};
+}
+
+/** Le modèle de chaque joueur, par identifiant. */
+async function modelsOf(db: Executor) {
+	const rows = await db
+		.select({ id: players.instagramId, model: players.modelFileId })
+		.from(players);
+	return new Map(rows.map(({ id, model }) => [id, model]));
 }
 
 /** Les lignes d'audit de l'outil `tool`. */
@@ -347,28 +363,65 @@ describe("regler_modele_classe", () => {
 		expect(outputOf(await setDefault(client, "magicien", first))).toEqual({
 			classe: "magicien",
 			fichier: first,
+			joueurs_suivis: 0,
 		});
 		expect(outputOf(await setDefault(client, "magicien", second))).toEqual({
 			classe: "magicien",
 			fichier: second,
+			joueurs_suivis: 0,
 		});
 		expect(await auditOf(db, "regler_modele_classe")).toEqual([
 			expect.objectContaining({
 				input: { classe: "magicien", fichier: first },
 				succeeded: true,
 				before: { classe: "magicien", fichier: null },
-				after: { classe: "magicien", fichier: first },
+				after: { classe: "magicien", fichier: first, joueurs_suivis: 0 },
 			}),
 			expect.objectContaining({
 				input: { classe: "magicien", fichier: second },
 				succeeded: true,
 				before: { classe: "magicien", fichier: first },
-				after: { classe: "magicien", fichier: second },
+				after: { classe: "magicien", fichier: second, joueurs_suivis: 0 },
 			}),
 		]);
 		expect((await stored(db)).defaults).toEqual([
 			{ class: "wizard", modelFileId: second },
 		]);
+	});
+
+	test("les joueurs de la classe suivent son modèle par défaut, du premier réglage au suivant ; joueurs_suivis les compte, et l'audit le garde", async () => {
+		const { db, client } = await connectToRegistry();
+		const first = await depositFor(client, { classe: "magicien" });
+		const second = await depositFor(client, { classe: "magicien" });
+		const entries = followers(40);
+		await writePage(db, entries);
+		// La classe se calcule depuis l'identifiant (`personnages`) : parmi ces 40, des magiciens et
+		// d'autres classes.
+		const wizards = entries
+			.map(({ id }) => id)
+			.filter((id) => characterOf(id).class === "wizard");
+		expect(wizards.length).toBeGreaterThan(0);
+		expect(wizards.length).toBeLessThan(entries.length);
+		for (const fichier of [first, second]) {
+			expect(outputOf(await setDefault(client, "magicien", fichier))).toEqual({
+				classe: "magicien",
+				fichier,
+				joueurs_suivis: wizards.length,
+			});
+			expect(await modelsOf(db)).toEqual(
+				new Map(
+					entries.map(({ id }) => [id, wizards.includes(id) ? fichier : null]),
+				),
+			);
+		}
+		expect((await auditOf(db, "regler_modele_classe")).at(-1)).toMatchObject({
+			succeeded: true,
+			after: {
+				classe: "magicien",
+				fichier: second,
+				joueurs_suivis: wizards.length,
+			},
+		});
 	});
 
 	// Les fichiers qu'une classe refuse, sur une base qui porte le fichier 1 du magicien, réglé par
@@ -429,6 +482,7 @@ describe("regler_modele_classe", () => {
 			expect(outputOf(await setDefault(client, name, fichier))).toEqual({
 				classe: name,
 				fichier,
+				joueurs_suivis: 0,
 			});
 		}
 		const files = await db

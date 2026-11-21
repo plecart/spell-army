@@ -13,6 +13,7 @@
 		"@modelcontextprotocol/server": "^2.4.0",
 		"combat": "workspace:*",
 		"donnees": "workspace:*",
+		"joueurs": "workspace:*",
 		"next": "^16.4.6",
 		"personnages": "workspace:*",
 		"react": "^19.3.1",

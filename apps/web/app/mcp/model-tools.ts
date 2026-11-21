@@ -1,8 +1,5 @@
-import {
-	type ModelTarget,
-	setClassDefaultModel,
-	storeModelFile,
-} from "donnees";
+import { type ModelTarget, storeModelFile } from "donnees";
+import { changeClassDefaultModel } from "joueurs";
 import { checkModel, describeDeviations, MAX_MODEL_BYTES } from "personnages";
 import { z } from "zod";
 import { boundedBase64 } from "./bounds.ts";
@@ -93,15 +90,16 @@ export const depositModelTool: McpTool<typeof deposit> = {
 };
 
 /**
- * `destructiveHint` : le réglage écrase le modèle par défaut précédent. Comme `modifier_reglages`,
- * l'outil ne demande pas de confirmation : l'audit garde l'avant (ADR 0005, « Conséquences »).
- * `idempotentHint` : N appels identiques laissent le même état.
+ * `destructiveHint` : le réglage écrase le modèle par défaut précédent, et le modèle des joueurs qui
+ * le suivent. Comme `modifier_reglages`, l'outil ne demande pas de confirmation : l'audit garde
+ * l'avant (ADR 0005, « Conséquences »). `idempotentHint` : N appels identiques laissent le même
+ * état.
  */
 export const setClassModelTool: McpTool<typeof setting> = {
 	name: "regler_modele_classe",
 	title: "Régler le modèle par défaut d'une classe",
 	description:
-		"Fait d'un fichier 3D déposé pour une classe par deposer_fichier_3d le modèle par défaut de cette classe, à la place du précédent. Refuse un fichier inexistant, celui d'un monstre ou celui d'une autre classe. Rend la classe et le fichier ; le journal d'audit garde l'avant et l'après.",
+		"Fait d'un fichier 3D déposé pour une classe par deposer_fichier_3d le modèle par défaut de cette classe, à la place du précédent. Les joueurs de la classe dont le modèle était l'ancien défaut prennent le nouveau — sans ancien défaut, ceux qui n'avaient pas de modèle ; les autres gardent le leur. Refuse un fichier inexistant, celui d'un monstre ou celui d'une autre classe. Rend la classe, le fichier et le nombre de joueurs qui ont suivi ; le journal d'audit garde l'avant et l'après.",
 	annotations: {
 		readOnlyHint: false,
 		destructiveHint: true,
@@ -109,14 +107,14 @@ export const setClassModelTool: McpTool<typeof setting> = {
 		openWorldHint: false,
 	},
 	input: setting,
-	output: setting,
+	output: setting.extend({ joueurs_suivis: z.int() }),
 	run: async (executor, { classe, fichier }) => {
-		const { before, after } = await setClassDefaultModel(
+		const { before, after, followed } = await changeClassDefaultModel(
 			executor,
 			CLASS_OF[classe],
 			fichier,
 		);
-		const output = { classe, fichier: after };
+		const output = { classe, fichier: after, joueurs_suivis: followed };
 		return { output, before: { classe, fichier: before }, after: output };
 	},
 };

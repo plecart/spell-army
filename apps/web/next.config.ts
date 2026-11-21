@@ -12,7 +12,7 @@ if (existsSync(ROOT_ENV)) {
 
 const nextConfig: NextConfig = {
 	// Les paquets du dépôt exposent leurs sources TypeScript : Next.js les compile avec l'application.
-	transpilePackages: ["combat", "donnees", "personnages"],
+	transpilePackages: ["combat", "donnees", "joueurs", "personnages"],
 	// Sans cela, `next dev` écrit un `AGENTS.md` quand il détecte un agent IA : les consignes des
 	// agents du dépôt vivent dans `CLAUDE.md`.
 	agentRules: false,
