@@ -56,8 +56,9 @@ export const listPassesTool: McpTool<typeof listing> = {
  * `relancer_passe` (ADR 0003, « Journal »), sur le fournisseur `provider`, construit à chaque
  * relance. L'outil gère ses transactions (ADR 0005, « Conséquences ») : le verrou de l'import se
  * voit des tics dès sa prise, et chaque page s'écrit dans la sienne. Les indices suivent leurs
- * définitions MCP : une relance ajoute des joueurs et une ligne au journal sans rien écraser, deux
- * relances font deux passes, et la liste des abonnés se lit chez le fournisseur.
+ * définitions MCP : une relance inscrit des joueurs sans toucher aux présents, et ouvre une passe
+ * au journal ou, pour une complète non terminée, poursuit sa ligne ; deux relances relisent deux
+ * fois la liste, chez le fournisseur.
  */
 export function relaunchPassTool(
 	provider: () => FollowerProvider,
