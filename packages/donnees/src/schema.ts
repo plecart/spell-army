@@ -182,6 +182,11 @@ export const INSTAGRAM_USERNAME_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
 // Le contrôle qu'une colonne suive `pattern`, dont la source, sans apostrophe, est recopiée en clair
 // dans la migration. `test/formes-instagram.ts` en éprouve les bornes, côté base et côté JavaScript.
 function matches(column: PgColumn, pattern: RegExp): SQL {
+	if (pattern.source.includes("'")) {
+		throw new Error(
+			`la source d'une forme recopiée dans la migration ne doit porter aucune apostrophe : ${pattern.source}`,
+		);
+	}
 	return sql`${column} ~ ${sql.raw(`'${pattern.source}'`)}`;
 }
 

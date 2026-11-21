@@ -26,7 +26,7 @@ export type WrittenPage = Omit<ScreenedPage, "entries"> & { added: number };
  *
  * Une transaction par appel, un point de sauvegarde quand `executor` en est déjà une : la page
  * s'écrit entière ou pas du tout. Elle verrouille d'abord `class_default_models` en mode partagé :
- * un réglage du modèle par défaut en cours la fait attendre son commit, et un réglage lancé pendant
+ * un réglage qui a déjà écrit son défaut la fait attendre son commit, et un réglage lancé pendant
  * l'écriture attend le sien, même pour une classe encore sans défaut, sans ligne à verrouiller.
  *
  * @param executor le client, ou la transaction de l'appelant.
