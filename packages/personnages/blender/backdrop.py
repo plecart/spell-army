@@ -7,8 +7,8 @@ se pose ensuite d'un seul tenant, à l'opacité du groupe (SVG 1.1, « Group opa
 formes qui se chevauchent ne foncent. L'importeur SVG de Blender ignore l'opacité (`io_curve_svg`,
 Blender 5.3), d'où ce tramage. Le sous-ensemble lu est celui qu'écrit `scenery.ts` : des `<g>` sous
 la racine, des `<rect>` (coins `rx`), `<circle>` et `<path>` aux commandes absolues M L H V Q C A Z,
-remplis selon la règle « nonzero » ; tout autre élément ou commande, et tout chemin mal formé,
-lèvent ValueError.
+remplis selon la règle « nonzero » ; tout autre élément ou commande, et les quatre formes de
+chemin mal formé que nomme `_path`, lèvent ValueError.
 
 Ce fichier se vérifie lui-même (`self_check`) : en tête de `rendus`, et sans Blender, avec le Python
 qu'il embarque (numpy compris) :

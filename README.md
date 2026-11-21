@@ -147,8 +147,9 @@ Sans classe nommée, chaque commande les prend toutes ; une clé inconnue est re
 - `modeles` écrit `packages/personnages/out/modeles/<classe>.glb`, puis juge chaque fichier contre
   le contrat du fichier 3D : un écart arrête la commande, sortie 1, avec les écarts de chaque
   fichier. Une classe sans fichier Python l'arrête aussi, avant toute fabrication ; une classe dont
-  une main est du mauvais côté — `main_droite` en x < 0, `main_gauche` en x > 0, le personnage
-  tourné vers +Z (glTF 2.0, § 3.4) — n'est pas écrite, et l'arrête après les autres en la nommant.
+  une main est du mauvais côté — `main_droite` attendue en x < 0, `main_gauche` en x > 0, le
+  personnage tourné vers +Z (glTF 2.0, § 3.4) — n'est pas écrite, et l'arrête après les autres en
+  la nommant.
 - `rendus` part de ces GLB, à fabriquer d'abord : par classe, le personnage sur son socle, devant
   son décor, en `packages/personnages/out/rendus/<classe>.png`, puis toutes les classes rendues,
   sur 4 colonnes, dans `planche.png`. Il vérifie d'abord le tramage des décors (`backdrop.py`).
