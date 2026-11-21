@@ -1,6 +1,7 @@
 import { type Executor, excludedPlayers, players } from "donnees";
 import { freshDatabase } from "donnees/test/base-neuve";
-import { CLASS_KEYS, type ClassKey, characterOf } from "personnages";
+import { type ClassKey, characterOf, perClass } from "personnages";
+import { idsOf } from "personnages/test/identifiants";
 import { describe, expect, test } from "vitest";
 import { listVisiblePlayers } from "../src/index.ts";
 import { after, MINUTE_MS } from "./horloge.ts";
@@ -22,17 +23,6 @@ async function enlist(db: Executor, recruits: Recruit[]): Promise<void> {
 	);
 }
 
-/** Les `count` premiers identifiants, depuis « 1 », dont la classe est `classKey`. */
-function idsOf(classKey: ClassKey, count: number): string[] {
-	const ids: string[] = [];
-	for (let n = 1; ids.length < count; n++) {
-		if (characterOf(String(n)).class === classKey) {
-			ids.push(String(n));
-		}
-	}
-	return ids;
-}
-
 /** `count` recrues de `classKey`, aux pseudos `<prefix>_1`, `<prefix>_2`… */
 function recruitsOf(
 	classKey: ClassKey,
@@ -46,13 +36,8 @@ function recruitsOf(
 }
 
 /** Le nombre par classe, à zéro pour toute classe absente de `counts`. */
-function classCounts(
-	counts: Partial<Record<ClassKey, number>>,
-): Record<ClassKey, number> {
-	return Object.fromEntries(
-		CLASS_KEYS.map((classKey) => [classKey, counts[classKey] ?? 0]),
-	) as Record<ClassKey, number>;
-}
+const classCounts = (counts: Partial<Record<ClassKey, number>>) =>
+	perClass((classKey) => counts[classKey] ?? 0);
 
 const usernames = (page: { players: { username: string }[] }) =>
 	page.players.map(({ username }) => username);
