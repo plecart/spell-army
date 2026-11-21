@@ -43,7 +43,7 @@ function readVariables<const Name extends string>(
 	const missing = names.filter((name) => !env[name]);
 	if (missing.length > 0) {
 		throw new Error(
-			`Variable(s) absente(s) ou vide(s) : ${missing.join(", ")}. Renseigne-les dans le .env de la racine (README, « Déposer un fichier 3D »).`,
+			`Variable(s) absente(s) ou vide(s) : ${missing.join(", ")}. Renseigne-les dans le .env de la racine (docs/exploitation.md, « Déposer un fichier 3D »).`,
 		);
 	}
 	return Object.fromEntries(names.map((name) => [name, env[name]])) as Record<

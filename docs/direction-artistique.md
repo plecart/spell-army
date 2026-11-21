@@ -151,7 +151,7 @@ au site et à la vidéo.
 | Contour | Ajouté à l'affichage, pas dans le fichier. | Proposé |
 | Budget | 30 000 triangles au plus par personnage. | Décidé |
 | Fabrication | **Blender**, installé sur le poste le 2026-11-16 (version 5.3). | Décidé |
-| Pilotage de Blender | **Un script Python par classe**, versionné dans `packages/personnages/blender/`, lancé sans fenêtre par `pnpm --filter personnages modeles` (README, « Fabriquer les modèles 3D »). Le serveur MCP officiel de Blender sert d'atelier : regarder et retoucher une pièce dans Blender ouvert, puis reporter le changement dans le script. Essai du 2026-11-21 sur le magicien : même code, même GLB, 0 écart au contrat par les deux voies ; seul le script se refait depuis un clone et se lance par un sous-agent. | Décidé |
+| Pilotage de Blender | **Un script Python par classe**, versionné dans `packages/personnages/blender/`, lancé sans fenêtre par `pnpm --filter personnages modeles` (docs/exploitation.md, « Fabriquer les modèles 3D »). Le serveur MCP officiel de Blender sert d'atelier : regarder et retoucher une pièce dans Blender ouvert, puis reporter le changement dans le script. Essai du 2026-11-21 sur le magicien : même code, même GLB, 0 écart au contrat par les deux voies ; seul le script se refait depuis un clone et se lance par un sous-agent. | Décidé |
 
 **Ce que ce contrat impose à la fabrication :**
 

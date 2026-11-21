@@ -1,5 +1,5 @@
 // Commande `pnpm --filter web deposer-3d <fichier.glb> --classe <classe>`, ou `--monstre <nom>` :
-// dépose un fichier 3D par le serveur MCP (README, « Déposer un fichier 3D »). Sortie 0 avec
+// dépose un fichier 3D par le serveur MCP (docs/exploitation.md, « Déposer un fichier 3D »). Sortie 0 avec
 // l'identifiant du fichier rangé, 1 avec la raison du refus.
 import { parseArgs } from "node:util";
 import { DEPOSIT_COMMAND } from "../app/mcp/deposit-command.ts";

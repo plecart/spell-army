@@ -120,7 +120,7 @@ describe("la commande deposer-3d", () => {
 			);
 			await expect(refusal).rejects.toThrow(
 				new Error(
-					`Variable(s) absente(s) ou vide(s) : ${names}. Renseigne-les dans le .env de la racine (README, « Déposer un fichier 3D »).`,
+					`Variable(s) absente(s) ou vide(s) : ${names}. Renseigne-les dans le .env de la racine (docs/exploitation.md, « Déposer un fichier 3D »).`,
 				),
 			);
 			expect(requests).toEqual([]);

@@ -1,6 +1,6 @@
 // Commandes `pnpm --filter personnages modeles [classe…]` et `rendus [classe…]` : Blender, lancé
 // sans fenêtre, fabrique le GLB de chaque classe, jugé ensuite par `checkModel`, ou rend ses images
-// de validation (README, « Fabriquer les modèles 3D »). Sortie 0, ou 1 avec la raison.
+// de validation (docs/exploitation.md, « Fabriquer les modèles 3D »). Sortie 0, ou 1 avec la raison.
 import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -71,7 +71,7 @@ function runBlender(script: string, args: readonly string[]): void {
 	);
 	if (error !== undefined) {
 		throw new Error(
-			`Blender ne se lance pas (« ${blender} ») : ${error.message}. Renseigne BLENDER, le chemin de blender.exe, dans le .env de la racine, ou mets Blender dans le PATH (README, « Fabriquer les modèles 3D »).`,
+			`Blender ne se lance pas (« ${blender} ») : ${error.message}. Renseigne BLENDER, le chemin de blender.exe, dans le .env de la racine, ou mets Blender dans le PATH (docs/exploitation.md, « Fabriquer les modèles 3D »).`,
 		);
 	}
 	if (status !== 0) {
