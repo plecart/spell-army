@@ -1,6 +1,6 @@
 import { createMcpHandler, Server } from "@modelcontextprotocol/server";
 import type { Executor } from "donnees";
-import { isAuthorized } from "./token.ts";
+import { requireBearer } from "../token.ts";
 import { callTool, listTools, type McpTool } from "./tool.ts";
 
 const SERVER_INFO = { name: "wizard-army", version: "1.0.0" };
@@ -37,11 +37,5 @@ export function createMcpEndpoint({
 		},
 		{ responseMode: "json", legacy: "reject", maxSubscriptions: 0 },
 	);
-	return async (request) =>
-		isAuthorized(request.headers.get("authorization"), token())
-			? handler.fetch(request)
-			: new Response(null, {
-					status: 401,
-					headers: { "WWW-Authenticate": "Bearer" },
-				});
+	return requireBearer(token, (request) => handler.fetch(request));
 }

@@ -1,5 +1,8 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
+// Le contrôle d'un secret présenté en `Authorization: Bearer`, commun au jeton du serveur MCP
+// (`MCP_TOKEN`) et au secret du tic (`CRON_SECRET`).
+
 /**
  * Longueur minimale du jeton configuré, en octets UTF-8 : en deçà, tout est refusé (ADR 0004,
  * « Serveur MCP et secrets »).
@@ -30,4 +33,22 @@ export function isAuthorized(
 		sha256(authorization ?? ""),
 		sha256(`Bearer ${configuredToken}`),
 	);
+}
+
+/**
+ * `handler`, derrière le contrôle du secret que rend `configuredToken`, lu à chaque requête
+ * (`isAuthorized`) : tout refus rend `401`, `WWW-Authenticate: Bearer` et un corps vide, sans
+ * appeler `handler`.
+ */
+export function requireBearer(
+	configuredToken: () => string | undefined,
+	handler: (request: Request) => Promise<Response>,
+): (request: Request) => Promise<Response> {
+	return async (request) =>
+		isAuthorized(request.headers.get("authorization"), configuredToken())
+			? handler(request)
+			: new Response(null, {
+					status: 401,
+					headers: { "WWW-Authenticate": "Bearer" },
+				});
 }

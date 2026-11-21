@@ -5,5 +5,6 @@ export default databaseTestConfig([
 	"test/aucune-requete-libre.test.ts",
 	"test/image.test.ts",
 	"test/jeton.test.ts",
+	"test/route-du-tic.test.ts",
 	"test/route.test.ts",
 ]);

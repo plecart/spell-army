@@ -100,3 +100,29 @@ l'envoie et affiche l'identifiant du fichier rangé, que `regler_modele_classe` 
 le modèle par défaut de sa classe. Les classes portent leur nom d'outil, comme dans `ajouter_sort` :
 `magicien`, `golem`, `guerrier`, `nain`, `vampire`, `druide`, `paysan`, `fee`. Sortie 0 sur un
 dépôt, 1 sur un refus, dont elle affiche la raison.
+
+## Tic de l'import
+
+Le tic horaire de l'import (`docs/adr/0002-taches-planifiees-et-auto-reparation.md`) est servi sur
+`POST /api/tic`, qu'appellent Vercel Schedules et le filet GitHub Actions avec l'en-tête
+`Authorization: Bearer <CRON_SECRET>`. Sous le verrou de l'import, il fait la suite d'une passe
+complète interrompue, la passe rapide, puis le départ d'une passe complète quand elle est due ; il
+ne lance aucun combat. Il lit la base de `DATABASE_URL` et la liste des abonnés chez HikerAPI, avec
+`HIKERAPI_ACCESS_KEY` et `INSTAGRAM_ACCOUNT_ID` (gabarit : `.env.example`).
+
+Ses réponses :
+
+- `401`, `WWW-Authenticate: Bearer` et un corps vide : l'en-tête manque ou ne porte pas le secret,
+  ou `CRON_SECRET` manque ou fait moins de 32 octets. Rien n'est lu, ni la base ni le fournisseur.
+- `200`, `{ "passes": […], "erreur_nombre_abonnes": null }` : les passes que le tic a fait tourner,
+  sous les champs de `lister_passes`.
+- `500` et le même corps : une passe s'est close en erreur, ou la lecture du nombre d'abonnés a
+  échoué, son erreur dans `erreur_nombre_abonnes`.
+- `200`, `{ "message": "passe en cours : ce tic n'a rien fait" }` : une autre passe tient le verrou.
+- `500`, `{ "message": … }` au texte fixe : « configuration de l'import incomplète », la clé ou le
+  compte manque ou est invalide, et aucune passe ne part ; ou « tic interrompu par une erreur ». La
+  cause est au journal du serveur, jamais dans la réponse.
+
+`CRON_SECRET` se crée comme le jeton MCP, à l'étape 2 de « Serveur MCP local » :
+`openssl rand -base64 32` dans un terminal hors de l'app Claude, rangé dans KeePassXC, puis saisi à
+la main dans les réglages Vercel et dans les secrets GitHub Actions du filet (ADR 0004, « Saisie »).
