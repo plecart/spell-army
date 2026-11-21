@@ -24,11 +24,24 @@ export const render = (element: ReactElement): string =>
 	renderToStaticMarkup(element);
 
 /**
- * Le texte de `html` : sans balises, entités décodées, blancs ASCII resserrés. Les autres blancs
- * restent, dont l'espace fine insécable des milliers.
+ * Le texte de `html` : chaque balise vaut un blanc, entités décodées, blancs ASCII resserrés. Les
+ * autres blancs restent, dont l'espace fine insécable des milliers.
  */
 export function textOf(html: string): string {
-	return decode(html.replace(/<[^>]*>/g, " "))
+	return collapse(html.replace(/<[^>]*>/g, " "));
+}
+
+/**
+ * Le texte d'un paragraphe `html`, comme `textOf`, mais ses balises retirées sans blanc : un lien
+ * reste collé à la ponctuation qui le suit, comme à l'écran.
+ */
+export function paragraphTextOf(html: string): string {
+	return collapse(html.replace(/<[^>]*>/g, ""));
+}
+
+// `text`, entités décodées, blancs ASCII resserrés.
+function collapse(text: string): string {
+	return decode(text)
 		.replace(/[ \t\r\n]+/g, " ")
 		.trim();
 }
