@@ -1,14 +1,18 @@
 import { describe, expect, test } from "vitest";
 import {
-	type ArmyAction,
 	type CombatLog,
 	type Fighter,
 	fight,
 	type Monster,
-	type MonsterAction,
 } from "../src/index.ts";
 import { bagOf, type DiceStream, diceOf } from "../src/dice.ts";
-import { fighterOf, harmless, monsterOf } from "./combattants.ts";
+import {
+	armyActions,
+	fighterOf,
+	harmless,
+	monsterActions,
+	monsterOf,
+} from "./combattants.ts";
 
 // Un monstre que l'armée n'entame pas en quelques dizaines d'actions.
 const ENDLESS_LIFE = 1e9;
@@ -31,18 +35,6 @@ function rounds(drawn: string[], size: number): string[][] {
 /** Les `count` premiers tirages sans remise de `items` dans le flux `stream` de la graine « 1 ». */
 function draws<T>(items: readonly T[], stream: DiceStream, count: number): T[] {
 	return Array.from({ length: count }, bagOf(items, diceOf(stream, "1")).draw);
-}
-
-function armyActions(log: CombatLog): ArmyAction[] {
-	return log.actions.filter(
-		(action): action is ArmyAction => action.side === "army",
-	);
-}
-
-function monsterActions(log: CombatLog): MonsterAction[] {
-	return log.actions.filter(
-		(action): action is MonsterAction => action.side === "monster",
-	);
 }
 
 describe("les entrées du combat", () => {

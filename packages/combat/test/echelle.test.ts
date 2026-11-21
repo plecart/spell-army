@@ -1,9 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { scaleFactor } from "../src/index.ts";
 import { armyOf, SEEDS, SIMULATION_TIMEOUT } from "./armees.ts";
-import { fighterOf } from "./combattants.ts";
-
-const LAVA_GOLEM = { life: 1.5, strength: 1, magic: 1, speed: 0.5 };
+import { fighterOf, LAVA_GOLEM } from "./combattants.ts";
 
 describe("le facteur d'échelle d'un profil", () => {
 	test(

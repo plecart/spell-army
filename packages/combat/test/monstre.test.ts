@@ -4,6 +4,7 @@ import {
 	REFERENCE_ATTACKS,
 	sizeMonster,
 } from "../src/index.ts";
+import { LAVA_GOLEM } from "./combattants.ts";
 
 const PRECISION = 10;
 
@@ -41,7 +42,7 @@ describe("la taille d'un monstre", () => {
 	test("chaque stat vaut budget × multiplicateur du profil × facteur d'échelle", () => {
 		const stats = sizeMonster(
 			{ life: 1000, strength: 800, magic: 600, speed: 400 },
-			{ life: 1.5, strength: 1, magic: 1, speed: 0.5 },
+			LAVA_GOLEM,
 			1.165,
 		);
 
