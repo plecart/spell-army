@@ -1,6 +1,8 @@
 import type { Client } from "@modelcontextprotocol/client";
 import {
 	type Executor,
+	INSTAGRAM_ID_PATTERN,
+	INSTAGRAM_USERNAME_PATTERN,
 	players,
 	readDrawablePool,
 	readSpell,
@@ -55,6 +57,18 @@ async function expectedPlayer(db: Executor, id: string, pseudo: string) {
 	};
 }
 
+/** Chaque motif d'un schéma JSON, avec le pointeur de son nœud, à toute profondeur. */
+function patternsOf(schema: unknown, pointer = "#"): [string, string][] {
+	if (typeof schema !== "object" || schema === null) {
+		return [];
+	}
+	return Object.entries(schema).flatMap(([key, value]) =>
+		key === "pattern" && typeof value === "string"
+			? [[pointer, value] as [string, string]]
+			: patternsOf(value, `${pointer}/${key}`),
+	);
+}
+
 describe("outils des joueurs : tools/list", () => {
 	test("publie chercher_joueur en lecture seule et donner_sort, qui écrase le sort du joueur ; des schémas de sortie stricts, chaque champ d'entrée décrit", () => {
 		const strict = expect.objectContaining({
@@ -101,6 +115,30 @@ describe("outils des joueurs : tools/list", () => {
 				fields: ["identifiant", "sort"].map((field) => [field, nonBlank]),
 				outputSchema: strict,
 			},
+		]);
+	});
+
+	test("les schémas de sortie gardent la forme Instagram de chaque identifiant et de chaque pseudo", () => {
+		expect(
+			publishedTools(PLAYER_TOOLS).flatMap(({ name, outputSchema }) =>
+				patternsOf(outputSchema).map(([pointer, pattern]) => [
+					name,
+					pointer,
+					pattern,
+				]),
+			),
+		).toEqual([
+			[
+				"chercher_joueur",
+				"#/properties/joueurs/items/properties/identifiant",
+				INSTAGRAM_ID_PATTERN.source,
+			],
+			[
+				"chercher_joueur",
+				"#/properties/joueurs/items/properties/pseudo",
+				INSTAGRAM_USERNAME_PATTERN.source,
+			],
+			["donner_sort", "#/properties/identifiant", INSTAGRAM_ID_PATTERN.source],
 		]);
 	});
 });

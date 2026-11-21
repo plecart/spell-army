@@ -1,5 +1,5 @@
 import { type Executor, players, updateSpell } from "donnees";
-import { freshDatabase } from "donnees/test/base-neuve";
+import { freshDatabase, waitForOneLockWaiter } from "donnees/test/base-neuve";
 import { describe, expect, test } from "vitest";
 import { giveSpell, writePage } from "../src/index.ts";
 import { entry } from "./faux-fournisseur.ts";
@@ -30,20 +30,26 @@ async function spellsOf(db: Executor): Promise<Map<string, number>> {
 	);
 }
 
-/** Un numéro de la réserve de départ (1 à 24) autre que `number`. */
-const otherThan = (number: number) => (number === 1 ? 2 : 1);
+/** Deux numéros distincts de la réserve de départ (1 à 24), autres que `number`. */
+const otherThan = (number: number) =>
+	[1, 2, 3].filter((other) => other !== number) as [number, number];
 
 describe("don d'un sort à un joueur", () => {
-	test.each<[string, number | undefined]>([
-		["un sort tirable", undefined],
-		["un sort de poids 0, jamais tiré", 0],
+	test.each<[string, number | undefined, (previous: number) => number]>([
+		["un sort tirable", undefined, (previous) => otherThan(previous)[0]],
+		[
+			"un sort de poids 0, jamais tiré",
+			0,
+			(previous) => otherThan(previous)[0],
+		],
+		["le sort qu'il a déjà", undefined, (previous) => previous],
 	])(
-		"%s remplace le sien, et rend l'ancien et le nouveau numéro ; le témoin garde le sien",
-		async (_, weight) => {
+		"%s : le joueur l'a ensuite, l'ancien et le nouveau numéro sont rendus ; le témoin garde le sien",
+		async (_, weight, choose) => {
 			const db = await databaseWithPlayers();
 			const before = await spellsOf(db);
 			const previous = before.get(TARGET) ?? 0;
-			const given = otherThan(previous);
+			const given = choose(previous);
 			if (weight !== undefined) {
 				await updateSpell(db, given, { weight });
 			}
@@ -85,4 +91,17 @@ describe("don d'un sort à un joueur", () => {
 			expect(await readPlayers(db)).toEqual(before);
 		},
 	);
+
+	test("un don lancé pendant un autre, non validé, attend son commit, puis rend le sort donné par le premier comme numéro d'avant", async () => {
+		const db = await databaseWithPlayers();
+		const [first, second] = otherThan((await spellsOf(db)).get(TARGET) ?? 0);
+		let concurrent: ReturnType<typeof giveSpell> | undefined;
+		await db.transaction(async (tx) => {
+			await giveSpell(tx, TARGET, first);
+			concurrent = giveSpell(db, TARGET, second);
+			await waitForOneLockWaiter(db);
+		});
+		expect(await concurrent).toEqual({ before: first, after: second });
+		expect((await spellsOf(db)).get(TARGET)).toBe(second);
+	});
 });
