@@ -10,7 +10,14 @@ export {
 	serializeLog,
 	type UnreachedForced,
 } from "./log.ts";
-export type { Monster, MonsterAttack } from "./monster.ts";
+export {
+	type Monster,
+	type MonsterAttack,
+	NEUTRAL_PROFILE,
+	type Profile,
+	REFERENCE_ATTACKS,
+	sizeMonster,
+} from "./monster.ts";
 export {
 	DEFAULT_WEIGHT,
 	type EffectCategory,
@@ -18,6 +25,12 @@ export {
 	spellKey,
 	validateSpell,
 } from "./rules.ts";
+export {
+	type Sample,
+	scaleFactor,
+	type Trial,
+	victoryShare,
+} from "./scale.ts";
 export { STARTING_POOL } from "./starting-pool.ts";
 export type {
 	CharacterClass,
