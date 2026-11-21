@@ -3,7 +3,7 @@ import { and, desc, eq, notExists, sql } from "drizzle-orm";
 import { type ClassKey, characterOf, perClass } from "personnages";
 
 /** Le nombre de joueurs d'une page de l'annuaire (direction artistique § 3, « Pagination »). */
-export const DIRECTORY_PAGE_SIZE = 24;
+const DIRECTORY_PAGE_SIZE = 24;
 
 /** Un joueur visible, tel que l'annuaire le montre. */
 export interface VisiblePlayer {
