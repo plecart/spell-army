@@ -38,6 +38,9 @@ export type Recipe = { kind: "shares"; shares: Shares } | { kind: "bestStat" };
 /** Les parts d'une recette, en % ; une stat absente n'y entre pas. */
 export type Shares = Partial<Record<Stat, number>>;
 
+/** La somme des parts d'une recette, en % : une part se lit sur ce total. */
+export const FULL_RECIPE = 100;
+
 /**
  * La jauge d'une forme conditionnelle, de 0 à 1 :
  * - `monsterLifeLost` : la Vie perdue par le monstre, 0 intact, 1 à bout ;

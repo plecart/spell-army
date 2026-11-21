@@ -1,11 +1,12 @@
-import type {
-	Effect,
-	EffectBase,
-	Form,
-	Linear,
-	Recipe,
-	Shares,
-	Spell,
+import {
+	type Effect,
+	type EffectBase,
+	type Form,
+	FULL_RECIPE,
+	type Linear,
+	type Recipe,
+	type Shares,
+	type Spell,
 } from "./spell.ts";
 
 /** La pastille de la carte (direction artistique § 4, « En-tête ») : Dégâts, Soin ou Vol de vie. */
@@ -17,8 +18,6 @@ export type EffectCategory = "damage" | "heal" | "lifesteal";
  */
 export const DEFAULT_WEIGHT = 1;
 
-/** La somme des parts d'une recette, en % : une part se lit sur ce total. */
-export const FULL_RECIPE = 100;
 /** La seule base d'un sort mixte (game design § 2, « Vol de vie »). */
 const MIXED_BASE: EffectBase = "armyStat";
 /** Ce que vaut au plus un sort mixte en dégâts + soin : ×1,0, un coup normal. */

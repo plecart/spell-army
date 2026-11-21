@@ -1,10 +1,10 @@
 import type { ArmySummary, Fighter } from "./army.ts";
 import type { MonsterAttack } from "./monster.ts";
-import { FULL_RECIPE } from "./rules.ts";
 import {
 	type CharacterClass,
 	type EffectBase,
 	type Form,
+	FULL_RECIPE,
 	type Linear,
 	type Recipe,
 	STATS,
