@@ -93,3 +93,49 @@ export class FakeFollowerProvider implements FollowerProvider {
 		throw new Error(`curseur inconnu du faux fournisseur : ${cursor}`);
 	}
 }
+
+/**
+ * Un faux fournisseur de `list`, en pages de `pageSize`, et son horloge : partie de `start`, elle
+ * avance de `pageMs` à chaque page lue, avant que la page rende ou échoue.
+ */
+export function pacedProvider(
+	list: readonly FollowerEntry[],
+	{
+		pageSize,
+		start,
+		pageMs,
+	}: { pageSize?: number; start: Date; pageMs: number },
+): { provider: FakeFollowerProvider; clock: () => Date } {
+	let now = start.getTime();
+	const provider = new FakeFollowerProvider(list, {
+		pageSize,
+		onPageRead: () => {
+			now += pageMs;
+		},
+	});
+	return { provider, clock: () => new Date(now) };
+}
+
+/**
+ * Un faux fournisseur de `list` qui retient ses lectures de page : la première se signale par
+ * `reading`, et toutes attendent `release()` pour rendre — de quoi tenir une passe en cours.
+ */
+export function heldProvider(list: readonly FollowerEntry[]): {
+	provider: FakeFollowerProvider;
+	reading: Promise<void>;
+	release: () => void;
+} {
+	const reading = Promise.withResolvers<void>();
+	const released = Promise.withResolvers<void>();
+	const provider = new FakeFollowerProvider(list, {
+		onPageRead: () => {
+			reading.resolve();
+			return released.promise;
+		},
+	});
+	return {
+		provider,
+		reading: reading.promise,
+		release: () => released.resolve(),
+	};
+}

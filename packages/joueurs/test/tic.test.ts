@@ -16,19 +16,13 @@ import {
 	runTick,
 	writePage,
 } from "../src/index.ts";
-import { FakeFollowerProvider, followers } from "./faux-fournisseur.ts";
-
-const T0 = new Date("2026-11-21T10:00:00Z");
-const MINUTE_MS = 60_000;
-const HOUR_MS = 60 * MINUTE_MS;
-const DAY_MS = 24 * HOUR_MS;
-// Le bail du verrou : 300 s (ADR 0002, « Verrou à bail »).
-const LEASE_MS = 300_000;
-
-/** L'instant `ms` millisecondes après `T0`. */
-function after(ms: number): Date {
-	return new Date(T0.getTime() + ms);
-}
+import {
+	type FakeFollowerProvider,
+	followers,
+	heldProvider,
+	pacedProvider,
+} from "./faux-fournisseur.ts";
+import { after, DAY_MS, HOUR_MS, LEASE_MS, T0 } from "./horloge.ts";
 
 /**
  * Un tic sur `db` et un faux fournisseur de `list`, en pages de `pageSize` : son horloge part de
@@ -43,14 +37,8 @@ function tickOver(
 		pageMs = 0,
 	}: { pageSize?: number; start?: Date; pageMs?: number } = {},
 ): { provider: FakeFollowerProvider; options: ImportOptions } {
-	let now = start.getTime();
-	const provider = new FakeFollowerProvider(list, {
-		pageSize,
-		onPageRead: () => {
-			now += pageMs;
-		},
-	});
-	return { provider, options: { db, provider, clock: () => new Date(now) } };
+	const { provider, clock } = pacedProvider(list, { pageSize, start, pageMs });
+	return { provider, options: { db, provider, clock } };
 }
 
 /**
@@ -371,20 +359,13 @@ describe("tic de l'import", () => {
 describe("verrou du tic", () => {
 	test("deux tics en même temps : le second, le premier retenu dans une lecture de page, rend « occupé » sans rien lire ni journaliser ; le premier fini, un troisième passe", async () => {
 		const db = await freshDatabase();
-		const reading = Promise.withResolvers<void>();
-		const release = Promise.withResolvers<void>();
-		const held = new FakeFollowerProvider(followers(3), {
-			onPageRead: () => {
-				reading.resolve();
-				return release.promise;
-			},
-		});
-		const first = runTick({ db, provider: held, clock: () => T0 });
-		await reading.promise;
+		const held = heldProvider(followers(3));
+		const first = runTick({ db, provider: held.provider, clock: () => T0 });
+		await held.reading;
 		const second = tickOver(db, followers(3));
 		expect(await runTick(second.options)).toBeNull();
 		expect(second.provider.cursors).toEqual([]);
-		release.resolve();
+		held.release();
 		const report = await first;
 		expect(await listPasses(db, 10)).toEqual(report?.passes.toReversed());
 		expect(await runTick(tickOver(db, followers(3)).options)).not.toBeNull();
