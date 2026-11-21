@@ -1,7 +1,9 @@
 # ADR 0005 — Serveur MCP : SDK officiel v2, serveur bas niveau, sans état
 
 - **Statut** : accepté le 2026-11-17. Précisé le 2026-11-21 : un outil peut gérer ses propres
-  transactions (§ « Conséquences », `relancer_passe`, issue #13).
+  transactions (§ « Conséquences », `relancer_passe`, issue #13). Précisé le 2026-11-21 :
+  confirmation par code des outils destructeurs (§ « Décisions », ligne « Confirmation »,
+  issue #14).
 - **Source** : ADR 0001 (« Back-office », « Services partagés », « File d'attente ») ; ADR 0004
   § « Serveur MCP et secrets » ; issue #11, « Décisions verrouillées » (la bibliothèque se choisit à
   l'implémentation et se trace dans un ADR)
@@ -22,6 +24,7 @@ critères d'acceptation).
 | Sans SSE | Quatre voies mènent le gestionnaire à répondre en SSE, chacune fermée. Un échange qui émet un message avant son résultat : `responseMode: "json"` répond toujours d'un seul corps JSON. Le repli sans état de la génération 2025, qui répond en flux SSE d'un message : `legacy: "reject"` le refuse par l'erreur `-32022`. Un flux `subscriptions/listen` : `maxSubscriptions: 0` le refuse avant de l'ouvrir, et le serveur n'annonce aucun `listChanged`, donc aucun client n'en ouvre d'office. GET et DELETE, opérations de session de 2025 : `405`. Le test « sans SSE » de `apps/web/test/point-d-entree.test.ts` passe par chacune, et par un échange nominal. | Accepté le 2026-11-17 |
 | Serveur bas niveau | La fabrique rend un `Server` bas niveau dont l'application écrit `tools/list` et `tools/call`, pas un `McpServer`. Avec `McpServer.registerTool`, une entrée qui échoue au schéma est rejetée par le SDK avant le gestionnaire : la ligne d'audit en erreur ne s'écrirait pas. Le SDK marque `Server` `@deprecated` au profit de `McpServer` pour l'API de haut niveau, et le garde pour les cas avancés : celui-ci en est un. L'enrobage commun de `apps/web/app/mcp/` valide l'entrée (schéma Zod strict), appelle le service et écrit l'audit ; `tools/list` publie, pour chaque outil, son titre, ses annotations et les schémas JSON tirés de ses schémas Zod d'entrée et de sortie. | Accepté le 2026-11-17 |
 | Authentification | Contrôlée dans la route, avant le SDK : en-tête `Authorization: Bearer`, empreintes SHA-256 comparées par `crypto.timingSafeEqual` (ADR 0004). Le SDK ne lit ni ne vérifie aucun jeton. | Accepté le 2026-11-17 |
+| Confirmation | Un outil destructeur au sens de l'ADR 0004 (« Durcissement MCP ») déclare au registre `confirmation`, la description de ce que fera l'appel confirmé ; l'enrobage ajoute à son entrée un `code` facultatif. Sans code valide, rien ne change : la réponse rend la description et un code ; l'appel qui renvoie ce code avec les mêmes paramètres exécute. Le code est `<expiration en ms>.<HMAC-SHA256 en base64url>` du nom de l'outil, des paramètres canoniques sans le code (clés triées) et de l'expiration, 5 minutes après l'émission, sous une clé dérivée de `MCP_TOKEN` par HMAC avec un libellé propre à la confirmation. Rien n'est stocké : changer le jeton invalide les codes en cours, et un code rejoué avant son expiration exécute de nouveau l'appel — le mécanisme suppose donc un outil idempotent, comme `retirer_joueur`. | Accepté le 2026-11-21 (#14) |
 
 **Écartés.** `mcp-handler` 2.x (Vercel Labs) : une surcouche du même SDK v2 (traces OpenTelemetry,
 `withMcpAuth` pour OAuth), sans usage ici avec un jeton fixe. `@modelcontextprotocol/sdk` 1.x :
@@ -38,10 +41,10 @@ réponses SSE, alors que Claude Code négocie la spécification 2026 (« Vérifi
   dont l'audit s'écrit après l'appel —, l'audit, et la sortie structurée : `structuredContent`,
   répété en texte JSON.
 - `destructiveHint` suit la définition de la spécification MCP : un outil dont la mise à jour n'est
-  pas purement additive le porte, comme `modifier_reglages`, qui écrase une valeur. Il ne désigne pas
-  les outils « destructeurs » de l'ADR 0004 (« Durcissement MCP »), qui demandent une confirmation
-  (#14) : `modifier_reglages` n'en demande pas, puisque l'audit garde l'ancienne valeur (#11,
-  « Décisions »).
+  pas purement additive le porte, comme `modifier_reglages`, qui écrase une valeur. Il ne désigne
+  pas les outils « destructeurs » de l'ADR 0004 (« Durcissement MCP »), qui demandent une
+  confirmation (ligne « Confirmation ») : `modifier_reglages` n'en demande pas, puisque l'audit
+  garde l'ancienne valeur (#11, « Décisions »).
 - Seul un client qui négocie la spécification 2026-07-28 se branche ; un client qui ouvre en 2025
   reçoit l'erreur `-32022`, qui nomme la version servie. Claude Code ouvre en 2026 sous un drapeau
   distant actif par défaut. S'il revenait au handshake de 2025 — drapeau coupé, ou
