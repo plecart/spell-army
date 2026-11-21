@@ -1,5 +1,5 @@
-// Le montage commun des tests du serveur MCP : le client officiel branché sur un point d'entrée ou
-// sur le registre réel, et le journal d'audit d'une base.
+// Le montage commun des tests du serveur MCP et du tic : le client officiel branché sur un point
+// d'entrée ou sur le registre réel, le journal d'audit d'une base, et la requête du tic.
 import {
 	type CallToolResult,
 	Client,
@@ -23,6 +23,20 @@ export const registry = createRegistry(() => new FakeFollowerProvider([]));
 export const TOKEN = "t".repeat(32);
 export const AUTHORIZATION = `Bearer ${TOKEN}`;
 export const ENDPOINT_URL = "http://wizard-army.test/api/mcp";
+
+// Secret factice du tic, de 32 octets comme le jeton.
+export const TICK_SECRET = "s".repeat(32);
+
+/** Un `POST` du tic, avec les en-têtes `headers` : par défaut, celui qui présente `TICK_SECRET`. */
+export function tickRequest(
+	headers: Record<string, string> = { authorization: `Bearer ${TICK_SECRET}` },
+): Request {
+	return new Request("http://wizard-army.test/api/tic", {
+		method: "POST",
+		headers,
+	});
+}
+
 // Le client de Claude Code négocie la spécification 2026-07-28 (ADR 0005, « Conséquences »).
 const NEGOTIATING: ClientOptions = { versionNegotiation: { mode: "auto" } };
 
@@ -71,6 +85,11 @@ export function auditRows(db: Executor) {
 	return db.select().from(auditLog);
 }
 
+/** Les lignes d'audit de l'outil `tool`. */
+export async function auditOf(db: Executor, tool: string) {
+	return (await auditRows(db)).filter((row) => row.tool === tool);
+}
+
 // `JSON.stringify` écrit un nombre infini `null` : le corps brut porte `1e999` à la place de cette
 // chaîne, que `JSON.parse` lit `Infinity`.
 export const INFINITE = "__infini__";
@@ -104,6 +123,31 @@ export async function connectToRegistry(provider?: FollowerProvider) {
 		),
 	);
 	await client.listTools();
+	return { db, client };
+}
+
+/**
+ * Appelle `tool` avec `args` sur le registre réel, une base migrée neuve et le fournisseur
+ * `provider` : refusé, une seule ligne d'audit de l'outil, en erreur, garde l'entrée reçue et le
+ * message rendu. Rend la base et le client, pour vérifier que rien n'est écrit.
+ */
+export async function expectRefusal(
+	tool: string,
+	args: Record<string, unknown>,
+	message: string,
+	provider?: FollowerProvider,
+) {
+	const { db, client } = await connectToRegistry(provider);
+	const result = await client.callTool({ name: tool, arguments: args });
+	const rows = await auditOf(db, tool);
+	expect(rows).toEqual([
+		expect.objectContaining({ input: args, succeeded: false }),
+	]);
+	expect(rows[0]?.error).toContain(message);
+	expect(result).toMatchObject({
+		content: [{ type: "text", text: rows[0]?.error }],
+		isError: true,
+	});
 	return { db, client };
 }
 

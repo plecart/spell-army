@@ -5,29 +5,19 @@ import { FakeFollowerProvider, followers } from "joueurs/test/faux-fournisseur";
 import { describe, expect, test, vi } from "vitest";
 import { followerProvider } from "../app/environment.ts";
 import { createTickEndpoint } from "../app/tick.ts";
+import { TICK_SECRET, tickRequest } from "./montage.ts";
 
-// Secret factice de 32 octets, le minimum admis.
-const SECRET = "s".repeat(32);
-const TICK_URL = "http://wizard-army.test/api/tic";
 const INSTANT = expect.stringMatching(
 	/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/,
 );
 const NONE_DISCARDED = { identifiant_invalide: 0, pseudo_invalide: 0 };
 
-/** Le tic sur `db` et le fournisseur `provider`, sous le secret `SECRET`. */
+/** Le tic sur `db` et le fournisseur `provider`, sous le secret `TICK_SECRET`. */
 function tickOn(db: Executor, provider: () => FollowerProvider) {
 	return createTickEndpoint({
-		secret: () => SECRET,
+		secret: () => TICK_SECRET,
 		database: () => db,
 		provider,
-	});
-}
-
-/** Un `POST` du tic, qui présente `secret`. */
-function tick(secret = SECRET): Request {
-	return new Request(TICK_URL, {
-		method: "POST",
-		headers: { authorization: `Bearer ${secret}` },
 	});
 }
 
@@ -40,7 +30,10 @@ describe("tic de l'import, sur la base de test", () => {
 	test("sans CRON_SECRET valide : 401, sans rien lire chez le fournisseur ni rien écrire au journal", async () => {
 		const db = await freshDatabase();
 		const provider = new FakeFollowerProvider(followers(3));
-		const response = await tickOn(db, () => provider)(tick("u".repeat(32)));
+		const response = await tickOn(
+			db,
+			() => provider,
+		)(tickRequest({ authorization: `Bearer ${"u".repeat(32)}` }));
 		expect(response.status).toBe(401);
 		expect(provider.cursors).toEqual([]);
 		expect(await db.$count(importPasses)).toBe(0);
@@ -50,7 +43,7 @@ describe("tic de l'import, sur la base de test", () => {
 		const db = await freshDatabase();
 		const provider = new FakeFollowerProvider(followers(3), { pageSize: 2 });
 		const { status, body } = await read(
-			await tickOn(db, () => provider)(tick()),
+			await tickOn(db, () => provider)(tickRequest()),
 		);
 		expect({ status, body }).toEqual({
 			status: 200,
@@ -92,7 +85,7 @@ describe("tic de l'import, sur la base de test", () => {
 		const db = await freshDatabase();
 		const provider = new FakeFollowerProvider(followers(4), { pageSize: 2 });
 		provider.failingPage = 2;
-		const response = await tickOn(db, () => provider)(tick());
+		const response = await tickOn(db, () => provider)(tickRequest());
 		const text = await response.text();
 		expect(response.status).toBe(500);
 		expect(JSON.parse(text)).toMatchObject({
@@ -124,10 +117,10 @@ describe("tic de l'import, sur la base de test", () => {
 		const provider = new FakeFollowerProvider(followers(3));
 		// Le premier tic part en complète de la semaine ; le second, sous les 7 jours, lit le nombre
 		// d'abonnés pour l'auto-contrôle.
-		expect((await tickOn(db, () => provider)(tick())).status).toBe(200);
+		expect((await tickOn(db, () => provider)(tickRequest())).status).toBe(200);
 		provider.failingFollowerCount = true;
 		const { status, body } = await read(
-			await tickOn(db, () => provider)(tick()),
+			await tickOn(db, () => provider)(tickRequest()),
 		);
 		expect(status).toBe(500);
 		expect(body).toMatchObject({
@@ -140,10 +133,12 @@ describe("tic de l'import, sur la base de test", () => {
 		const db = await freshDatabase();
 		await acquireImportLock(db, new Date());
 		const provider = new FakeFollowerProvider(followers(3));
-		expect(await read(await tickOn(db, () => provider)(tick()))).toEqual({
-			status: 200,
-			body: { message: "passe en cours : ce tic n'a rien fait" },
-		});
+		expect(await read(await tickOn(db, () => provider)(tickRequest()))).toEqual(
+			{
+				status: 200,
+				body: { message: "passe en cours : ce tic n'a rien fait" },
+			},
+		);
 		expect(provider.cursors).toEqual([]);
 		expect(await db.$count(importPasses)).toBe(0);
 	});
@@ -161,7 +156,9 @@ describe("tic de l'import, sur la base de test", () => {
 			vi.stubEnv("INSTAGRAM_ACCOUNT_ID", accountId);
 			const serverLog = vi.spyOn(console, "error").mockReturnValue();
 			const db = await freshDatabase();
-			expect(await read(await tickOn(db, followerProvider)(tick()))).toEqual({
+			expect(
+				await read(await tickOn(db, followerProvider)(tickRequest())),
+			).toEqual({
 				status: 500,
 				body: { message: "configuration de l'import incomplète" },
 			});
@@ -182,7 +179,7 @@ describe("tic de l'import, sur la base de test", () => {
 		const response = await tickOn(
 			db,
 			() => new FakeFollowerProvider(followers(3)),
-		)(tick());
+		)(tickRequest());
 		const text = await response.text();
 		expect({ status: response.status, body: JSON.parse(text) }).toEqual({
 			status: 500,

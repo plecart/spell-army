@@ -1,6 +1,6 @@
 import { setTimeout as sleep } from "node:timers/promises";
 import type { Client } from "@modelcontextprotocol/client";
-import { type Executor, importPasses } from "donnees";
+import { importPasses } from "donnees";
 import { acquireImportLock, listPasses, runTick, writePage } from "joueurs";
 import {
 	FakeFollowerProvider,
@@ -9,8 +9,9 @@ import {
 } from "joueurs/test/faux-fournisseur";
 import { describe, expect, test } from "vitest";
 import {
-	auditRows,
+	auditOf,
 	connectToRegistry,
+	expectRefusal,
 	outputOf,
 	publishedTools,
 } from "./montage.ts";
@@ -36,11 +37,6 @@ const BLOCKED_AFTER_MS = 1_000;
 /** L'instant `hours` heures après `EARLIER`. */
 function hoursLater(hours: number): Date {
 	return new Date(EARLIER.getTime() + hours * HOUR_MS);
-}
-
-/** Les lignes d'audit de l'outil `tool`. */
-async function auditOf(db: Executor, tool: string) {
-	return (await auditRows(db)).filter((row) => row.tool === tool);
 }
 
 async function listing(client: Client, args: Record<string, unknown> = {}) {
@@ -270,17 +266,7 @@ describe("lister_passes", () => {
 	])(
 		"%s : refusé, une ligne d'audit en erreur avec l'entrée reçue",
 		async (_, args, message) => {
-			const { db, client } = await connectToRegistry();
-			const result = await listing(client, args);
-			const rows = await auditOf(db, "lister_passes");
-			expect(rows).toEqual([
-				expect.objectContaining({ input: args, succeeded: false }),
-			]);
-			expect(rows[0]?.error).toContain(message);
-			expect(result).toMatchObject({
-				content: [{ type: "text", text: rows[0]?.error }],
-				isError: true,
-			});
+			await expectRefusal("lister_passes", args, message);
 		},
 	);
 });
@@ -399,20 +385,12 @@ describe("relancer_passe", () => {
 		"%s : refusé, une ligne d'audit en erreur avec l'entrée reçue, rien de lancé",
 		async (_, args, message) => {
 			const provider = new FakeFollowerProvider(followers(3));
-			const { db, client } = await connectToRegistry(provider);
-			const result = await client.callTool({
-				name: "relancer_passe",
-				arguments: args,
-			});
-			const rows = await auditOf(db, "relancer_passe");
-			expect(rows).toEqual([
-				expect.objectContaining({ input: args, succeeded: false }),
-			]);
-			expect(rows[0]?.error).toContain(message);
-			expect(result).toMatchObject({
-				content: [{ type: "text", text: rows[0]?.error }],
-				isError: true,
-			});
+			const { db } = await expectRefusal(
+				"relancer_passe",
+				args,
+				message,
+				provider,
+			);
 			expect(provider.cursors).toEqual([]);
 			expect(await db.$count(importPasses)).toBe(0);
 		},

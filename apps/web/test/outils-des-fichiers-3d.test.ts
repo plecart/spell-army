@@ -13,6 +13,7 @@ import { describe, expect, test } from "vitest";
 import { CLASS } from "./classes.ts";
 import { CONFORMING, DEVIATIONS, NON_CONFORMING } from "./fichiers-3d.ts";
 import {
+	auditOf,
 	auditRows,
 	connectToRegistry,
 	outputOf,
@@ -37,11 +38,6 @@ async function modelsOf(db: Executor) {
 		.select({ id: players.instagramId, model: players.modelFileId })
 		.from(players);
 	return new Map(rows.map(({ id, model }) => [id, model]));
-}
-
-/** Les lignes d'audit de l'outil `tool`. */
-async function auditOf(db: Executor, tool: string) {
-	return (await auditRows(db)).filter((row) => row.tool === tool);
 }
 
 async function deposit(client: Client, args: Record<string, unknown>) {

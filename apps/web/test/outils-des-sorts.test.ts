@@ -24,8 +24,10 @@ import { callTool } from "../app/mcp/tool.ts";
 import { CLASS } from "./classes.ts";
 import { gif, IMAGE_FORMATS, png } from "./images.ts";
 import {
+	auditOf,
 	auditRows,
 	connectToRegistry,
+	expectRefusal,
 	INFINITE,
 	outputOf,
 	publishedTools,
@@ -149,29 +151,6 @@ async function listSpellsThroughTool(client: Client) {
 /** Le sort n° 1 tel que `lister_sorts` le rend. */
 async function firstSpell(client: Client) {
 	return (await listSpellsThroughTool(client))[0];
-}
-
-/**
- * Appelle `tool` avec `args` sur une base neuve : refusé, une seule ligne d'audit de l'outil, en
- * erreur, garde l'entrée reçue et le message rendu. Rend le client, pour vérifier que rien n'est écrit.
- */
-async function expectRefusal(
-	tool: string,
-	args: Record<string, unknown>,
-	message: string,
-): Promise<Client> {
-	const { db, client } = await connectToRegistry();
-	const result = await client.callTool({ name: tool, arguments: args });
-	const rows = (await auditRows(db)).filter((row) => row.tool === tool);
-	expect(rows).toEqual([
-		expect.objectContaining({ input: args, succeeded: false }),
-	]);
-	expect(rows[0]?.error).toContain(message);
-	expect(result).toMatchObject({
-		content: [{ type: "text", text: rows[0]?.error }],
-		isError: true,
-	});
-	return client;
 }
 
 describe("outils des sorts : tools/list", () => {
@@ -331,9 +310,7 @@ describe("ajouter_sort", () => {
 		});
 		expect(outputOf(result)).toEqual(created);
 		expect(await listSpellsThroughTool(client)).toContainEqual(created);
-		expect(
-			(await auditRows(db)).filter(({ tool }) => tool === "ajouter_sort"),
-		).toEqual([
+		expect(await auditOf(db, "ajouter_sort")).toEqual([
 			expect.objectContaining({
 				input: NEW_SPELL,
 				succeeded: true,
@@ -355,9 +332,7 @@ describe("ajouter_sort", () => {
 			arguments: longest,
 		});
 		expect(outputOf(result)).toMatchObject(longest);
-		expect(
-			(await auditRows(db)).filter(({ tool }) => tool === "ajouter_sort"),
-		).toEqual([
+		expect(await auditOf(db, "ajouter_sort")).toEqual([
 			expect.objectContaining({
 				input: longest,
 				after: expect.objectContaining(longest),
@@ -453,7 +428,7 @@ describe("ajouter_sort", () => {
 	])(
 		"%s : refusé, une ligne d'audit en erreur avec l'entrée reçue, rien d'écrit",
 		async (_, args, message) => {
-			const client = await expectRefusal("ajouter_sort", args, message);
+			const { client } = await expectRefusal("ajouter_sort", args, message);
 			expect(await listSpellsThroughTool(client)).toHaveLength(24);
 		},
 	);
@@ -526,9 +501,7 @@ describe("modifier_sort", () => {
 		});
 		expect(outputOf(result)).toEqual(after);
 		expect(await firstSpell(client)).toEqual(after);
-		expect(
-			(await auditRows(db)).filter(({ tool }) => tool === "modifier_sort"),
-		).toEqual([
+		expect(await auditOf(db, "modifier_sort")).toEqual([
 			expect.objectContaining({ input: args, succeeded: true, before, after }),
 		]);
 	});
@@ -607,7 +580,7 @@ describe("modifier_sort", () => {
 	])(
 		"%s : refusé, une ligne d'audit en erreur avec l'entrée reçue, rien d'écrit",
 		async (_, args, message) => {
-			const client = await expectRefusal("modifier_sort", args, message);
+			const { client } = await expectRefusal("modifier_sort", args, message);
 			expect(await firstSpell(client)).toEqual(toolSpell(FIRST));
 		},
 	);
