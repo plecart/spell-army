@@ -1,10 +1,14 @@
 import { type Executor, excludedPlayers, importPasses, players } from "donnees";
 import { freshDatabase } from "donnees/test/base-neuve";
+import { sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import {
+	closeStalePasses,
 	type FollowerEntry,
 	type PassContext,
+	resumeFullPass,
 	runQuickPass,
+	startFullPass,
 	writePage,
 } from "../src/index.ts";
 import { FakeFollowerProvider } from "./faux-fournisseur.ts";
@@ -12,9 +16,9 @@ import { FakeFollowerProvider } from "./faux-fournisseur.ts";
 const T0 = new Date("2026-11-21T10:00:00Z");
 const MINUTE_MS = 60_000;
 
-/** L'instant `minutes` minutes après `T0`. */
-function after(minutes: number): Date {
-	return new Date(T0.getTime() + minutes * MINUTE_MS);
+/** L'instant `minutes` minutes après `from`, `T0` par défaut. */
+function after(minutes: number, from = T0): Date {
+	return new Date(from.getTime() + minutes * MINUTE_MS);
 }
 
 /** `count` abonnés bien formés, d'identifiants consécutifs à partir de `first`. */
@@ -26,27 +30,53 @@ function followers(count: number, first = 1): FollowerEntry[] {
 }
 
 /**
- * Un faux fournisseur de `list`, et le contexte d'une passe sur `db` : son horloge part de `T0` et
- * avance d'une minute à chaque page lue.
+ * Un faux fournisseur de `list`, en pages de `pageSize`, et le contexte d'une passe sur `db` : son
+ * horloge part de `start` et avance d'une minute à chaque page lue ; son budget court jusqu'à
+ * `deadline`, une heure après `start` par défaut.
  */
 function passOver(
 	db: Executor,
 	list: readonly FollowerEntry[],
-	pageSize?: number,
+	{
+		pageSize,
+		start = T0,
+		deadline = after(60, start),
+	}: { pageSize?: number; start?: Date; deadline?: Date } = {},
 ): { provider: FakeFollowerProvider; context: PassContext } {
-	let now = T0.getTime();
+	let now = start.getTime();
 	const provider = new FakeFollowerProvider(list, {
 		pageSize,
 		onPageRead: () => {
 			now += MINUTE_MS;
 		},
 	});
-	return { provider, context: { db, provider, clock: () => new Date(now) } };
+	const clock = () => new Date(now);
+	return { provider, context: { db, provider, clock, deadline } };
 }
 
 /** Le journal des passes, dans l'ordre où elles ont commencé. */
 function readPasses(db: Executor) {
 	return db.select().from(importPasses).orderBy(importPasses.id);
+}
+
+/**
+ * Vérifie que la ligne du journal, toutes colonnes lues en texte, ne porte aucune valeur reçue de
+ * `page`. Les identifiants d'un ou deux chiffres restent de côté : un compteur peut les valoir.
+ */
+async function expectNoReceivedValue(
+	db: Executor,
+	page: readonly FollowerEntry[],
+): Promise<void> {
+	const { rows } = await db.execute<{ pass: string }>(
+		sql`select p::text as pass from import_passes p`,
+	);
+	expect(rows).toHaveLength(1);
+	const received = page
+		.flatMap(({ id, username }) => [id, username])
+		.filter((value) => !/^[0-9]{1,2}$/.test(value));
+	for (const value of received) {
+		expect(rows[0]?.pass).not.toContain(value);
+	}
 }
 
 describe("passe rapide", () => {
@@ -79,7 +109,9 @@ describe("passe rapide", () => {
 		const db = await freshDatabase();
 		await writePage(db, followers(1, 10));
 		await db.insert(excludedPlayers).values({ instagramId: "11" });
-		const { provider, context } = passOver(db, followers(4, 10), 2);
+		const { provider, context } = passOver(db, followers(4, 10), {
+			pageSize: 2,
+		});
 		expect(await runQuickPass(context, "mcp")).toMatchObject({
 			trigger: "mcp",
 			status: "done",
@@ -92,12 +124,166 @@ describe("passe rapide", () => {
 
 	test("la passe rapide s'arrête en fin de liste, même quand sa dernière page ajoute des joueurs", async () => {
 		const db = await freshDatabase();
-		const { provider, context } = passOver(db, followers(3), 2);
+		const { provider, context } = passOver(db, followers(3), { pageSize: 2 });
 		expect(await runQuickPass(context, "tick")).toMatchObject({
 			status: "done",
 			pages: 2,
 			added: 3,
 		});
 		expect(provider.cursors).toEqual([null, provider.cursorOf(2)]);
+	});
+});
+
+describe("passe complète", () => {
+	test("interrompue par le budget après la page 2 sur 5 : notée interrompue, sans erreur, à son curseur ; la reprise lit les pages 3 à 5 seulement et la termine, sur la même ligne du journal", async () => {
+		const db = await freshDatabase();
+		const list = followers(10);
+		const first = passOver(db, list, { pageSize: 2, deadline: after(2) });
+		const interrupted = await startFullPass(first.context, "weekly");
+		expect(first.provider.cursors).toEqual([null, first.provider.cursorOf(2)]);
+		expect(interrupted).toEqual({
+			id: expect.any(Number),
+			kind: "full",
+			trigger: "weekly",
+			status: "interrupted",
+			startedAt: T0,
+			finishedAt: after(2),
+			pages: 2,
+			added: 4,
+			invalidIds: 0,
+			invalidUsernames: 0,
+			error: null,
+			cursor: first.provider.cursorOf(3),
+		});
+
+		const next = passOver(db, list, { pageSize: 2, start: after(60) });
+		const done = await resumeFullPass(next.context);
+		expect(next.provider.cursors).toEqual(
+			[3, 4, 5].map((page) => next.provider.cursorOf(page)),
+		);
+		expect(done).toEqual({
+			...interrupted,
+			status: "done",
+			finishedAt: after(63),
+			pages: 5,
+			added: 10,
+			cursor: null,
+		});
+		expect(await readPasses(db)).toEqual([done]);
+		expect(await db.$count(players)).toBe(10);
+	});
+
+	test("une complète restée en cours, sa fonction tuée, reprend à son curseur sous son déclencheur d'origine", async () => {
+		const db = await freshDatabase();
+		const { provider, context } = passOver(db, followers(10), { pageSize: 2 });
+		await db.insert(importPasses).values({
+			kind: "full",
+			trigger: "self_check",
+			status: "running",
+			startedAt: T0,
+			cursor: provider.cursorOf(4),
+		});
+		expect(await resumeFullPass(context)).toMatchObject({
+			trigger: "self_check",
+			status: "done",
+			pages: 2,
+			added: 4,
+		});
+		expect(provider.cursors).toEqual([
+			provider.cursorOf(4),
+			provider.cursorOf(5),
+		]);
+	});
+
+	test("sans complète à reprendre — une terminée, une rapide en cours —, la reprise ne lit rien et rend null", async () => {
+		const db = await freshDatabase();
+		const { provider, context } = passOver(db, followers(1));
+		await db.insert(importPasses).values([
+			{
+				kind: "full",
+				trigger: "weekly",
+				status: "done",
+				startedAt: T0,
+				finishedAt: T0,
+			},
+			{ kind: "quick", trigger: "tick", status: "running", startedAt: T0 },
+		]);
+		expect(await resumeFullPass(context)).toBeNull();
+		expect(provider.cursors).toEqual([]);
+	});
+
+	test("une complète ne démarre pas tant qu'une autre n'est pas terminée", async () => {
+		const db = await freshDatabase();
+		const { context } = passOver(db, followers(1), { deadline: T0 });
+		await startFullPass(context, "weekly");
+		await expect(startFullPass(context, "mcp")).rejects.toMatchObject({
+			cause: { code: "23505", constraint: "import_passes_one_unfinished_full" },
+		});
+		expect(await db.$count(importPasses)).toBe(1);
+	});
+
+	test("données non fiables : le journal compte les écartées par motif, et aucune colonne de sa ligne ne porte une valeur reçue", async () => {
+		const db = await freshDatabase();
+		const page = [
+			...["12", "abc", "007", "0"].map((id) => ({
+				id,
+				username: `joueur_${id}`,
+			})),
+			{ id: "13", username: "a b" },
+			{ id: "14", username: "a".repeat(31) },
+		];
+		// Une complète : son curseur est la colonne de texte qu'une page écrit.
+		const { context } = passOver(db, page);
+		expect(await startFullPass(context, "mcp")).toMatchObject({
+			status: "done",
+			added: 1,
+			invalidIds: 3,
+			invalidUsernames: 2,
+		});
+		await expectNoReceivedValue(db, page);
+	});
+});
+
+describe("passes restées en cours", () => {
+	test("closeStalePasses interrompt toute passe restée en cours, à l'instant donné, et ne touche pas les autres", async () => {
+		const db = await freshDatabase();
+		const running = { status: "running", startedAt: T0 } as const;
+		const done = {
+			kind: "quick",
+			trigger: "tick",
+			status: "done",
+			startedAt: T0,
+			finishedAt: T0,
+		} as const;
+		await db
+			.insert(importPasses)
+			.values([
+				{ kind: "quick", trigger: "tick", ...running },
+				{ kind: "full", trigger: "weekly", ...running, cursor: "c" },
+				done,
+			]);
+		await closeStalePasses(db, after(10));
+		expect(
+			(await readPasses(db)).map(({ kind, status, finishedAt, cursor }) => ({
+				kind,
+				status,
+				finishedAt,
+				cursor,
+			})),
+		).toEqual([
+			{
+				kind: "quick",
+				status: "interrupted",
+				finishedAt: after(10),
+				cursor: null,
+			},
+			{
+				kind: "full",
+				status: "interrupted",
+				finishedAt: after(10),
+				cursor: "c",
+			},
+			{ kind: "quick", status: "done", finishedAt: T0, cursor: null },
+		]);
 	});
 });
