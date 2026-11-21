@@ -163,6 +163,22 @@ describe("écriture d'une page", () => {
 		expect(eleven?.arrivedAt).not.toBe(first?.arrivedAt);
 	});
 
+	test("deux écritures concurrentes d'un même nouveau joueur : la seconde attend le commit de la première, puis n'ajoute personne, sans erreur", async () => {
+		const db = await freshDatabase();
+		let second: ReturnType<typeof writePage> | undefined;
+		await db.transaction(async (tx) => {
+			expect(await writePage(tx, [entry("12")])).toMatchObject({ added: 1 });
+			// La première écriture n'est pas validée : la seconde ne la voit pas parmi les connus, et son
+			// insertion attend sur la clé primaire.
+			second = writePage(db, [entry("12", "autre")]);
+			await waitForOneLockWaiter(db);
+		});
+		expect(await second).toMatchObject({ added: 0 });
+		expect((await readPlayers(db)).map(({ username }) => username)).toEqual([
+			"joueur_12",
+		]);
+	});
+
 	test("données non fiables : seule l'entrée bien formée est écrite, les écartées comptées par motif", async () => {
 		const db = await freshDatabase();
 		const page = [
