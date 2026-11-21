@@ -3,7 +3,11 @@ export {
 	readCalibrationSettings,
 	updateCalibrationSettings,
 } from "./calibration-settings.ts";
-export { createClient, type Executor } from "./client.ts";
+export {
+	createClient,
+	type Executor,
+	postgresErrorCode,
+} from "./client.ts";
 export {
 	type ModelTarget,
 	type StoredModelFile,
