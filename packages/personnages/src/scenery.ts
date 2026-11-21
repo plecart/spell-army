@@ -247,7 +247,10 @@ export interface Pedestal {
 	 * la base de `centerY + thickness / 2`.
 	 */
 	top: { radius: number; thickness: number; centerY: number; color: string };
-	/** Hauteur des pieds du personnage au-dessus de y = 0 : il flotte au-dessus du socle. */
+	/**
+	 * Hauteur des pieds du personnage au-dessus de y = 0 : il flotte au-dessus du socle, assez près
+	 * pour que ses pieds, vus d'un peu haut, restent au milieu du disque.
+	 */
 	lift: number;
 }
 
@@ -265,6 +268,6 @@ export const PEDESTALS: Readonly<Record<ClassKey, Pedestal>> = perClass(
 			centerY: -0.005,
 			color: CLASS_COLORS[classKey],
 		},
-		lift: 0.07,
+		lift: 0.012,
 	}),
 );
