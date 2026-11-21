@@ -4,8 +4,15 @@
  * chaque forme et l'efficacité du lanceur appartiennent au moteur de combat.
  */
 
-/** Les quatre stats (game design § 1) : Vie, Force, Magie, Vitesse. */
-export type Stat = "life" | "strength" | "magic" | "speed";
+/**
+ * Les quatre stats (game design § 1), dans son ordre : Vie, Force, Magie, Vitesse. Ordre figé :
+ * il départage la meilleure stat d'un lanceur (`power.ts`).
+ */
+export const STATS = ["life", "strength", "magic", "speed"] as const;
+export type Stat = (typeof STATS)[number];
+
+/** Une valeur par stat : celles d'un personnage, leurs sommes sur une armée, celles d'un monstre. */
+export type Stats = Record<Stat, number>;
 
 /**
  * Les huit classes du game design § 1. Doublon assumé du `ClassKey` de `personnages`, mêmes

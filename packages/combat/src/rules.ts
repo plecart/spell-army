@@ -9,7 +9,8 @@ export type EffectCategory = "damage" | "heal" | "lifesteal";
  */
 export const DEFAULT_WEIGHT = 1;
 
-const FULL_RECIPE = 100;
+/** La somme des parts d'une recette, en % : une part se lit sur ce total. */
+export const FULL_RECIPE = 100;
 const MIXED_MAX = 1;
 // L'arrondi binaire des décimaux : 0,34 + 0,56 + 0,1 y vaut 1,0000000000000002.
 const ROUNDING_TOLERANCE = 1e-9;

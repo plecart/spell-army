@@ -17,4 +17,5 @@ export type {
 	Shares,
 	Spell,
 	Stat,
+	Stats,
 } from "./spell.ts";
