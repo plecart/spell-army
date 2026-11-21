@@ -19,6 +19,8 @@ import {
 } from "three";
 
 // Repris de `render_previews.py`, dont les unités et les intensités sont celles de three.js.
+// ponytail: recopiés, sans test qui lie les deux langages ; un fichier de valeurs lu par le script
+// et par ce module si elles bougent encore.
 const FIELD_OF_VIEW = 28; // champ vertical, en degrés
 const CAMERA = [0, 1.24, 6.4] as const;
 const TARGET = [0, 1.12, 0] as const;
