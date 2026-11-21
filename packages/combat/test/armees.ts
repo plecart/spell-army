@@ -10,8 +10,9 @@ export const SEEDS: readonly string[] = Array.from(
 /** Le délai d'un test qui simule des milliers de combats sur des armées de 1 000. */
 export const SIMULATION_TIMEOUT = 120_000;
 
-// Une fabrique pour tout le fichier de test : classe et stats d'une graine se calculent une fois.
-const armies = simulationArmies<Spell>();
+// Une fabrique pour tout le fichier de test, qui garde chaque graine : les tests de l'annexe B
+// mesurent 24 sorts sur les mêmes graines.
+const armies = simulationArmies<Spell>(Number.POSITIVE_INFINITY);
 
 /** L'armée de simulation de la graine `seed` (`simulationArmies`), ses sorts tirés dans `pool`. */
 export function armyOf(

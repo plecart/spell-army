@@ -32,14 +32,14 @@ interface Draw<Spell> {
  * 1 000 personnages calculés par `characterOf` sur les identifiants `seed × 1 000` à
  * `seed × 1 000 + 999`, chacun avec le sort que `drawSpell` lui tire dans la réserve `pool`.
  *
- * Classe et stats se calculent une fois par graine et se gardent tant que la fabrique vit : d'une
- * réserve à l'autre, seuls les sorts changent. Une fabrique par mesure, donc, pour que ce qu'elle
- * garde parte avec elle.
+ * Classe et stats d'une graine gardée servent à ses armées suivantes, d'une réserve à l'autre :
+ * seuls les sorts changent. La fabrique garde les personnages des `keptSeeds` dernières graines
+ * calculées : la dernière seulement par défaut, assez pour une mesure qui tire chaque graine dans
+ * deux réserves à la suite ; `Infinity` pour plusieurs mesures sur les mêmes graines.
  */
-export function simulationArmies<Spell extends NumberedSpell>(): (
-	seed: string,
-	pool: readonly Spell[],
-) => Recruit<Spell>[] {
+export function simulationArmies<Spell extends NumberedSpell>(
+	keptSeeds = 1,
+): (seed: string, pool: readonly Spell[]) => Recruit<Spell>[] {
 	const enlisted = new Map<string, readonly Enlisted[]>();
 	const draws = new WeakMap<readonly Spell[], Draw<Spell>>();
 
@@ -52,6 +52,9 @@ export function simulationArmies<Spell extends NumberedSpell>(): (
 				return { id, characterClass, stats };
 			});
 			enlisted.set(seed, army);
+			if (enlisted.size > keptSeeds) {
+				enlisted.delete(enlisted.keys().next().value as string);
+			}
 		}
 		return army;
 	};

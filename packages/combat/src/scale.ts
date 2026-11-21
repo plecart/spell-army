@@ -30,10 +30,8 @@ const SCALE_PRECISION = 1e-3;
 const SIMULATION_POOL_VERSION = "simulation";
 
 /**
- * La part des combats que l'armée gagne contre le monstre de référence égal à elle : budget = ses
- * stats réelles (game design § 6), dimensionné par `sizeMonster` au profil et au facteur donnés,
- * avec `REFERENCE_ATTACKS` ; chaque combat sur sa graine. Profil neutre et facteur 1 : le monstre
- * « de sa force » du § 6, « Équilibre ».
+ * La part des combats que l'armée gagne contre le monstre de référence égal à elle (`armyWins`),
+ * chaque combat sur sa graine.
  *
  * @throws {RangeError} si l'échantillon ne compte aucun combat.
  */
@@ -42,21 +40,39 @@ export function victoryShare(
 	profile: Profile = NEUTRAL_PROFILE,
 	scale = 1,
 ): number {
-	if (trials.length === 0) {
+	return shareOf(trials.map((trial) => armyWins(trial, profile, scale)));
+}
+
+/**
+ * Vrai si l'armée gagne le combat de sa graine contre le monstre de référence égal à elle : budget =
+ * ses stats réelles (game design § 6), dimensionné par `sizeMonster` au profil et au facteur donnés,
+ * avec `REFERENCE_ATTACKS`. Profil neutre et facteur 1 : le monstre « de sa force » du § 6,
+ * « Équilibre ».
+ */
+export function armyWins(
+	{ seed, army }: Trial,
+	profile: Profile = NEUTRAL_PROFILE,
+	scale = 1,
+): boolean {
+	const log = fight({
+		army,
+		monster: referenceMonster(army, profile, scale),
+		seed,
+		poolVersion: SIMULATION_POOL_VERSION,
+	});
+	return log.summary.outcome === "victory";
+}
+
+/**
+ * La part des victoires parmi `outcomes`, de 0 à 1.
+ *
+ * @throws {RangeError} si l'échantillon ne compte aucun combat.
+ */
+export function shareOf(outcomes: readonly boolean[]): number {
+	if (outcomes.length === 0) {
 		throw new RangeError("l'échantillon doit compter au moins une graine");
 	}
-	let victories = 0;
-	for (const { seed, army } of trials) {
-		const monster = referenceMonster(army, profile, scale);
-		const log = fight({
-			army,
-			monster,
-			seed,
-			poolVersion: SIMULATION_POOL_VERSION,
-		});
-		if (log.summary.outcome === "victory") victories += 1;
-	}
-	return victories / trials.length;
+	return outcomes.filter(Boolean).length / outcomes.length;
 }
 
 /**

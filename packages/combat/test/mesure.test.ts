@@ -49,6 +49,27 @@ describe("la mesure d'un sort candidat", () => {
 		});
 	});
 
+	test("graine après graine, l'armée se tire avec puis sans le candidat : une seule graine à la fois", () => {
+		const calls: string[] = [];
+
+		measureSpell({
+			pool: [spellNumbered(1)],
+			candidate: spellNumbered(6),
+			seeds: ["1", "2"],
+			armyOf: (seed, pool) => {
+				calls.push(`${seed} : ${pool.map(({ name }) => name).join(" + ")}`);
+				return armyOf(seed, pool);
+			},
+		});
+
+		expect(calls).toEqual([
+			"1 : Coup d'épée + Boule de feu",
+			"1 : Coup d'épée",
+			"2 : Coup d'épée + Boule de feu",
+			"2 : Coup d'épée",
+		]);
+	});
+
 	test("un échantillon vide est refusé", () => {
 		expect(() =>
 			measureSpell({

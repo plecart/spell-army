@@ -54,9 +54,9 @@ const modification = z
 
 // L'échantillon de mesurer_sort : les graines 1 à 2 000, comme l'équilibre (issue #19, critère
 // « Équilibre »). Relevé le 2026-11-21 sur le poste de développement (Node 24.3), deux appels par
-// `callTool` : 13,3 et 12,6 s, de l'ordre de la dizaine de secondes, loin des 300 s de
+// `callTool` : 14,3 et 13,7 s, de l'ordre de la dizaine de secondes, loin des 300 s de
 // `maxDuration` de la route MCP même sur une fonction trois fois plus lente ; un pic de mémoire de
-// l'ordre de 0,8 Go.
+// 0,3 Go pour tout le processus de test, la mesure ne gardant qu'une armée à la fois.
 const MEASURED_SEEDS = 2000;
 
 const share = z.number().min(0).max(1);
