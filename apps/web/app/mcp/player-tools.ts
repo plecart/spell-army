@@ -3,6 +3,10 @@ import {
 	type FoundPlayer,
 	giveSpell,
 	MAX_FOUND_PLAYERS,
+	previewRemoval,
+	type RemovalEffect,
+	type RemovalPreview,
+	removePlayer,
 	searchPlayers,
 } from "joueurs";
 import { z } from "zod";
@@ -29,6 +33,19 @@ const gift = z.strictObject({
 		.min(1)
 		.describe("Le numéro du sort à donner, tel que lister_sorts le rend."),
 });
+
+const removal = z.strictObject({
+	identifiant: instagramId.describe(
+		"L'identifiant à retirer, d'un joueur ou non, tel que chercher_joueur le rend ; jamais un pseudo.",
+	),
+});
+
+// Le nom de chaque effet d'un retrait dans les outils.
+const REMOVAL_EFFECTS = {
+	removed: "joueur_retire",
+	excluded: "identifiant_exclu",
+	already_excluded: "deja_exclu",
+} as const satisfies Record<RemovalEffect, string>;
 
 const toolPlayer = z.strictObject({
 	identifiant: instagramId,
@@ -92,5 +109,53 @@ export const giveSpellTool: McpTool<typeof gift> = {
 		const { before, after } = await giveSpell(executor, identifiant, sort);
 		const output = { identifiant, sort: after };
 		return { output, before: { identifiant, sort: before }, after: output };
+	},
+};
+
+/**
+ * Ce que fera le retrait de `identifiant` d'après `preview`, pour le mainteneur, pseudo compris :
+ * rendue à Claude, cette description n'entre dans aucune ligne d'audit.
+ */
+function describeRemoval(identifiant: string, preview: RemovalPreview): string {
+	switch (preview.effect) {
+		case "removed":
+			return `Supprimera le joueur @${preview.username} (identifiant ${identifiant}) : sa ligne entière, avec sa date d'arrivée, son sort et son modèle ; et exclura définitivement son identifiant de l'import, qui ne le recréera jamais. Sans annulation.`;
+		case "excluded":
+			return `Aucun joueur d'identifiant ${identifiant} : exclura seulement cet identifiant, définitivement, de l'import, qui n'en créera jamais le joueur. Sans annulation.`;
+		case "already_excluded":
+			return `L'identifiant ${identifiant} est déjà exclu, sans joueur : rien à faire.`;
+	}
+}
+
+/**
+ * `retirer_joueur` (ADR 0003, « RGPD »), outil destructeur : l'enrobage exige un code de
+ * confirmation (ADR 0005, « Décisions », ligne « Confirmation »), et `confirmation` décrit le
+ * retrait d'après `previewRemoval`. `destructiveHint` : il supprime une ligne ; `idempotentHint` :
+ * N retraits identiques laissent le même état, d'où un code rejoué sans effet de plus. Aucun pseudo
+ * dans sa sortie ni dans son audit, qui garde l'entrée et l'après ; la description de la
+ * confirmation, rendue à Claude, le nomme.
+ */
+export const removePlayerTool: McpTool<typeof removal> = {
+	name: "retirer_joueur",
+	title: "Retirer un joueur",
+	description:
+		"Retire un joueur, désigné par son identifiant, jamais par son pseudo : supprime sa ligne, pseudo, date d'arrivée, sort et modèle compris, et exclut son identifiant de l'import, qui ne le recrée jamais. Un identifiant sans joueur est seulement exclu ; un identifiant déjà exclu ne change rien. Sans annulation. Rend l'identifiant et l'effet : joueur_retire, identifiant_exclu ou deja_exclu.",
+	annotations: {
+		readOnlyHint: false,
+		destructiveHint: true,
+		idempotentHint: true,
+		openWorldHint: false,
+	},
+	input: removal,
+	output: z.strictObject({
+		identifiant: instagramId,
+		effet: z.enum(REMOVAL_EFFECTS),
+	}),
+	confirmation: async (executor, { identifiant }) =>
+		describeRemoval(identifiant, await previewRemoval(executor, identifiant)),
+	run: async (executor, { identifiant }) => {
+		const effect = await removePlayer(executor, identifiant);
+		const output = { identifiant, effet: REMOVAL_EFFECTS[effect] };
+		return { output, after: output };
 	},
 };

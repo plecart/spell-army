@@ -1,5 +1,6 @@
 // Le montage commun des tests du serveur MCP et du tic : le client officiel branché sur un point
-// d'entrée ou sur le registre réel, le journal d'audit d'une base, et la requête du tic.
+// d'entrée ou sur le registre réel, le journal d'audit d'une base, la requête du tic, et les codes
+// de confirmation des outils destructeurs.
 import {
 	type CallToolResult,
 	Client,
@@ -11,7 +12,7 @@ import { auditLog, type Executor } from "donnees";
 import { freshDatabase } from "donnees/test/base-neuve";
 import type { FollowerProvider } from "joueurs";
 import { FakeFollowerProvider } from "joueurs/test/faux-fournisseur";
-import { expect, onTestFinished } from "vitest";
+import { expect, onTestFinished, vi } from "vitest";
 import { createRegistry } from "../app/mcp/registry.ts";
 import { createMcpEndpoint } from "../app/mcp/server.ts";
 import { listTools } from "../app/mcp/tool.ts";
@@ -168,4 +169,54 @@ export function outputOf({
 	}
 	expect(structuredContent).toEqual(JSON.parse(block.text));
 	return structuredContent;
+}
+
+// La durée de validité d'un code de confirmation, 5 minutes (issue #14), et le refus d'un code
+// invalide, qui précède la description.
+export const CODE_LIFETIME_MS = 5 * 60_000;
+export const REFUSED_CODE =
+	"Code refusé (périmé, modifié ou obtenu pour d'autres paramètres) : rien n'a été fait.";
+
+const BASE64URL =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+/** Ce que rend l'appel sans exécution d'un outil confirmable. */
+export interface Confirmation {
+	description: string;
+	code: string;
+	expiration: string;
+}
+
+/** La confirmation que rend un appel sans exécution, sa sortie `{ confirmation }`. */
+export function confirmationOf(result: CallToolResult): Confirmation {
+	return (outputOf(result) as { confirmation: Confirmation }).confirmation;
+}
+
+/** Le code que rend l'appel sans code de l'outil `name` avec `args`. */
+export async function codeFor(
+	client: Client,
+	name: string,
+	args: object,
+): Promise<string> {
+	return confirmationOf(await client.callTool({ name, arguments: { ...args } }))
+		.code;
+}
+
+/**
+ * `code`, le caractère d'index `index` — négatif, depuis la fin — remplacé par son voisin de
+ * base64url, qui n'en diffère que par le bit de poids faible.
+ */
+export function flipLowBit(code: string, index: number): string {
+	const at = index < 0 ? code.length + index : index;
+	const digit = BASE64URL.indexOf(code.charAt(at));
+	return code.slice(0, at) + BASE64URL.charAt(digit ^ 1) + code.slice(at + 1);
+}
+
+/** Arrête l'horloge de `Date` seule à `at` : `pg` et testcontainers gardent les vraies minuteries. */
+export function freezeDate(at: number) {
+	vi.useFakeTimers({ toFake: ["Date"] });
+	vi.setSystemTime(at);
+	onTestFinished(() => {
+		vi.useRealTimers();
+	});
 }

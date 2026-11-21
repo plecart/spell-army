@@ -1,23 +1,28 @@
-import type { CallToolResult, Client } from "@modelcontextprotocol/client";
+import type { Client } from "@modelcontextprotocol/client";
 import type { Executor } from "donnees";
 import { freshDatabase } from "donnees/test/base-neuve";
-import { describe, expect, onTestFinished, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { z } from "zod";
 import { confirmationKey } from "../app/mcp/confirmation.ts";
 import { createMcpEndpoint } from "../app/mcp/server.ts";
 import { callTool, listTools, type McpTool } from "../app/mcp/tool.ts";
 import {
 	auditRows,
+	CODE_LIFETIME_MS,
+	type Confirmation,
+	codeFor,
+	confirmationOf,
 	connectClient,
+	flipLowBit,
+	freezeDate,
 	outputOf,
+	REFUSED_CODE,
 	registry,
 	type Serve,
 	TOKEN,
 } from "./montage.ts";
 
-// La durée de validité d'un code, 5 minutes (issue #14), et l'instant où les tests qui la mesurent
-// arrêtent l'horloge de `Date`.
-const LIFETIME_MS = 5 * 60_000;
+// L'instant où les tests qui mesurent la durée d'un code arrêtent l'horloge de `Date`.
 const NOW = Date.UTC(2026, 10, 21, 10);
 
 // Un autre jeton admis, de 32 octets comme `TOKEN`.
@@ -25,11 +30,7 @@ const OTHER_TOKEN = "u".repeat(32);
 
 // Un code : `<expiration en ms depuis l'époque>.<HMAC-SHA256 en base64url>`.
 const CODE = /^([0-9]+)\.([A-Za-z0-9_-]{43})$/;
-const BASE64URL =
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-const REFUSED =
-	"Code refusé (périmé, modifié ou obtenu pour d'autres paramètres) : rien n'a été fait.";
 const NO_KEY =
 	"Confirmation impossible : aucune clé de confirmation, rien n'a été fait.";
 const NOTICE =
@@ -96,45 +97,9 @@ async function confirmableEndpoint() {
 	return { db, tools, client, serve };
 }
 
-interface Confirmation {
-	description: string;
-	code: string;
-	expiration: string;
-}
-
-/** La confirmation que rend un appel sans exécution. */
-function confirmationOf(result: CallToolResult): Confirmation {
-	return (outputOf(result) as { confirmation: Confirmation }).confirmation;
-}
-
-/** Le code que rend l'appel sans code de `name` avec `args`. */
-async function codeFor(client: Client, name: string, args: object = ARGS) {
-	return confirmationOf(await client.callTool({ name, arguments: { ...args } }))
-		.code;
-}
-
 /** Appelle `effacer` avec `ARGS` et `code`. */
 function erase(client: Client, code: string) {
 	return client.callTool({ name: "effacer", arguments: { ...ARGS, code } });
-}
-
-/**
- * `code`, le caractère d'index `index` — négatif, depuis la fin — remplacé par son voisin de
- * base64url, qui n'en diffère que par le bit de poids faible.
- */
-function flipLowBit(code: string, index: number): string {
-	const at = index < 0 ? code.length + index : index;
-	const digit = BASE64URL.indexOf(code.charAt(at));
-	return code.slice(0, at) + BASE64URL.charAt(digit ^ 1) + code.slice(at + 1);
-}
-
-/** Arrête l'horloge de `Date` seule à `at` : `pg` et testcontainers gardent les vraies minuteries. */
-function freezeDate(at: number) {
-	vi.useFakeTimers({ toFake: ["Date"] });
-	vi.setSystemTime(at);
-	onTestFinished(() => {
-		vi.useRealTimers();
-	});
 }
 
 describe("confirmation par code d'un outil destructeur", () => {
@@ -148,11 +113,11 @@ describe("confirmation par code d'un outil destructeur", () => {
 			confirmation: {
 				description: DESCRIPTION,
 				code: expect.stringMatching(CODE),
-				expiration: new Date(NOW + LIFETIME_MS).toISOString(),
+				expiration: new Date(NOW + CODE_LIFETIME_MS).toISOString(),
 			},
 		});
 		const { code } = (output as { confirmation: Confirmation }).confirmation;
-		expect(CODE.exec(code)?.[1]).toBe(String(NOW + LIFETIME_MS));
+		expect(CODE.exec(code)?.[1]).toBe(String(NOW + CODE_LIFETIME_MS));
 		expect(tools.erase.run).not.toHaveBeenCalled();
 		expect(await auditRows(db)).toEqual([
 			expect.objectContaining({
@@ -168,7 +133,7 @@ describe("confirmation par code d'un outil destructeur", () => {
 
 	test("avec le code rendu, mêmes paramètres : exécuté une fois, sans le code ; la sortie rend son résultat, l'audit son avant et son après", async () => {
 		const { db, tools, client } = await confirmableEndpoint();
-		const code = await codeFor(client, "effacer");
+		const code = await codeFor(client, "effacer", ARGS);
 		expect(outputOf(await erase(client, code))).toEqual({
 			resultat: { effacee: "c" },
 		});
@@ -202,22 +167,26 @@ describe("confirmation par code d'un outil destructeur", () => {
 		],
 		[
 			"obtenu pour un autre outil confirmable, aux mêmes paramètres",
-			({ client }) => codeFor(client, "raser"),
+			({ client }) => codeFor(client, "raser", ARGS),
 		],
 		[
 			"au premier caractère de l'HMAC changé",
-			async ({ client }) => flipLowBit(await codeFor(client, "effacer"), -43),
+			async ({ client }) =>
+				flipLowBit(await codeFor(client, "effacer", ARGS), -43),
 		],
 		[
 			// Ses deux bits de poids faible ne portent rien : il se décode en les mêmes 32 octets
 			// (Node 24.3, mesuré le 2026-11-21).
 			"au dernier caractère de l'HMAC changé pour un voisin qui se décode en les mêmes octets",
-			async ({ client }) => flipLowBit(await codeFor(client, "effacer"), -1),
+			async ({ client }) =>
+				flipLowBit(await codeFor(client, "effacer", ARGS), -1),
 		],
 		[
 			"à l'expiration repoussée d'une milliseconde",
 			async ({ client }) => {
-				const [expiration, mac] = (await codeFor(client, "effacer")).split(".");
+				const [expiration, mac] = (
+					await codeFor(client, "effacer", ARGS)
+				).split(".");
 				return `${Number(expiration) + 1}.${mac}`;
 			},
 		],
@@ -230,6 +199,7 @@ describe("confirmation par code d'un outil destructeur", () => {
 						authorization: `Bearer ${OTHER_TOKEN}`,
 					}),
 					"effacer",
+					ARGS,
 				),
 		],
 	])(
@@ -238,7 +208,7 @@ describe("confirmation par code d'un outil destructeur", () => {
 			const { db, tools, client, serve } = await confirmableEndpoint();
 			const code = await refusedCode({ client, serve });
 			expect(confirmationOf(await erase(client, code))).toEqual({
-				description: `${REFUSED} ${DESCRIPTION}`,
+				description: `${REFUSED_CODE} ${DESCRIPTION}`,
 				code: expect.stringMatching(CODE),
 				expiration: expect.any(String),
 			});
@@ -266,15 +236,15 @@ describe("confirmation par code d'un outil destructeur", () => {
 			0,
 			{
 				confirmation: expect.objectContaining({
-					description: `${REFUSED} ${DESCRIPTION}`,
+					description: `${REFUSED_CODE} ${DESCRIPTION}`,
 				}),
 			},
 		],
 	])("%s", async (_, lateMs, runs, output) => {
 		freezeDate(NOW);
 		const { tools, client } = await confirmableEndpoint();
-		const code = await codeFor(client, "effacer");
-		vi.setSystemTime(NOW + LIFETIME_MS + lateMs);
+		const code = await codeFor(client, "effacer", ARGS);
+		vi.setSystemTime(NOW + CODE_LIFETIME_MS + lateMs);
 		expect(outputOf(await erase(client, code))).toEqual(output);
 		expect(tools.erase.run).toHaveBeenCalledTimes(runs);
 	});
@@ -295,7 +265,7 @@ describe("confirmation par code d'un outil destructeur", () => {
 
 	test("limite assumée, rien n'étant stocké : un code rejoué avant son expiration exécute de nouveau l'appel", async () => {
 		const { tools, client } = await confirmableEndpoint();
-		const code = await codeFor(client, "effacer");
+		const code = await codeFor(client, "effacer", ARGS);
 		for (const _ of [1, 2]) {
 			expect(outputOf(await erase(client, code))).toEqual({
 				resultat: { effacee: "c" },

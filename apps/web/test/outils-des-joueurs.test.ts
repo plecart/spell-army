@@ -1,6 +1,7 @@
 import type { Client } from "@modelcontextprotocol/client";
 import {
 	type Executor,
+	excludedPlayers,
 	INSTAGRAM_ID_PATTERN,
 	INSTAGRAM_USERNAME_PATTERN,
 	players,
@@ -8,20 +9,26 @@ import {
 	readSpell,
 	updateSpell,
 } from "donnees";
-import { writePage } from "joueurs";
-import { entry } from "joueurs/test/faux-fournisseur";
+import { type FollowerProvider, removePlayer, writePage } from "joueurs";
+import { entry, FakeFollowerProvider } from "joueurs/test/faux-fournisseur";
 import { characterOf, drawSpell } from "personnages";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { CLASS } from "./classes.ts";
 import {
 	auditOf,
+	CODE_LIFETIME_MS,
+	codeFor,
+	confirmationOf,
 	connectToRegistry,
 	expectRefusal,
+	flipLowBit,
+	freezeDate,
 	outputOf,
 	publishedTools,
+	REFUSED_CODE,
 } from "./montage.ts";
 
-const PLAYER_TOOLS = ["chercher_joueur", "donner_sort"];
+const PLAYER_TOOLS = ["chercher_joueur", "donner_sort", "retirer_joueur"];
 const nonBlank = expect.stringMatching(/\S/);
 
 async function search(client: Client, args: Record<string, unknown>) {
@@ -70,7 +77,7 @@ function patternsOf(schema: unknown, pointer = "#"): [string, string][] {
 }
 
 describe("outils des joueurs : tools/list", () => {
-	test("publie chercher_joueur en lecture seule et donner_sort, qui écrase le sort du joueur ; des schémas de sortie stricts, chaque champ d'entrée décrit", () => {
+	test("publie chercher_joueur en lecture seule, donner_sort, qui écrase le sort du joueur, et retirer_joueur, qui supprime sa ligne, avec le code de la confirmation ; des schémas de sortie stricts, chaque champ d'entrée décrit", () => {
 		const strict = expect.objectContaining({
 			type: "object",
 			additionalProperties: false,
@@ -115,9 +122,23 @@ describe("outils des joueurs : tools/list", () => {
 				fields: ["identifiant", "sort"].map((field) => [field, nonBlank]),
 				outputSchema: strict,
 			},
+			{
+				name: "retirer_joueur",
+				title: "Retirer un joueur",
+				annotations: {
+					readOnlyHint: false,
+					destructiveHint: true,
+					idempotentHint: true,
+					openWorldHint: false,
+				},
+				fields: ["identifiant", "code"].map((field) => [field, nonBlank]),
+				outputSchema: strict,
+			},
 		]);
 	});
 
+	// Chaque motif publié, à toute profondeur : celui d'un champ qui le perdrait manquerait. L'enveloppe
+	// de confirmation de retirer_joueur en ajoute un, celui de l'ISO 8601 de `z.iso.datetime()`.
 	test("les schémas de sortie gardent la forme Instagram de chaque identifiant et de chaque pseudo", () => {
 		expect(
 			publishedTools(PLAYER_TOOLS).flatMap(({ name, outputSchema }) =>
@@ -139,6 +160,16 @@ describe("outils des joueurs : tools/list", () => {
 				INSTAGRAM_USERNAME_PATTERN.source,
 			],
 			["donner_sort", "#/properties/identifiant", INSTAGRAM_ID_PATTERN.source],
+			[
+				"retirer_joueur",
+				"#/properties/confirmation/properties/expiration",
+				expect.any(String),
+			],
+			[
+				"retirer_joueur",
+				"#/properties/resultat/properties/identifiant",
+				INSTAGRAM_ID_PATTERN.source,
+			],
 		]);
 	});
 });
@@ -292,6 +323,246 @@ describe("donner_sort", () => {
 		"%s : refusé, une ligne d'audit en erreur avec l'entrée reçue",
 		async (_, args, message) => {
 			await expectRefusal("donner_sort", args, message);
+		},
+	);
+
+	test("un joueur retiré : refusé comme un joueur absent, la base inchangée", async () => {
+		const { db, client } = await connectToRegistry();
+		await writePage(db, [entry(TARGET), entry(WITNESS)]);
+		await removePlayer(db, TARGET);
+		const before = await readPlayers(db);
+		expect(await give(client, { identifiant: TARGET, sort: 1 })).toMatchObject({
+			content: [
+				{
+					type: "text",
+					text: "Aucun joueur d'identifiant 10 : rien n'a changé.",
+				},
+			],
+			isError: true,
+		});
+		expect(await readPlayers(db)).toEqual(before);
+	});
+});
+
+describe("retirer_joueur", () => {
+	// Le joueur retiré, au pseudo qu'aucune sortie ni ligne d'audit ne garde, un témoin qui reste,
+	// un identifiant sans joueur et un identifiant déjà exclu.
+	const TARGET = "10";
+	const PSEUDO = "pseudo_a_effacer";
+	const WITNESS = "11";
+	const NON_PLAYER = "12";
+	const EXCLUDED = "13";
+	const LIST = [entry(TARGET, PSEUDO), entry(WITNESS)];
+
+	const nothing = async () => {};
+	const excludeOne = (db: Executor) =>
+		db.insert(excludedPlayers).values({ instagramId: EXCLUDED });
+
+	function remove(client: Client, args: Record<string, unknown>) {
+		return client.callTool({ name: "retirer_joueur", arguments: args });
+	}
+
+	/** Le retrait de `identifiant`, confirmé par le code de l'appel sans code. */
+	async function confirmedRemoval(client: Client, identifiant: string) {
+		const code = await codeFor(client, "retirer_joueur", { identifiant });
+		return remove(client, { identifiant, code });
+	}
+
+	/** Les joueurs, toutes colonnes, et les identifiants exclus. */
+	async function stateOf(db: Executor) {
+		const exclusions = await db
+			.select()
+			.from(excludedPlayers)
+			.orderBy(excludedPlayers.instagramId);
+		return {
+			joueurs: await readPlayers(db),
+			exclus: exclusions.map(({ instagramId }) => instagramId),
+		};
+	}
+
+	/** Les identifiants des joueurs et des exclus. */
+	async function idsOf(db: Executor) {
+		const { joueurs, exclus } = await stateOf(db);
+		return { joueurs: joueurs.map(({ instagramId }) => instagramId), exclus };
+	}
+
+	/**
+	 * Le registre réel, sur une base neuve où `TARGET` et le témoin sont inscrits, l'identifiant
+	 * dans l'état de `setup`, et sur le fournisseur `provider`.
+	 */
+	async function registryWithPlayers(
+		setup: (db: Executor) => Promise<unknown> = nothing,
+		provider?: FollowerProvider,
+	) {
+		const { db, client } = await connectToRegistry(provider);
+		await writePage(db, LIST);
+		await setup(db);
+		return { db, client };
+	}
+
+	test.each<[string, (db: Executor) => Promise<unknown>, string, string]>([
+		[
+			"d'un joueur : la suppression de sa ligne et l'exclusion de son identifiant",
+			nothing,
+			TARGET,
+			"Supprimera le joueur @pseudo_a_effacer (identifiant 10) : sa ligne entière, avec sa date d'arrivée, son sort et son modèle ; et exclura définitivement son identifiant de l'import, qui ne le recréera jamais. Sans annulation.",
+		],
+		[
+			"d'un identifiant sans joueur : son exclusion seule",
+			nothing,
+			NON_PLAYER,
+			"Aucun joueur d'identifiant 12 : exclura seulement cet identifiant, définitivement, de l'import, qui n'en créera jamais le joueur. Sans annulation.",
+		],
+		[
+			"d'un identifiant déjà exclu : rien à faire",
+			excludeOne,
+			EXCLUDED,
+			"L'identifiant 13 est déjà exclu, sans joueur : rien à faire.",
+		],
+	])(
+		"sans code, le retrait %s : décrit, avec un code ; joueurs et exclus inchangés",
+		async (_, setup, identifiant, description) => {
+			const { db, client } = await registryWithPlayers(setup);
+			const before = await stateOf(db);
+			expect(confirmationOf(await remove(client, { identifiant }))).toEqual({
+				description,
+				code: expect.any(String),
+				expiration: expect.any(String),
+			});
+			expect(await stateOf(db)).toEqual(before);
+		},
+	);
+
+	test.each<[string, (client: Client) => Promise<string>]>([
+		[
+			"obtenu pour un autre identifiant",
+			(client) => codeFor(client, "retirer_joueur", { identifiant: WITNESS }),
+		],
+		[
+			"modifié",
+			async (client) =>
+				flipLowBit(
+					await codeFor(client, "retirer_joueur", { identifiant: TARGET }),
+					-43,
+				),
+		],
+		[
+			"de plus de 5 minutes",
+			async (client) => {
+				const issuedAt = Date.now();
+				freezeDate(issuedAt);
+				const code = await codeFor(client, "retirer_joueur", {
+					identifiant: TARGET,
+				});
+				vi.setSystemTime(issuedAt + CODE_LIFETIME_MS + 1);
+				return code;
+			},
+		],
+	])("un code %s : refusé, rien ne change", async (_, refusedCode) => {
+		const { db, client } = await registryWithPlayers();
+		const before = await stateOf(db);
+		const code = await refusedCode(client);
+		const { description } = confirmationOf(
+			await remove(client, { identifiant: TARGET, code }),
+		);
+		expect(description.startsWith(`${REFUSED_CODE} Supprimera`)).toBe(true);
+		expect(await stateOf(db)).toEqual(before);
+	});
+
+	test.each<
+		[
+			string,
+			(db: Executor) => Promise<unknown>,
+			string,
+			string,
+			Awaited<ReturnType<typeof idsOf>>,
+		]
+	>([
+		[
+			"d'un joueur : sa ligne supprimée, son identifiant exclu",
+			nothing,
+			TARGET,
+			"joueur_retire",
+			{ joueurs: [WITNESS], exclus: [TARGET] },
+		],
+		[
+			"d'un identifiant sans joueur : il est seulement exclu",
+			nothing,
+			NON_PLAYER,
+			"identifiant_exclu",
+			{ joueurs: [TARGET, WITNESS], exclus: [NON_PLAYER] },
+		],
+		[
+			"d'un identifiant déjà exclu : rien à faire, sans erreur",
+			excludeOne,
+			EXCLUDED,
+			"deja_exclu",
+			{ joueurs: [TARGET, WITNESS], exclus: [EXCLUDED] },
+		],
+	])(
+		"confirmé, le retrait %s",
+		async (_, setup, identifiant, effet, expected) => {
+			const { db, client } = await registryWithPlayers(setup);
+			expect(outputOf(await confirmedRemoval(client, identifiant))).toEqual({
+				resultat: { identifiant, effet },
+			});
+			expect(await idsOf(db)).toEqual(expected);
+		},
+	);
+
+	test("une ligne d'audit par appel, sans code, au code refusé ou confirmé : aucune ne garde le pseudo, que seule la description rendue nomme", async () => {
+		const { db, client } = await registryWithPlayers();
+		const { description } = confirmationOf(
+			await remove(client, { identifiant: TARGET }),
+		);
+		const refused = await codeFor(client, "retirer_joueur", {
+			identifiant: WITNESS,
+		});
+		await remove(client, { identifiant: TARGET, code: refused });
+		await confirmedRemoval(client, TARGET);
+		expect(description).toContain(`@${PSEUDO}`);
+		const rows = await auditOf(db, "retirer_joueur");
+		expect(
+			rows.map(({ input, succeeded, after }) => [input, succeeded, after]),
+		).toEqual([
+			[{ identifiant: TARGET }, true, null],
+			[{ identifiant: WITNESS }, true, null],
+			[{ identifiant: TARGET, code: refused }, true, null],
+			[{ identifiant: TARGET }, true, null],
+			[
+				{ identifiant: TARGET, code: expect.any(String) },
+				true,
+				{ identifiant: TARGET, effet: "joueur_retire" },
+			],
+		]);
+		expect(JSON.stringify(rows)).not.toContain(PSEUDO);
+	});
+
+	test("retiré puis toujours abonné : relancer_passe sur un fournisseur qui le liste encore ne le recrée pas", async () => {
+		const { db, client } = await registryWithPlayers(
+			nothing,
+			new FakeFollowerProvider(LIST),
+		);
+		outputOf(await confirmedRemoval(client, TARGET));
+		const pass = await client.callTool({
+			name: "relancer_passe",
+			arguments: { type: "rapide" },
+		});
+		expect(outputOf(pass)).toMatchObject({ etat: "terminee", ajouts: 0 });
+		expect(await idsOf(db)).toEqual({ joueurs: [WITNESS], exclus: [TARGET] });
+	});
+
+	test.each<[string, Record<string, unknown>, string]>([
+		[
+			"un champ inconnu",
+			{ identifiant: TARGET, pseudo: "a" },
+			'Unrecognized key: "pseudo"',
+		],
+		["un identifiant à zéro de tête", { identifiant: "007" }, "Invalid string"],
+	])(
+		"%s : refusé, une ligne d'audit en erreur avec l'entrée reçue",
+		async (_, args, message) => {
+			await expectRefusal("retirer_joueur", args, message);
 		},
 	);
 });

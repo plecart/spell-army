@@ -86,6 +86,16 @@ pour chacun, l'identifiant, le pseudo, la classe, le numéro et le nom du sort, 
 poids 0 compris : un tel sort ne se tire jamais, il ne se donne qu'ainsi. Il refuse un joueur absent
 et un sort inexistant sans rien changer, et le journal d'audit garde l'ancien numéro.
 
+`retirer_joueur` retire un joueur, désigné par son identifiant, jamais par son pseudo (ADR 0003,
+« RGPD ») : sa ligne est supprimée, pseudo, date d'arrivée, sort et modèle compris, et son
+identifiant exclu de l'import, qui ne le recrée jamais ; un identifiant sans joueur est seulement
+exclu, un identifiant déjà exclu ne change rien. Il n'a pas d'annulation, et se confirme en deux
+appels, comme tout outil destructeur (`docs/adr/0005-serveur-mcp.md`, ligne « Confirmation ») : le
+premier, sans code, ne change rien et rend la description de ce qui sera fait, pseudo compris, et un
+code valable 5 minutes ; Claude la montre au mainteneur, et ne renvoie le code, avec le même
+identifiant, qu'avec son accord. Le code n'est pas à usage unique : rejoué avant son expiration, il
+refait l'appel, sans effet de plus. Ni la sortie ni le journal d'audit ne gardent le pseudo.
+
 ### Déposer un fichier 3D
 
 Un fichier 3D ne passe jamais par Claude : une commande du dépôt le lit sur le poste et l'envoie
