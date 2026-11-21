@@ -7,7 +7,7 @@ cou et à l'ourlet, et sa ceinture est un anneau de bronze, comme celle du magic
 
 import math
 
-from annuaire import EYES, SCALE, STEEL, dome, hand, head, legs
+from annuaire import EYES, SCALE, STEEL, hand, head, helmet, legs
 from workshop import (
     LEFT,
     MATTE,
@@ -26,6 +26,7 @@ from workshop import (
 )
 
 BRONZE = "#b8893a"  # le galon du magicien
+HELMET_TILT = 0.3  # le casque bascule d'autant vers l'arrière, en radians
 FORWARD = (math.pi / 2, 0, 0)  # le +Y d'un cylindre couché vers l'avant, +Z
 
 
@@ -46,10 +47,7 @@ def build(color):
     part(box("boucle", 0.1, 0.085, 0.03), secondaire, sol, (0, 0.38, 0.375))
 
     tete = head(0.26, peau, fixe, poils, (0, 0.8, 0))
-    chapeau = anchor("chapeau", tete, (0, 0.43, 0))
-    part(dome("casque", 0.275), coiffe, chapeau, scale=(1, 0.9, 1))
-    part(torus("bordure", 0.27, 0.022, 10, 40), coiffe, chapeau, rotation=(math.pi / 2, 0, 0))
-    part(cylinder("pointe", 0, 0.06, 0.16), coiffe, chapeau, (0, 0.3, 0))
+    helmet(coiffe, anchor("chapeau", tete, (0, 0.33, 0)), 0.275, HELMET_TILT, 0.9, 0.16)
 
     main_droite = hand(RIGHT, (0.45, 0.55, 0.08), peau)
     part(cylinder("manche", 0.028, 0.028, 0.76, 12), poils, main_droite, (0, 0.2, 0))
