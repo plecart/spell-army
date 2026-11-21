@@ -15,6 +15,8 @@ export {
 	calibrationSettings,
 	classDefaultModels,
 	excludedPlayers,
+	importLock,
+	importPasses,
 	INSTAGRAM_ID_PATTERN,
 	INSTAGRAM_USERNAME_PATTERN,
 	modelFiles,
