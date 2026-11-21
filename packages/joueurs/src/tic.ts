@@ -48,8 +48,13 @@ export interface TickReport {
 }
 
 // Le budget d'un tic : 240 s, sous les 300 s d'une fonction ; la marge couvre la page commencée en
-// dernier, dont l'appel au fournisseur se borne à 30 s (briefing de la PR #37, « Budget »).
+// dernier, dont l'appel au fournisseur se borne à 30 s (`createHikerApiProvider` ; briefing de la
+// PR #37, « Budget »).
 const DEFAULT_BUDGET_MS = 240_000;
+// La réserve de la passe rapide : la suite d'une complète s'arrête autant avant l'échéance du tic,
+// pour que la passe rapide lise au moins sa première page — un appel au fournisseur borné à 30 s,
+// l'écriture de la page, et de la marge.
+const QUICK_PASS_RESERVE_MS = 60_000;
 const DAY_MS = 86_400_000;
 // Une complète part chaque semaine (ADR 0003, « Passe complète »).
 const WEEKLY_INTERVAL_MS = 7 * DAY_MS;
@@ -64,9 +69,10 @@ const SELF_CHECK_INTERVAL_MS = DAY_MS;
  * il y a 7 jours ou moins — dès le premier tic sur une base vide —, sinon celle de l'auto-contrôle
  * (ADR 0003, « Auto-contrôle ») quand aucune complète d'auto-contrôle n'est partie depuis moins de
  * 24 h et que la base compte moins de joueurs que le nombre d'abonnés affiché, lu seulement alors.
- * Les délais se comptent depuis le début des passes, à l'horloge. Toutes courent sur un même
- * budget : une complète partie sans budget s'arrête interrompue à 0 page, et le tic suivant la
- * reprend. Le tic ne lance aucun combat.
+ * Les délais se comptent depuis le début des passes, à l'horloge. Toutes courent sur le budget du
+ * tic, dont (a) laisse 60 s à (b) : la suite d'une complète s'arrête à l'échéance avancée
+ * d'autant, et la passe rapide court jusqu'à celle du tic. Une complète partie sans budget en (c)
+ * s'arrête interrompue à 0 page, et le tic suivant la reprend. Le tic ne lance aucun combat.
  *
  * Une lecture du nombre d'abonnés qui échoue ne fait partir aucune passe ni n'écrit au journal :
  * elle se rend au compte rendu.
@@ -74,13 +80,17 @@ const SELF_CHECK_INTERVAL_MS = DAY_MS;
  * @param options la base, le fournisseur, l'horloge et le budget.
  * @returns le compte rendu du tic ; `null`, sans rien lire ni journaliser, quand le verrou est
  * pris par un autre.
- * @throws toute erreur de la base, telle quelle, le verrou rendu.
+ * @throws toute erreur de la base, telle quelle, le verrou rendu ; si son rendu échoue aussi,
+ * l'erreur d'origine remonte, et le bail expire seul.
  */
 export async function runTic(
 	options: ImportOptions,
 ): Promise<TickReport | null> {
 	return underImportLock(options, async (context) => {
-		const resumed = await resumeFullPass(context);
+		const resumed = await resumeFullPass({
+			...context,
+			deadline: new Date(context.deadline.getTime() - QUICK_PASS_RESERVE_MS),
+		});
 		const passes = resumed ? [resumed] : [];
 		passes.push(await runQuickPass(context, "tick"));
 		const due =
@@ -111,7 +121,8 @@ export async function runTic(
  * @param kind le type de la passe.
  * @returns la passe telle que le journal la rend, une fois close ; `null`, sans attendre, sans rien
  * lire ni journaliser, quand le verrou est pris : une passe est en cours.
- * @throws toute erreur de la base, telle quelle, le verrou rendu.
+ * @throws toute erreur de la base, telle quelle, le verrou rendu ; si son rendu échoue aussi,
+ * l'erreur d'origine remonte, et le bail expire seul.
  */
 export async function relaunchPass(
 	options: ImportOptions,
@@ -129,7 +140,8 @@ export async function relaunchPass(
 
 // Prend le verrou de l'import à l'instant de l'horloge et rend `null` s'il est pris. Sinon, sous le
 // verrou, interrompt les passes restées en cours, fait `run` sous un budget compté depuis la prise,
-// et rend le verrou quoi qu'il arrive.
+// et rend le verrou quoi qu'il arrive. Quand `run` lève, son erreur remonte telle quelle : un rendu
+// qui échoue alors s'ignore, et le bail expire seul ; quand `run` réussit, l'erreur du rendu remonte.
 async function underImportLock<T>(
 	{
 		db,
@@ -144,13 +156,17 @@ async function underImportLock<T>(
 	if (holder === null) {
 		return null;
 	}
+	let result: T;
 	try {
 		await closeStalePasses(db, start);
 		const deadline = new Date(start.getTime() + budgetMs);
-		return await run({ db, provider, clock, deadline });
-	} finally {
-		await releaseImportLock(db, holder);
+		result = await run({ db, provider, clock, deadline });
+	} catch (error) {
+		await releaseImportLock(db, holder).catch(() => undefined);
+		throw error;
 	}
+	await releaseImportLock(db, holder);
+	return result;
 }
 
 // (c) : fait partir la complète due — celle de la semaine, ou celle d'un auto-contrôle en défaut —

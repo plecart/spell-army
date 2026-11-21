@@ -53,6 +53,28 @@ function tickOver(
 	return { provider, options: { db, provider, clock: () => new Date(now) } };
 }
 
+/**
+ * Fait échouer sous le code `code` toute instruction `event` sur `table`, par un déclencheur ; rend
+ * de quoi le retirer.
+ */
+async function injectFailure(
+	db: Executor,
+	event: "insert" | "delete",
+	table: string,
+	code: string,
+): Promise<() => Promise<unknown>> {
+	const name = `fail_on_${event}_${table}`;
+	await db.execute(
+		sql.raw(`create function ${name}() returns trigger language plpgsql
+			as $$ begin raise exception 'panne injectée' using errcode = '${code}'; end $$`),
+	);
+	await db.execute(
+		sql.raw(`create trigger ${name} before ${event} on ${table}
+			for each row execute function ${name}()`),
+	);
+	return () => db.execute(sql.raw(`drop trigger ${name} on ${table}`));
+}
+
 /** Inscrit au journal une passe complète terminée, partie à `startedAt`. */
 async function finishedFullPass(
 	db: Executor,
@@ -169,6 +191,38 @@ describe("tic de l'import", () => {
 		expect(next.provider.cursors[0]).toBe(next.provider.cursorOf(3));
 	});
 
+	test("une complète reprise s'arrête 60 s avant l'échéance du tic : la passe rapide qui la suit lit sa première page", async () => {
+		const db = await freshDatabase();
+		const list = followers(40);
+		await writePage(db, list);
+		// 25 s par page lue : la reprise lit ses pages 3 à 10 à 0 s, 25 s… 175 s ; sa page 11
+		// commencerait à 200 s, au-delà de son échéance de 180 s. La passe rapide lit alors sa page à
+		// 200 s, avant les 240 s du budget.
+		const { provider, options } = tickOver(db, list, {
+			pageSize: 2,
+			pageMs: 25_000,
+		});
+		await db.insert(importPasses).values({
+			kind: "full",
+			trigger: "weekly",
+			status: "interrupted",
+			startedAt: after(-HOUR_MS),
+			finishedAt: after(-HOUR_MS),
+			pages: 2,
+			cursor: provider.cursorOf(3),
+		});
+		expect((await runTic(options))?.passes).toMatchObject([
+			{
+				kind: "full",
+				status: "interrupted",
+				finishedAt: after(200_000),
+				pages: 10,
+			},
+			{ kind: "quick", status: "done", pages: 1 },
+		]);
+		expect(provider.cursors.at(-1)).toBe(provider.cursorOf(1));
+	});
+
 	test("une complète partie sans budget s'ouvre et s'arrête interrompue à 0 page ; le tic suivant la reprend du haut de la liste", async () => {
 		const db = await freshDatabase();
 		const list = followers(4);
@@ -249,6 +303,18 @@ describe("tic de l'import", () => {
 			reads: 1,
 			started: ["self_check"],
 		});
+	});
+
+	test("auto-contrôle : autant de joueurs que d'abonnés affichés, aucune complète ne part, le nombre lu une fois", async () => {
+		const db = await freshDatabase();
+		const list = followers(100);
+		await writePage(db, list);
+		await finishedFullPass(db, after(-HOUR_MS));
+		const { provider, options } = tickOver(db, list);
+		provider.followerCount = 100;
+		const report = await runTic(options);
+		expect(report?.passes.map(({ kind }) => kind)).toEqual(["quick"]);
+		expect(provider.followerCountReads).toBe(1);
 	});
 
 	test("une lecture du nombre d'abonnés qui échoue : compte rendu en échec, l'erreur composée par le code, aucune complète partie ni ligne au journal pour elle", async () => {
@@ -345,19 +411,26 @@ describe("verrou du tic", () => {
 
 	test("une erreur de la base remonte du tic, et le verrou est rendu", async () => {
 		const db = await freshDatabase();
-		await db.execute(
-			sql.raw(`create function fail_on_pass() returns trigger language plpgsql
-				as $$ begin raise exception 'panne injectée'; end $$`),
-		);
-		await db.execute(
-			sql.raw(`create trigger fail_on_pass before insert on import_passes
-				for each row execute function fail_on_pass()`),
-		);
+		const repair = await injectFailure(db, "insert", "import_passes", "P0001");
 		await expect(runTic(tickOver(db, []).options)).rejects.toMatchObject({
 			cause: { code: "P0001" },
 		});
-		await db.execute(sql.raw("drop trigger fail_on_pass on import_passes"));
+		await repair();
 		expect(await runTic(tickOver(db, []).options)).not.toBeNull();
+	});
+
+	test.each([
+		["après une passe en erreur : l'erreur de la passe remonte", true, "P0001"],
+		["après un tic réussi : son erreur remonte", false, "P0004"],
+	])("un rendu du verrou qui échoue %s", async (_, failingPass, code) => {
+		const db = await freshDatabase();
+		if (failingPass) {
+			await injectFailure(db, "insert", "import_passes", "P0001");
+		}
+		await injectFailure(db, "delete", "import_lock", "P0004");
+		await expect(runTic(tickOver(db, []).options)).rejects.toMatchObject({
+			cause: { code },
+		});
 	});
 });
 
