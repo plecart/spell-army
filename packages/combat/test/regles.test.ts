@@ -295,6 +295,51 @@ describe("validité d'un sort", () => {
 	});
 });
 
+// Un sort mixte (game design § 2, « Vol de vie ») : sur la seule base stat de l'armée, à ×1,0 au
+// plus.
+describe("un sort mixte", () => {
+	const OFF_BASE = (base: string) =>
+		`un sort mixte (dégâts et soin) ne prend que la base « armyStat », reçu : « ${base} »`;
+
+	test.each<[string, Effect, string[]]>([
+		[
+			"sur la Vie maximale de l'armée, à dégâts 0,1 + soin 0,1",
+			{ base: "armyMaxLife", damage: linear(0.1), heal: linear(0.1) },
+			[OFF_BASE("armyMaxLife")],
+		],
+		[
+			"sur le dernier coup du monstre, à dégâts 0,5 + soin 0,5",
+			{ base: "monsterLastHit", damage: linear(0.5), heal: linear(0.5) },
+			[OFF_BASE("monsterLastHit")],
+		],
+		[
+			"sur la stat de l'armée, au-delà de ×1,0 : dégâts 0,5 + soin 0,51",
+			{ base: "armyStat", damage: linear(0.5), heal: linear(0.51) },
+			[
+				"dégâts + soin d'un sort mixte doivent rester au plus 1 aux deux bouts de la jauge, reçu : 1.01 à jauge 0, 1.01 à jauge 1",
+			],
+		],
+		[
+			"sur la stat de l'armée, à ×1,0 tout juste : dégâts 0,5 + soin 0,5",
+			{ base: "armyStat", damage: linear(0.5), heal: linear(0.5) },
+			[],
+		],
+		// Les témoins : hors de la stat de l'armée, un sort qui n'est pas mixte reste admis.
+		[
+			"un soin seul sur la Vie maximale de l'armée",
+			{ base: "armyMaxLife", heal: linear(0.2) },
+			[],
+		],
+		[
+			"des dégâts seuls sur le dernier coup du monstre",
+			{ base: "monsterLastHit", damage: linear(1.4) },
+			[],
+		],
+	])("%s", (_, effect, errors) => {
+		expect(validateSpell({ ...SWORD, effect })).toEqual(errors);
+	});
+});
+
 // Une part nulle aux deux bouts de la jauge ne fait rien. Comptée présente, elle ferait d'un soin un
 // vol de vie, et un jumeau de Soin (n° 11) passerait l'unicité (game design § 2, « Unicité »).
 describe("une part d'effet nulle", () => {

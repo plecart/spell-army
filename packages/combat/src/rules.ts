@@ -1,4 +1,13 @@
-import type { Effect, Form, Linear, Recipe, Shares, Spell } from "./spell.ts";
+import {
+	type Effect,
+	type EffectBase,
+	type Form,
+	FULL_RECIPE,
+	type Linear,
+	type Recipe,
+	type Shares,
+	type Spell,
+} from "./spell.ts";
 
 /** La pastille de la carte (direction artistique § 4, « En-tête ») : Dégâts, Soin ou Vol de vie. */
 export type EffectCategory = "damage" | "heal" | "lifesteal";
@@ -9,7 +18,9 @@ export type EffectCategory = "damage" | "heal" | "lifesteal";
  */
 export const DEFAULT_WEIGHT = 1;
 
-const FULL_RECIPE = 100;
+/** La seule base d'un sort mixte (game design § 2, « Vol de vie »). */
+const MIXED_BASE: EffectBase = "armyStat";
+/** Ce que vaut au plus un sort mixte en dégâts + soin : ×1,0, un coup normal. */
 const MIXED_MAX = 1;
 // L'arrondi binaire des décimaux : 0,34 + 0,56 + 0,1 y vaut 1,0000000000000002.
 const ROUNDING_TOLERANCE = 1e-9;
@@ -84,8 +95,12 @@ function formKey(form: Form): string {
  *   seulement si la jauge est `classShare`.
  * - Effet : des dégâts, du soin ou les deux, chacun un nombre fini ≥ 0 aux deux bouts de la
  *   jauge, non nul à l'un d'eux au moins — une part nulle s'omet —, et qui ne suit une jauge que
- *   dans une forme conditionnelle. Un sort mixte vaut au plus ×1,0 en dégâts + soin aux deux bouts
- *   de sa jauge (game design § 2, « Vol de vie ») ; l'effet étant linéaire, ses bouts suffisent.
+ *   dans une forme conditionnelle.
+ * - Sort mixte (game design § 2, « Vol de vie » : « ne dépasse jamais ×1,0 ») : sur la seule base
+ *   `armyStat`, où il vaut au plus ×1,0 en dégâts + soin aux deux bouts de sa jauge — l'effet étant
+ *   linéaire, ses bouts suffisent. Ailleurs, un coup normal vaut un coefficient qui suit l'armée ou
+ *   le monstre, et aucune borne fixe n'y tiendrait ce « jamais » (relevé le 2026-11-21, Notes de
+ *   la PR #40).
  * - Poids : un nombre fini ≥ 0 ; 0, jamais tiré, est accepté.
  * - Nom et description : non vides une fois les blancs retirés.
  */
@@ -192,10 +207,15 @@ function linearErrors(
 	return errors;
 }
 
-function mixedErrors({ damage, heal }: Effect): string[] {
+function mixedErrors({ base, damage, heal }: Effect): string[] {
 	if (damage === undefined || heal === undefined) return [];
 	// Une part nulle, refusée à part, ne rend pas le sort mixte.
 	if (isZero(damage) || isZero(heal)) return [];
+	if (base !== MIXED_BASE) {
+		return [
+			`un sort mixte (dégâts et soin) ne prend que la base « ${MIXED_BASE} », reçu : « ${base} »`,
+		];
+	}
 	const totals = GAUGE_ENDS.map(
 		(gauge) => valueAt(damage, gauge) + valueAt(heal, gauge),
 	);

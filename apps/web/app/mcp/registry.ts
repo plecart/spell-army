@@ -10,6 +10,7 @@ import { readSettingsTool, updateSettingsTool } from "./settings-tools.ts";
 import {
 	addSpellTool,
 	listSpellsTool,
+	measureSpellTool,
 	updateSpellTool,
 } from "./spell-tools.ts";
 import type { McpTool } from "./tool.ts";
@@ -28,6 +29,7 @@ export function createRegistry(
 		listSpellsTool,
 		addSpellTool,
 		updateSpellTool,
+		measureSpellTool(),
 		depositModelTool,
 		setClassModelTool,
 		listPassesTool,

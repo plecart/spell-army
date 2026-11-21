@@ -35,9 +35,10 @@ Les règles complètes sont dans le [game design](docs/game-design.md), l'appare
 ## Où en est le projet
 
 - **Fait** : le socle du monorepo et sa CI, les personnages calculés, la réserve de 24 sorts,
-  l'import des abonnés, le serveur MCP de pilotage, les brouillons 3D des huit classes.
-- **En cours** : l'annuaire des recrues et la fiche du personnage, le moteur de combat, le
-  bestiaire, la saison, puis la mise en ligne d'une bêta.
+  l'import des abonnés, le serveur MCP de pilotage, les brouillons 3D des huit classes, le moteur
+  de combat.
+- **En cours** : l'annuaire des recrues et la fiche du personnage, le bestiaire, la saison, puis
+  la mise en ligne d'une bêta.
 - **Plus tard** : la vidéo de chaque combat.
 
 Le découpage vit dans les [issues](https://github.com/plecart/wizard-army-v2/issues) et les
@@ -90,7 +91,8 @@ flowchart LR
 - **CI à chaque PR** : audit des dépendances, lint, format, typecheck, dérive du schéma par rapport
   aux migrations, build et tests.
 - **Des paquets purs** : personnages et combat se testent sans base ni réseau, et le hasard dérive
-  d'un hachage de l'identifiant ou de la graine du combat, jamais du générateur du langage.
+  d'un hachage de l'identifiant ou de la graine du combat, jamais du générateur du langage : à
+  graine égale, même combat.
 
 ## Les décisions
 

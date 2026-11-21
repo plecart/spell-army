@@ -1,3 +1,4 @@
+export { simulationArmies } from "./army.ts";
 export {
 	CLASS_KEYS,
 	CLASS_RANGES,

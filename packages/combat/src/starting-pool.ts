@@ -11,10 +11,11 @@ function fixed(constant: number): Linear {
 
 /**
  * La réserve de départ : les 24 sorts de l'annexe B du game design, dans son ordre et sous son
- * numéro, tous de poids 1. Les coefficients sont ceux de l'annexe, en multiplicateurs (×1,0 = un
- * coup normal). Chaque description écrit ses variables dans la phrase (direction artistique § 4,
- * « Description ») : la recette après « selon », la forme, le partage d'un vol de vie ; « gros »
- * ne qualifie que les coûteux, plus forts par définition (game design § 2, « Formes »).
+ * numéro, tous de poids 1. Les coefficients sont ceux de l'annexe, en multiplicateurs de leur base
+ * (`EffectBase`) : ×1,0 = un coup normal sur la stat de l'armée. Chaque description écrit ses
+ * variables dans la phrase (direction artistique § 4, « Description ») : la recette après
+ * « selon », la forme, le partage d'un vol de vie ; « gros » ne qualifie que les coûteux, plus
+ * forts par définition (game design § 2, « Formes »).
  */
 export const STARTING_POOL: readonly Spell[] = [
 	{
