@@ -22,7 +22,7 @@ export interface HikerApiOptions {
 
 const FOLLOWERS_ROUTE = "/g2/user/followers";
 const USER_ROUTE = "/v1/user/by/id";
-// Le délai d'un appel que suppose le budget du tic (`tic.ts`, `DEFAULT_BUDGET_MS`).
+// Le délai d'un appel que suppose le budget du tic (`tick.ts`, `DEFAULT_BUDGET_MS`).
 const DEFAULT_TIMEOUT_MS = 30_000;
 // Un curseur reçu est gardé tel quel au journal et renvoyé dans l'URL de la page suivante : plus
 // long, il est refusé. En base64, comme l'exemple de la spec 1.8.4, il garde l'URL sous les

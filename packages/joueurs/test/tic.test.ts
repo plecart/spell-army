@@ -13,7 +13,7 @@ import {
 	type ImportOptions,
 	listPasses,
 	relaunchPass,
-	runTic,
+	runTick,
 	writePage,
 } from "../src/index.ts";
 import { FakeFollowerProvider, followers } from "./faux-fournisseur.ts";
@@ -94,7 +94,7 @@ describe("tic de l'import", () => {
 	test("sur une base vide, le premier tic fait la passe rapide, puis part en complète de la semaine sans lire le nombre d'abonnés ; son compte rendu est le journal", async () => {
 		const db = await freshDatabase();
 		const { provider, options } = tickOver(db, followers(3));
-		const report = await runTic(options);
+		const report = await runTick(options);
 		expect(report).toMatchObject({
 			passes: [
 				{ kind: "quick", trigger: "tick", status: "done", added: 3 },
@@ -134,7 +134,7 @@ describe("tic de l'import", () => {
 			await writePage(db, list);
 			await finishedFullPass(db, after(-7 * DAY_MS - extraMs), trigger);
 			const { options } = tickOver(db, list);
-			const report = await runTic(options);
+			const report = await runTick(options);
 			expect(report?.passes.map((pass) => pass.trigger)).toEqual(triggers);
 		},
 	);
@@ -154,7 +154,7 @@ describe("tic de l'import", () => {
 			added: 4,
 			cursor: provider.cursorOf(3),
 		});
-		expect((await runTic(options))?.passes).toMatchObject([
+		expect((await runTick(options))?.passes).toMatchObject([
 			{ kind: "full", status: "done", pages: 5, added: 10 },
 			{ kind: "quick", status: "done", pages: 1, added: 0 },
 		]);
@@ -170,7 +170,7 @@ describe("tic de l'import", () => {
 		// 80 s par page lue : la passe rapide lit sa page à 0 s, la complète ses pages 1 et 2 à 80 s
 		// et 160 s ; sa page 3 commencerait à 240 s, l'échéance du budget par défaut.
 		const first = tickOver(db, list, { pageSize: 2, pageMs: 80_000 });
-		expect(await runTic(first.options)).toMatchObject({
+		expect(await runTick(first.options)).toMatchObject({
 			passes: [
 				{ kind: "quick", status: "done" },
 				{
@@ -184,7 +184,7 @@ describe("tic de l'import", () => {
 			failed: false,
 		});
 		const next = tickOver(db, list, { pageSize: 2, start: after(HOUR_MS) });
-		expect((await runTic(next.options))?.passes).toMatchObject([
+		expect((await runTick(next.options))?.passes).toMatchObject([
 			{ kind: "full", status: "done", pages: 5 },
 			{ kind: "quick", status: "done" },
 		]);
@@ -211,7 +211,7 @@ describe("tic de l'import", () => {
 			pages: 2,
 			cursor: provider.cursorOf(3),
 		});
-		expect((await runTic(options))?.passes).toMatchObject([
+		expect((await runTick(options))?.passes).toMatchObject([
 			{
 				kind: "full",
 				status: "interrupted",
@@ -229,12 +229,12 @@ describe("tic de l'import", () => {
 		await writePage(db, list);
 		// La page de la passe rapide consomme les 240 s du budget.
 		const first = tickOver(db, list, { pageSize: 2, pageMs: 240_000 });
-		expect((await runTic(first.options))?.passes).toMatchObject([
+		expect((await runTick(first.options))?.passes).toMatchObject([
 			{ kind: "quick", status: "done" },
 			{ kind: "full", status: "interrupted", pages: 0, error: null },
 		]);
 		const next = tickOver(db, list, { pageSize: 2, start: after(HOUR_MS) });
-		expect((await runTic(next.options))?.passes).toMatchObject([
+		expect((await runTick(next.options))?.passes).toMatchObject([
 			{ kind: "full", status: "done", pages: 2 },
 			{ kind: "quick", status: "done" },
 		]);
@@ -270,7 +270,7 @@ describe("tic de l'import", () => {
 				finishedAt: after(-8 * DAY_MS),
 				cursor: provider.cursorOf(3),
 			});
-			const report = await runTic(options);
+			const report = await runTick(options);
 			expect(
 				report?.passes.map(({ kind, status }) => `${kind} ${status}`),
 			).toEqual(passes);
@@ -289,7 +289,7 @@ describe("tic de l'import", () => {
 		const tickAt = async (start: Date) => {
 			const { provider, options } = tickOver(db, list, { start });
 			provider.followerCount = 100;
-			const report = await runTic(options);
+			const report = await runTick(options);
 			return {
 				reads: provider.followerCountReads,
 				started: report?.passes
@@ -312,7 +312,7 @@ describe("tic de l'import", () => {
 		await finishedFullPass(db, after(-HOUR_MS));
 		const { provider, options } = tickOver(db, list);
 		provider.followerCount = 100;
-		const report = await runTic(options);
+		const report = await runTick(options);
 		expect(report?.passes.map(({ kind }) => kind)).toEqual(["quick"]);
 		expect(provider.followerCountReads).toBe(1);
 	});
@@ -324,7 +324,7 @@ describe("tic de l'import", () => {
 		await finishedFullPass(db, after(-DAY_MS));
 		const { provider, options } = tickOver(db, list);
 		provider.failingFollowerCount = true;
-		expect(await runTic(options)).toMatchObject({
+		expect(await runTick(options)).toMatchObject({
 			passes: [{ kind: "quick", status: "done" }],
 			followerCountError: "panne injectée au nombre d'abonnés",
 			failed: true,
@@ -339,7 +339,7 @@ describe("tic de l'import", () => {
 		await writePage(db, list.slice(0, 2));
 		const first = tickOver(db, list, { pageSize: 2 });
 		first.provider.failingPage = 3;
-		expect(await runTic(first.options)).toMatchObject({
+		expect(await runTick(first.options)).toMatchObject({
 			passes: [
 				{ kind: "quick", status: "done", added: 0 },
 				{
@@ -356,7 +356,7 @@ describe("tic de l'import", () => {
 		expect(await db.$count(players)).toBe(4);
 
 		const next = tickOver(db, list, { pageSize: 2, start: after(HOUR_MS) });
-		expect(await runTic(next.options)).toMatchObject({
+		expect(await runTick(next.options)).toMatchObject({
 			passes: [
 				{ kind: "full", status: "done", error: null, pages: 5, added: 8 },
 				{ kind: "quick", status: "done" },
@@ -379,15 +379,15 @@ describe("verrou du tic", () => {
 				return release.promise;
 			},
 		});
-		const first = runTic({ db, provider: held, clock: () => T0 });
+		const first = runTick({ db, provider: held, clock: () => T0 });
 		await reading.promise;
 		const second = tickOver(db, followers(3));
-		expect(await runTic(second.options)).toBeNull();
+		expect(await runTick(second.options)).toBeNull();
 		expect(second.provider.cursors).toEqual([]);
 		release.resolve();
 		const report = await first;
 		expect(await listPasses(db, 10)).toEqual(report?.passes.toReversed());
-		expect(await runTic(tickOver(db, followers(3)).options)).not.toBeNull();
+		expect(await runTick(tickOver(db, followers(3)).options)).not.toBeNull();
 	});
 
 	test("un tic tué pendant sa passe rapide : son verrou se reprend au bout des 300 s du bail, et le tic qui le reprend note la passe interrompue", async () => {
@@ -399,7 +399,8 @@ describe("verrou du tic", () => {
 			status: "running",
 			startedAt: T0,
 		});
-		const tickAt = (start: Date) => runTic(tickOver(db, [], { start }).options);
+		const tickAt = (start: Date) =>
+			runTick(tickOver(db, [], { start }).options);
 		expect(await tickAt(after(LEASE_MS - 1))).toBeNull();
 		expect(await tickAt(after(LEASE_MS))).not.toBeNull();
 		expect((await listPasses(db, 10)).at(-1)).toMatchObject({
@@ -412,11 +413,11 @@ describe("verrou du tic", () => {
 	test("une erreur de la base remonte du tic, et le verrou est rendu", async () => {
 		const db = await freshDatabase();
 		const repair = await injectFailure(db, "insert", "import_passes", "P0001");
-		await expect(runTic(tickOver(db, []).options)).rejects.toMatchObject({
+		await expect(runTick(tickOver(db, []).options)).rejects.toMatchObject({
 			cause: { code: "P0001" },
 		});
 		await repair();
-		expect(await runTic(tickOver(db, []).options)).not.toBeNull();
+		expect(await runTick(tickOver(db, []).options)).not.toBeNull();
 	});
 
 	test.each([
@@ -428,7 +429,7 @@ describe("verrou du tic", () => {
 			await injectFailure(db, "insert", "import_passes", "P0001");
 		}
 		await injectFailure(db, "delete", "import_lock", "P0004");
-		await expect(runTic(tickOver(db, []).options)).rejects.toMatchObject({
+		await expect(runTick(tickOver(db, []).options)).rejects.toMatchObject({
 			cause: { code },
 		});
 	});

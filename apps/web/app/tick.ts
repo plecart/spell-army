@@ -1,5 +1,5 @@
 import type { Executor } from "donnees";
-import { type FollowerProvider, runTic, type TickReport } from "joueurs";
+import { type FollowerProvider, runTick, type TickReport } from "joueurs";
 import { toToolPass } from "./mcp/vocabulary.ts";
 import { requireBearer } from "./token.ts";
 
@@ -20,7 +20,7 @@ const TICK_FAILED = "tic interrompu par une erreur";
 const PASS_RUNNING = "passe en cours : ce tic n'a rien fait";
 
 /**
- * Le point d'entrée HTTP du tic horaire de l'import (ADR 0002, « Une seule tâche ») : `runTic` de
+ * Le point d'entrée HTTP du tic horaire de l'import (ADR 0002, « Une seule tâche ») : `runTick` de
  * `joueurs`. Le secret se contrôle d'abord, comme le jeton du serveur MCP (`requireBearer`) : tout
  * refus rend `401`, `WWW-Authenticate: Bearer` et un corps vide, sans demander la base ni le
  * fournisseur.
@@ -48,7 +48,7 @@ export function createTickEndpoint({
 		}
 		let report: TickReport | null;
 		try {
-			report = await runTic({ db: database(), provider: followers });
+			report = await runTick({ db: database(), provider: followers });
 		} catch (cause) {
 			return failure(TICK_FAILED, cause);
 		}
