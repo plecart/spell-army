@@ -7,7 +7,8 @@ export const THEME_KEY = "theme";
 
 /**
  * Le script qui pose le thème choisi sur `<html>` (`data-theme`) avant le premier rendu : en ligne
- * dans le `<head>`, il s'exécute pendant l'analyse du HTML (Next.js 16.4, guide « Preventing
- * Flash », « Themes »). Un stockage illisible ou une valeur inconnue laissent le thème du système.
+ * dans le `<head>`, il s'exécute pendant l'analyse du HTML (Next.js 16.4, guide « How to prevent
+ * flash before hydration », « Themes »). Un stockage illisible ou une valeur inconnue laissent le
+ * thème du système.
  */
 export const THEME_SCRIPT = `try{var t=localStorage.getItem("${THEME_KEY}");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
