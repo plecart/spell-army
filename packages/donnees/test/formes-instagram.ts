@@ -1,6 +1,7 @@
-// Les bornes de `INSTAGRAM_ID_PATTERN` et `INSTAGRAM_USERNAME_PATTERN` (`src/schema.ts`). Le contrôle
-// de la base (`test/joueurs.test.ts`) et le tri des entrées du paquet `joueurs` les éprouvent sur
-// cette même population : les expressions rationnelles de Postgres et de JavaScript s'y accordent.
+// Les bornes de `INSTAGRAM_ID_PATTERN` et `INSTAGRAM_USERNAME_PATTERN` (`src/schema.ts`). Le
+// contrôle de la base (`test/joueurs.test.ts`) et le tri des entrées du paquet `joueurs` les
+// éprouvent sur cette même population : les expressions rationnelles de Postgres et de JavaScript
+// s'y accordent. L'adaptateur HikerAPI y éprouve aussi le compte lu (`MALFORMED_IDS`).
 
 /** 30 caractères, la borne haute, avec chacun des signes admis. */
 export const LONGEST_USERNAME = `Ab.9_${"z".repeat(25)}`;

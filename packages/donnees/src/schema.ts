@@ -169,7 +169,7 @@ export const classDefaultModels = pgTable("class_default_models", {
  * tête (« 007 » et « 0 » sont hors forme, jamais normalisés), de 20 chiffres au plus, la largeur
  * d'un entier de 64 bits : un identifiant démesuré dépasserait la taille d'une entrée d'index et
  * ferait échouer sa page à chaque passe. Contrôlée sur `players` et `excluded_players`, et lue par
- * le tri des entrées du paquet `joueurs`.
+ * le paquet `joueurs` : le tri des entrées, et l'adaptateur HikerAPI pour le compte lu.
  */
 export const INSTAGRAM_ID_PATTERN = /^[1-9][0-9]{0,19}$/;
 
