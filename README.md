@@ -22,16 +22,17 @@ Installation, tests, lint, format, typecheck, audit, build, migration et dérive
 Le site public (`docs/direction-artistique.md` § 3) sert sur `/` l'annuaire des recrues : recherche
 dans le pseudo (`?q=`), filtre par classe (`?classe=`, le nom de la classe en minuscules sans
 accent), pages de 24 recrues (`?page=`). Il ne lit les joueurs que par `listVisiblePlayers` du
-paquet `joueurs`, qui écarte ceux de la liste d'exclusion. `pnpm --filter web dev` le sert en local
-sur la base de `DATABASE_URL`.
+paquet `joueurs`, qui écarte ceux de la liste d'exclusion. `/informations` dit qui traite les
+données des abonnés, lesquelles, pourquoi, sur quelle base et comment en demander le retrait (ADR
+0003, « RGPD »). `pnpm --filter web dev` le sert en local sur la base de `DATABASE_URL`.
 
 Deux variables, non secrètes (gabarit : `.env.example`) :
 
 - `BETA_BANNER` : non vide, le bandeau « BÊTA — version de test » s'affiche en tête de chaque page
   (ADR 0004, « Bandeau bêta ») ;
-- `INSTAGRAM_ACCOUNT_HANDLE` : le pseudo du compte, sans `@`. Le titre « L'armée de @compte » et le
-  lien « Instagram » du pied y mènent ; absente ou hors de la forme d'un pseudo, le titre est
-  « L'armée », sans lien.
+- `INSTAGRAM_ACCOUNT_HANDLE` : le pseudo du compte, sans `@`. Le titre « L'armée de @compte », le
+  lien « Instagram » du pied et le contact de `/informations` y mènent ; absente ou hors de la forme
+  d'un pseudo, le titre est « L'armée » et le contact « le compte Instagram du jeu », sans lien.
 
 Le CDN de Vercel garde `/` et `/informations` une heure au plus (`Vercel-CDN-Cache-Control`,
 `apps/web/next.config.ts`) : une recrue importée au tic horaire y apparaît dans l'heure.

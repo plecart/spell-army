@@ -74,6 +74,7 @@ svg {
 
 .site-header,
 .directory,
+.informations,
 .site-footer {
 	width: min(100%, 64rem);
 	margin-inline: auto;
@@ -174,7 +175,8 @@ svg {
 	);
 }
 
-.directory h1 {
+.directory h1,
+.informations h1 {
 	margin-bottom: 0.5rem;
 	font-size: clamp(2rem, 8vw, 3rem);
 	overflow-wrap: anywhere;
@@ -449,4 +451,19 @@ h1 a:hover {
 
 .class-options a[aria-current="true"] .count {
 	color: inherit;
+}
+
+/* La page « Informations » : des sections courtes, à la largeur d'une ligne de lecture. */
+
+.informations section {
+	max-width: 40rem;
+	margin-top: 1.5rem;
+}
+
+.informations h2 {
+	font-size: 1.25rem;
+}
+
+.informations p {
+	margin: 0.5rem 0 0;
 }
