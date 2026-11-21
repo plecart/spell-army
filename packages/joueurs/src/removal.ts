@@ -11,7 +11,7 @@ export type RemovalEffect = "removed" | "excluded" | "already_excluded";
 /** Ce que ferait un retrait : son effet et, pour un joueur, son pseudo. */
 export type RemovalPreview =
 	| { effect: "removed"; username: string }
-	| { effect: "excluded" | "already_excluded" };
+	| { effect: Exclude<RemovalEffect, "removed"> };
 
 /**
  * Ce que ferait `removePlayer` sur `instagramId` d'après l'état présent. Lecture seule.
