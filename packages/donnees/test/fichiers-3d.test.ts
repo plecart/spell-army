@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
 	type Executor,
 	type ModelTarget,
+	readClassDefaultModel,
 	setClassDefaultModel,
 	storeModelFile,
 } from "../src/index.ts";
@@ -96,6 +97,30 @@ describe("modèle par défaut d'une classe", () => {
 			before: wizard,
 			after: wizard,
 		});
+	});
+
+	test("le fichier du modèle par défaut se lit octet pour octet, celui du dernier réglage ; sans réglage, aucun", async () => {
+		const db = await freshDatabase();
+		// Les octets lus, en tableau : `pg` rend un `Buffer`, que `toEqual` distingue d'un `Uint8Array`.
+		const read = async (characterClass: string) => {
+			const model = await readClassDefaultModel(db, characterClass);
+			return model && [...model];
+		};
+		const storeWizard = async (bytes: number[]) =>
+			(
+				await storeModelFile(db, {
+					target: { class: "wizard" },
+					content: new Uint8Array(bytes),
+				})
+			).id;
+		const first = await storeWizard([1, 2, 3]);
+		const second = await storeWizard([4, 5]);
+		expect(await read("wizard")).toBeNull();
+		await setClassDefaultModel(db, "wizard", first);
+		expect(await read("wizard")).toEqual([1, 2, 3]);
+		await setClassDefaultModel(db, "wizard", second);
+		expect(await read("wizard")).toEqual([4, 5]);
+		expect(await read("golem")).toBeNull();
 	});
 
 	test("un réglage concurrent attend le précédent et lit son après pour avant", async () => {
