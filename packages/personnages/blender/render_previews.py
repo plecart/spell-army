@@ -9,7 +9,10 @@ SVG de `BACKDROPS`) et son socle (`pedestal`, de `PEDESTALS`). Chaque classe se 
 fabriqué, `<GLB>/<classe>.glb` — ce qu'on juge est ce qui sera déposé —, posé au-dessus de son socle
 et devant son décor, en `<sortie>/<classe>.png` ; puis toutes en `<sortie>/planche.png`. Cadrage et
 lumière viennent de la vignette du prototype `annuaire-bd.html` de la direction artistique ; ni
-contour ni ombre portée, qui viennent de l'affichage (direction artistique § 3 et § 7, « Contour »).
+contour ni ombre portée des lampes, qui viennent de l'affichage (direction artistique § 3 et § 7,
+« Contour »). Seule une ombre douce, au centre du dessus du socle, marque où le personnage flotte,
+comme celle qui suit sa hauteur dans la scène de la fiche (direction artistique § 3, « Scène de
+la fiche »).
 """
 
 import json
@@ -42,6 +45,7 @@ SIZE = 1024  # côté d'une image de classe, en pixels
 SURFACE = "#fffaf0"  # fond sous le décor : jeton « surface » clair, direction artistique § 2
 COLUMNS = 4  # colonnes de la planche, aux images réduites de moitié ; autant de rangées qu'il faut
 PEDESTAL_SEGMENTS = 48
+SHADOW, SHADOW_ALPHA = 0.42, 0.45  # rayon et opacité au centre de l'ombre douce sur le socle
 
 # La vignette du prototype : caméra perspective de 28° de champ vertical, personnage tourné de
 # 0,38 rad ; lumière hémisphérique, lampe principale et contre-jour, en intensités de three.js. Sa
@@ -139,6 +143,33 @@ def build_pedestal(pedestal):
     part(disc, material("dessus", top["color"], MATTE), position=(0, top["centerY"], 0))
 
 
+def place_shadow(pedestal):
+    """
+    L'ombre douce du personnage au centre du dessus du socle : un disque noir de rayon `SHADOW`,
+    opaque de `SHADOW_ALPHA` au centre et transparent au bord.
+    """
+    shade = bpy.data.materials.new("ombre")
+    nodes, links = shade.node_tree.nodes, shade.node_tree.links
+    shader = nodes["Principled BSDF"]
+    shader.inputs["Base Color"].default_value = (0, 0, 0, 1)
+    shader.inputs["Roughness"].default_value = 1
+    coordinates = nodes.new("ShaderNodeTexCoord").outputs["Object"]
+    spread = nodes.new("ShaderNodeMapping")
+    spread.inputs["Scale"].default_value = (1 / SHADOW,) * 3
+    falloff = nodes.new("ShaderNodeTexGradient")
+    falloff.gradient_type = "SPHERICAL"
+    strength = nodes.new("ShaderNodeMath")
+    strength.operation = "MULTIPLY"
+    strength.inputs[1].default_value = SHADOW_ALPHA
+    links.new(coordinates, spread.inputs["Vector"])
+    links.new(spread.outputs["Vector"], falloff.inputs["Vector"])
+    links.new(falloff.outputs["Fac"], strength.inputs[0])
+    links.new(strength.outputs["Value"], shader.inputs["Alpha"])
+    top = pedestal["top"]
+    above = top["centerY"] + top["thickness"] / 2 + 0.001
+    part(cylinder("ombre", SHADOW, SHADOW, 0.001, PEDESTAL_SEGMENTS), shade, position=(0, above, 0))
+
+
 def render_figure(path):
     """Rend la scène en PNG à `path` et la relit : RGBA de 0 à 1, encodé sRGB, de haut en bas."""
     bpy.context.scene.render.filepath = str(path)
@@ -179,6 +210,7 @@ def render_class(model, setting, path):
     empty_scene()
     pose_figure(model, setting["pedestal"]["lift"])
     build_pedestal(setting["pedestal"])
+    place_shadow(setting["pedestal"])
     scene = bpy.context.scene
     render_settings(scene)
     place_camera(scene)
