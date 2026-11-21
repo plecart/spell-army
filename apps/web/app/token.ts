@@ -7,7 +7,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
  * Longueur minimale du jeton configuré, en octets UTF-8 : en deçà, tout est refusé (ADR 0004,
  * « Serveur MCP et secrets »).
  */
-export const MIN_TOKEN_BYTES = 32;
+const MIN_TOKEN_BYTES = 32;
 
 function sha256(value: string): Buffer {
 	return createHash("sha256").update(value).digest();
