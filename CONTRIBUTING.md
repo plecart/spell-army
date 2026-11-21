@@ -1,4 +1,8 @@
-# Contribuer
+# La pipeline de développement
+
+Ce dépôt est un projet personnel : il n'accepte pas de contributions extérieures.
+Ce document décrit comment il est développé, par un humain et des agents IA ; faire tourner le
+projet en local est dans [`docs/exploitation.md`](docs/exploitation.md).
 
 Le développement suit une pipeline pilotée par les issues. **La source de vérité du process n'est
 pas ce fichier** : c'est le skill `cycle-pr` (déroulé pas à pas) et les règles permanentes dans
