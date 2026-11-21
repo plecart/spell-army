@@ -6,7 +6,7 @@ ceinture, plus étroite que la tunique, n'y paraissait pas : elle la déborde ic
 """
 
 from annuaire import EYES, SCALE, STEEL, dome, hand, head, legs
-from workshop import MATTE, METAL, anchor, box, cylinder, enlarge, material, part
+from workshop import LEFT, MATTE, METAL, RIGHT, anchor, box, cylinder, enlarge, material, part
 
 
 def build(color):
@@ -31,9 +31,9 @@ def build(color):
     part(dome("casque", 0.275), coiffe, chapeau)
     part(cylinder("pointe", 0, 0.06, 0.16), coiffe, chapeau, (0, 0.33, 0))
 
-    main_droite = hand("droite", (0.45, 0.55, 0.06), peau)
+    main_droite = hand(RIGHT, (0.45, 0.55, 0.06), peau)
     part(cylinder("manche", 0.025, 0.025, 0.8), secondaire, main_droite, (0, -0.05, 0))
     part(box("fer", 0.24, 0.15, 0.15), accessoire, main_droite, (0, 0.35, 0))
-    hand("gauche", (-0.45, 0.55, 0.06), peau)
+    hand(LEFT, (0.45, 0.55, 0.06), peau)
 
     enlarge(SCALE)

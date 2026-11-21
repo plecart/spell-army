@@ -1,6 +1,6 @@
 """
-L'atelier commun des classes : matériaux, primitives, ancres et pièces, agrandissement, scène vide,
-export GLB.
+L'atelier commun des classes : matériaux, primitives, côtés, ancres, pièces et mains,
+agrandissement, scène vide, export GLB.
 
 Une classe s'écrit dans le repère du fichier 3D (direction artistique § 7, « Repère ») : Y vers le
 haut, personnage tourné vers +Z. Les primitives reprennent les géométries de three.js, paramètres
@@ -9,6 +9,7 @@ passe dans le repère de Blender, Z vers le haut, où (x, y, z) glTF devient (x,
 """
 
 import math
+from collections import namedtuple
 
 import bmesh
 import bpy
@@ -17,6 +18,14 @@ from mathutils import Color, Euler, Matrix, Vector
 # glTF vers Blender : un quart de tour autour de X, écrit en entiers pour que la conversion d'un
 # point n'ajoute aucun reste de calcul flottant. L'export glTF fait le chemin inverse.
 GLTF_TO_BLENDER = Matrix(((1, 0, 0), (0, 0, -1), (0, 1, 0)))
+
+# Les deux côtés du personnage, vus par lui, et le signe de leur x dans le repère du fichier 3D :
+# tourné vers +Z, il a sa droite en -X (glTF 2.0, § 3.4 : « +Y as up, +Z as forward, and -X as
+# right »). Le nom d'un côté s'accorde à celui de sa pièce : `oeil_droit`, `main_droite`.
+Side = namedtuple("Side", "sign masculine feminine")
+LEFT = Side(1, "gauche", "gauche")
+RIGHT = Side(-1, "droit", "droite")
+SIDES = (LEFT, RIGHT)
 
 # Les finitions du prototype `modeles.html` de la direction artistique (fonction `material`), en
 # entrées du Principled BSDF : le vernis (Coat) s'exporte en KHR_materials_clearcoat.
@@ -243,6 +252,18 @@ def part(
     basis = GLTF_TO_BLENDER.to_4x4()
     piece.matrix_basis = basis @ local @ basis.transposed()
     return piece
+
+
+def hand(side, position, skin, radius):
+    """
+    L'ancre `main_<côté>` du côté `side`, en `position` mais son x compté vers l'extérieur, portant
+    sa paume flottante de peau `skin` et de rayon `radius` ; l'objet tenu s'accroche ensuite à
+    l'ancre rendue.
+    """
+    outward, height, depth = position
+    main = anchor(f"main_{side.feminine}", position=(side.sign * outward, height, depth))
+    part(sphere(f"paume_{side.feminine}", radius, 20, 16), skin, main, scale=(1, 1.1, 0.9))
+    return main
 
 
 def enlarge(factor):

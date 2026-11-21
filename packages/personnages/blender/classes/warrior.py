@@ -8,7 +8,19 @@ se tient par son bord, à côté.
 import math
 
 from annuaire import EYES, SCALE, STEEL, dome, hand, head, legs
-from workshop import METAL, anchor, box, cylinder, enlarge, material, part, sphere, torus
+from workshop import (
+    LEFT,
+    METAL,
+    RIGHT,
+    anchor,
+    box,
+    cylinder,
+    enlarge,
+    material,
+    part,
+    sphere,
+    torus,
+)
 
 SHIELD = 0.29  # rayon du bouclier
 TILT = 0.25  # le bouclier se tourne d'autant vers l'extérieur, autour de l'axe vertical
@@ -34,17 +46,19 @@ def build(color):
     part(dome("casque", 0.25), coiffe, chapeau)
     part(box("nasal", 0.06, 0.22, 0.03), coiffe, chapeau, (0, -0.1, 0.24))
 
-    main_droite = hand("droite", (0.4, 0.52, 0.08), peau)
+    main_droite = hand(RIGHT, (0.4, 0.52, 0.08), peau)
     part(box("lame", 0.05, 0.72, 0.02), accessoire, main_droite, (0, 0.43, 0))
     part(box("garde", 0.22, 0.04, 0.07), accessoire, main_droite, (0, 0.06, 0))
 
-    # La main tient le bord intérieur du bouclier : son centre est à un rayon, dans son plan, et son
-    # cerclage à 0,03 devant, le long de sa normale.
-    main_gauche = hand("gauche", (-0.32, 0.66, 0.13), peau)
-    center = (-SHIELD * math.cos(TILT), 0, -SHIELD * math.sin(TILT))
+    # La main tient le bord intérieur du bouclier : son centre est à un rayon vers l'extérieur, dans
+    # son plan, et son cerclage à 0,03 devant, le long de sa normale.
+    main_gauche = hand(LEFT, (0.32, 0.66, 0.13), peau)
+    outward = LEFT.sign
+    center = (outward * SHIELD * math.cos(TILT), 0, -SHIELD * math.sin(TILT))
     disc = cylinder("bouclier", SHIELD, SHIELD, 0.05)
-    part(disc, corps, main_gauche, center, (math.pi / 2, 0, TILT))
-    rim = (center[0] - 0.03 * math.sin(TILT), 0, center[2] + 0.03 * math.cos(TILT))
-    part(torus("cerclage", SHIELD, 0.025, 8, 32), secondaire, main_gauche, rim, (0, -TILT, 0))
+    part(disc, corps, main_gauche, center, (math.pi / 2, 0, -outward * TILT))
+    rim = (center[0] + outward * 0.03 * math.sin(TILT), 0, center[2] + 0.03 * math.cos(TILT))
+    ring = torus("cerclage", SHIELD, 0.025, 8, 32)
+    part(ring, secondaire, main_gauche, rim, (0, outward * TILT, 0))
 
     enlarge(SCALE)

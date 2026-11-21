@@ -8,7 +8,7 @@ percer le haut du crâne : ils le couvrent ici.
 import math
 
 from annuaire import SCALE, dome, hand, head, legs
-from workshop import MATTE, anchor, cylinder, enlarge, lathe, material, part
+from workshop import LEFT, MATTE, RIGHT, anchor, cylinder, enlarge, lathe, material, part
 
 
 def build(color):
@@ -34,7 +34,7 @@ def build(color):
     collar = lathe("col", [(0.2, -0.14), (0.3, 0.14)], 32, math.pi * 1.25, math.pi * 1.5)
     part(collar, fixe, dos, (0, 0.03, 0.02))
 
-    hand("droite", (0.45, 0.62, 0.12), peau)
-    hand("gauche", (-0.45, 0.62, 0.12), peau)
+    hand(RIGHT, (0.45, 0.62, 0.12), peau)
+    hand(LEFT, (0.45, 0.62, 0.12), peau)
 
     enlarge(SCALE)

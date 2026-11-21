@@ -6,7 +6,7 @@ passe à côté de son bord et au-dessus, quand celle du prototype le traversera
 """
 
 from annuaire import SCALE, WOOD, hand, head, legs
-from workshop import MATTE, anchor, box, cylinder, enlarge, material, part, sphere
+from workshop import LEFT, MATTE, RIGHT, anchor, box, cylinder, enlarge, material, part, sphere
 
 
 def build(color):
@@ -29,12 +29,12 @@ def build(color):
     part(cylinder("calotte", 0.2, 0.24, 0.17), coiffe, chapeau, (0, 0.09, 0))
     part(cylinder("galon", 0.245, 0.245, 0.045), fixe, chapeau, (0, 0.03, 0))
 
-    main_droite = hand("droite", (0.47, 0.72, 0.06), peau)
+    main_droite = hand(RIGHT, (0.47, 0.72, 0.06), peau)
     part(cylinder("manche", 0.024, 0.024, 1.65), accessoire, main_droite, (0, 0.105, 0))
     part(box("traverse", 0.22, 0.03, 0.03), accessoire, main_droite, (0, 0.93, 0))
     for i, dx in enumerate((-0.1, 0, 0.1), 1):
         tine = cylinder(f"dent_{i}", 0.012, 0.012, 0.24, 8)
         part(tine, accessoire, main_droite, (dx, 1.06, 0))
-    hand("gauche", (-0.42, 0.62, 0.08), peau)
+    hand(LEFT, (0.42, 0.62, 0.08), peau)
 
     enlarge(SCALE)

@@ -5,7 +5,19 @@ prototype enfonçait la tête dans la pointe de la robe : elle flotte ici au-des
 """
 
 from annuaire import EYES, SCALE, hand, head
-from workshop import PAINT, anchor, cylinder, enlarge, material, octahedron, part, sphere
+from workshop import (
+    LEFT,
+    PAINT,
+    RIGHT,
+    SIDES,
+    anchor,
+    cylinder,
+    enlarge,
+    material,
+    octahedron,
+    part,
+    sphere,
+)
 
 # Le verre du prototype : un matériau d'opacité 0,55, exporté en `alphaMode` BLEND.
 GLASS = {**PAINT, "Roughness": 0.2, "Alpha": 0.55}
@@ -35,16 +47,17 @@ def build(color):
 
     # Les ailes, plus en arrière que dans le prototype, où elles traversaient les cheveux.
     dos = anchor("dos", position=(0, 0.82, -0.3))
-    for side, s in (("gauche", -1), ("droite", 1)):
+    for side in SIDES:
         for name, y, size, tilt in WINGS:
-            wing = sphere(f"aile_{name}_{side}", 1, 20, 15)
+            wing = sphere(f"aile_{name}_{side.feminine}", 1, 20, 15)
             shape = (size * 0.55, size, 0.025)
-            part(wing, secondaire, dos, (s * 0.3, y, 0), (0, 0, -s * tilt), shape)
+            part(wing, secondaire, dos, (side.sign * 0.3, y, 0), (0, 0, -side.sign * tilt), shape)
 
-    main_droite = hand("droite", (0.29, 0.53, 0.1), peau)
+    main_droite = hand(RIGHT, (0.29, 0.53, 0.1), peau)
+    outward = RIGHT.sign  # la baguette penche vers l'extérieur de la main
     wand = cylinder("baguette", 0.014, 0.014, 0.5, 8)
-    part(wand, accessoire, main_droite, (0.03, 0.09, 0), (0, 0, -0.35))
-    part(octahedron("etoile", 0.07), accessoire, main_droite, (0.12, 0.33, 0))
-    hand("gauche", (-0.29, 0.53, 0.1), peau)
+    part(wand, accessoire, main_droite, (outward * 0.03, 0.09, 0), (0, 0, -outward * 0.35))
+    part(octahedron("etoile", 0.07), accessoire, main_droite, (outward * 0.12, 0.33, 0))
+    hand(LEFT, (0.29, 0.53, 0.1), peau)
 
     enlarge(SCALE * SIZE)
