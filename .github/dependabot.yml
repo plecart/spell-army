@@ -43,6 +43,14 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # `@types/node` suit les majeures de Node : ses types 25 et au-delà laisseraient passer au
+      # typecheck des API absentes du runtime déclaré, Node 24 (`engines.node` de `package.json`,
+      # `.nvmrc`). Refus décidé le 2026-11-22, sur la PR #30 (24.19.2 → 26.6.6). Réexamen : le test
+      # `packages/donnees/test/refus-dependabot.test.ts` rougit quand `engines.node` admet une
+      # version que cette plage refuse ; monter alors la borne à la majeure qui suit le runtime.
+      - dependency-name: "@types/node"
+        versions: [">=25.0.0"]
     labels: []
     commit-message:
       prefix: chore
