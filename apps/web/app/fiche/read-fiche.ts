@@ -1,6 +1,6 @@
 import { type PlayerSheet, readVisiblePlayer } from "joueurs";
-import { notFound } from "next/navigation.js";
-import { connection } from "next/server.js";
+import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { database } from "../environment.ts";
 
 /**

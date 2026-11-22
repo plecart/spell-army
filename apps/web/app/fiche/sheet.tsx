@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation.js";
+import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { isBackdropClick } from "../backdrop.ts";
 import { once } from "../once.ts";

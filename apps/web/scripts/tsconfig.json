@@ -1,0 +1,7 @@
+{
+	// Les scripts tournent sous Node, sans compilateur : comme Node, la résolution de la base
+	// (`nodenext`) exige l'extension de leurs imports relatifs, que celle de l'application, en
+	// bundler (`../tsconfig.json`), n'exige pas. Ce projet couvre tout `scripts/`, et ce que les
+	// scripts importent d'`app/`.
+	"extends": "../../../tsconfig.base.json"
+}

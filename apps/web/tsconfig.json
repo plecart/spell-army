@@ -2,24 +2,14 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"jsx": "react-jsx",
-		// `next` n'a pas de champ `exports` : sous `nodenext`, TypeScript ne résout ses sous-chemins
-		// qu'avec leur extension (`next/server.js`), que le compilateur de Next.js résout aussi. Ces
-		// chemins-ci ne servent qu'aux deux sous-chemins sans extension que le compilateur remplace
-		// lui-même : `next/font/google`, par son chargeur de polices, et `next/link`, dont l'import par
-		// défaut se type en module ES (`next-link.d.ts`). Le compilateur lit aussi ces chemins : un
-		// chemin vers un `.d.ts` lui rend un module vide (mesuré : `connection` de `next/server` y
-		// valait `undefined` sous `next start`).
-		"paths": {
-			"next/font/google": ["./node_modules/next/font/google/index.d.ts"],
-			"next/link": ["./next-link.d.ts"]
-		}
+		// Next.js compile l'application et résout ses imports en bundler : TypeScript suit la même
+		// résolution, celle d'un projet Next.js neuf (next 16.4.6 : `dist/docs/01-app/
+		// 03-api-reference/08-turbopack.md`, « TypeScript » ; `dist/lib/typescript/
+		// writeConfigurationDefaults.js`). Les sous-chemins de `next` s'y importent sans extension,
+		// sous leur forme documentée (`next/server`, `next/link`). Les scripts de `scripts/`, exécutés
+		// par Node, ont leur propre projet (`scripts/tsconfig.json`).
+		"module": "esnext",
+		"moduleResolution": "bundler"
 	},
-	"include": [
-		"next-env.d.ts",
-		".next/types/**/*.ts",
-		"app",
-		"test",
-		"scripts",
-		"*.ts"
-	]
+	"include": ["next-env.d.ts", ".next/types/**/*.ts", "app", "test", "*.ts"]
 }
