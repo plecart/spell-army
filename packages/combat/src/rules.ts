@@ -45,6 +45,8 @@ const TEXT_FIELDS = [
 const SPELL_LOWEST_SHARE = 1;
 /** La plus petite part d'une recette d'attaque du monstre : une part nulle y est admise. */
 const ATTACK_LOWEST_SHARE = 0;
+/** Les stats que peut prendre la recette d'une attaque de monstre. */
+const ATTACK_RECIPE_STATS: readonly string[] = ["strength", "magic"];
 /** Le nombre d'attaques d'un monstre (game design § 3, « Attaques »). */
 const ATTACK_COUNT = { min: 2, max: 4 } as const;
 /** Le coefficient moyen des attaques se vérifie au centième. */
@@ -265,7 +267,8 @@ function textErrors(candidate: Omit<Spell, "number">): string[] {
  * qu'il simule : un monstre se valide ici, avant son facteur d'échelle (`scaleFactor`).
  *
  * - Attaques (« Attaques ») : de 2 à 4, de noms deux à deux distincts.
- * - Recette d'une attaque : des parts entières de 0 à 100 dont la somme fait 100.
+ * - Recette d'une attaque : la Force et la Magie seules, en parts entières de 0 à 100 dont la
+ *   somme fait 100.
  * - Coefficient d'une attaque : un nombre fini > 0.
  * - Coefficient moyen (« Puissance d'une attaque ») : la moyenne simple des coefficients vaut ×0,78
  *   au centième.
@@ -303,12 +306,33 @@ function attackErrors({ name, recipe, coefficient }: MonsterAttack): string[] {
 			? []
 			: [`le coefficient doit être un nombre fini > 0, reçu : ${coefficient}`];
 	return [
+		...attackRecipeStatErrors(recipe),
 		...sharesErrors(recipe, ATTACK_LOWEST_SHARE),
 		...coefficientErrors,
 	].map((error) => `l'attaque « ${name} » : ${error}`);
 }
 
+/**
+ * Une recette d'attaque ne prend que la Force et la Magie du monstre (game design § 3,
+ * « Attaques ») : le type le dit, mais une entrée non typée peut porter une autre stat, que le
+ * combat pondérerait.
+ */
+function attackRecipeStatErrors(recipe: MonsterAttack["recipe"]): string[] {
+	const others = Object.keys(recipe).filter(
+		(stat) => !ATTACK_RECIPE_STATS.includes(stat),
+	);
+	const quoted = (stats: readonly string[]) =>
+		stats.map((stat) => `« ${stat} »`).join(", ");
+	return others.length === 0
+		? []
+		: [
+				`la recette ne prend que la Force et la Magie (${quoted(ATTACK_RECIPE_STATS)}), reçu : ${quoted(others)}`,
+			];
+}
+
 function meanCoefficientErrors(attacks: readonly MonsterAttack[]): string[] {
+	// Sans attaque, il n'y a pas de moyenne : le nombre d'attaques le dit déjà.
+	if (attacks.length === 0) return [];
 	const total = attacks.reduce((sum, { coefficient }) => sum + coefficient, 0);
 	const hundredths = Math.round((total / attacks.length) * HUNDREDTHS);
 	if (hundredths === Math.round(MEAN_COEFFICIENT * HUNDREDTHS)) return [];

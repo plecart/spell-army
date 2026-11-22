@@ -99,6 +99,25 @@ describe("validité d'un monstre", () => {
 			["le nom d'attaque « Poing de lave » doit être unique dans le monstre"],
 		],
 		[
+			"aucune attaque",
+			{ attacks: [] },
+			["un monstre doit avoir de 2 à 4 attaques, reçu : 0"],
+		],
+		[
+			"une recette sur la Vie",
+			{
+				attacks: [
+					attack("Poing de lave", 0.78, {
+						life: 100,
+					} as MonsterAttack["recipe"]),
+					attack("Coulée"),
+				],
+			},
+			[
+				"l'attaque « Poing de lave » : la recette ne prend que la Force et la Magie (« strength », « magic »), reçu : « life »",
+			],
+		],
+		[
 			"une recette à 99 %",
 			{
 				attacks: [
