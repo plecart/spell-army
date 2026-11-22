@@ -60,8 +60,9 @@ function drawableSpells(spells: readonly WikiSpell[]): WikiSpell[] {
  *
  * Lève une erreur, à afficher telle quelle, avant toute écriture : un passage introuvable ou
  * incomplet dans son document ; un refus de la base, expliqué pour une table absente ou un droit
- * refusé, sinon tel quel ; aucun sort tirable ; un sort tirable invalide (`validateSpell`), qu'elle
- * nomme ; un dossier qui n'est pas vide (`writeFolder`).
+ * refusé, sinon tel quel ; aucun sort tirable ; un sort tirable invalide (`validateSpell`), ou dont
+ * l'image est d'un type inconnu (`wikiPages`), qu'elle nomme ; un dossier qui n'est pas vide
+ * (`writeFolder`).
  */
 export async function generateWiki(
 	folder: string,
