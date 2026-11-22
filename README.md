@@ -36,8 +36,8 @@ Les règles complètes sont dans le [game design](docs/game-design.md), l'appare
 
 - **Fait** : le socle du monorepo et sa CI, les personnages calculés, la réserve de 24 sorts,
   l'import des abonnés, le serveur MCP de pilotage, les brouillons 3D des huit classes, le moteur
-  de combat.
-- **En cours** : l'annuaire des recrues et la fiche du personnage, le bestiaire, la saison, puis
+  de combat, l'annuaire des recrues et la page « Informations ».
+- **En cours** : la fiche du personnage, le bestiaire, la saison, puis
   la mise en ligne d'une bêta.
 - **Plus tard** : la vidéo de chaque combat.
 

@@ -15,6 +15,15 @@ export const CLASS_KEYS = [
 ] as const;
 export type ClassKey = (typeof CLASS_KEYS)[number];
 
+/** Une valeur par classe de `CLASS_KEYS`, celle que `valueFor` donne pour la classe. */
+export function perClass<T>(
+	valueFor: (classKey: ClassKey) => T,
+): Record<ClassKey, T> {
+	return Object.fromEntries(
+		CLASS_KEYS.map((classKey) => [classKey, valueFor(classKey)]),
+	) as Record<ClassKey, T>;
+}
+
 /** Les stats, dans l'ordre où le tirage les parcourt. Ordre figé, comme celui des classes. */
 export const STAT_KEYS = ["life", "strength", "magic", "speed"] as const;
 export type StatKey = (typeof STAT_KEYS)[number];

@@ -1,5 +1,5 @@
 import { type Executor, players, spells } from "donnees";
-import { eq, ilike, sql } from "drizzle-orm";
+import { eq, type SQL, type SQLWrapper, sql } from "drizzle-orm";
 import { type ClassKey, characterOf } from "personnages";
 
 /** Le nombre de joueurs que rend au plus une recherche. */
@@ -23,9 +23,8 @@ export interface PlayerSearch {
 }
 
 /**
- * Les joueurs dont le pseudo contient `fragment`, sans tenir compte des majuscules (`ilike`).
- * `fragment` est pris littéralement : ses `\`, `%` et `_` sont échappés dans le motif, et aucun
- * n'agit en métacaractère.
+ * Les joueurs dont le pseudo contient `fragment`, pris littéralement, sans tenir compte des
+ * majuscules (`containsIgnoringCase`).
  *
  * Tri par pseudo dans l'ordre des octets (`collate "C"`, majuscules avant minuscules), le même sur
  * toute base quelle que soit sa collation, puis par identifiant : deux joueurs peuvent porter le
@@ -51,7 +50,7 @@ export async function searchPlayers(
 		})
 		.from(players)
 		.innerJoin(spells, eq(players.spellNumber, spells.number))
-		.where(ilike(players.username, `%${likeLiteral(fragment)}%`))
+		.where(containsIgnoringCase(players.username, fragment))
 		.orderBy(sql`${players.username} collate "C"`, players.instagramId)
 		// Une ligne de plus que la limite dit si la liste est tronquée.
 		.limit(MAX_FOUND_PLAYERS + 1);
@@ -64,8 +63,12 @@ export async function searchPlayers(
 	};
 }
 
-// `text` pris littéralement dans un motif `LIKE` : `\`, `%` et `_` précédés de `\`, le caractère
-// d'échappement par défaut de Postgres.
-function likeLiteral(text: string): string {
-	return text.replace(/[\\%_]/g, "\\$&");
+/**
+ * Le prédicat SQL « `text` contient `fragment`, sans tenir compte des majuscules ».
+ *
+ * Par `strpos` et jamais par `like` : `fragment` est pris littéralement, sans échappement, et ses
+ * `_`, `%` et `\` n'agissent pas en métacaractères. Un `fragment` vide est contenu dans tout texte.
+ */
+export function containsIgnoringCase(text: SQLWrapper, fragment: string): SQL {
+	return sql`strpos(lower(${text}), lower(${fragment})) > 0`;
 }

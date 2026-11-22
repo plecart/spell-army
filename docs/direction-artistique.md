@@ -19,7 +19,7 @@ Statuts, comme au cadrage :
 | Site | **Style BD** : fond crème à trame de points, bordures d'encre de 2 px, ombres décalées de 3 px, titres gras. | Décidé |
 | Personnages | **Jouet verni à contour fin** : volumes simples et lisses, vernis brillant, fin contour d'encre. **Couleurs sourdes**, jamais flashy. | Décidé |
 | Écran de référence | **Le téléphone d'abord.** Le site est surtout vu sur mobile ; le bureau suit. | Décidé |
-| Thèmes | Clair et sombre, choisis par le système, avec un bouton pour basculer. | Proposé |
+| Thèmes | Clair et sombre, choisis par le système, avec un bouton pour basculer. | Décidé |
 
 ## 2. Couleurs et typographie
 
@@ -36,7 +36,7 @@ Statuts, comme au cadrage :
 | Paysan | `#c4a052` |
 | Fée | `#3f9c95` |
 
-**Couleurs d'interface** (Proposé), celles des prototypes :
+**Couleurs d'interface** (Décidé), celles des prototypes :
 
 | Jeton | Clair | Sombre |
 |---|---|---|
@@ -52,7 +52,7 @@ En sombre, l'ombre décalée reste noire : une ombre claire est refusée, trop m
 
 **Couleurs d'effet des sorts** (Proposé) : dégâts `#b83b26`, soin `#4f7a3a`, vol de vie `#6e1f33`.
 
-**Typographie** (Proposé) : Bricolage Grotesque (Google Fonts), graisses 400 à 800, une seule famille.
+**Typographie** (Décidé) : Bricolage Grotesque (Google Fonts), graisses 400 à 800, une seule famille.
 
 ## 3. Le site au MVP
 
@@ -63,7 +63,7 @@ En sombre, l'ombre décalée reste noire : une ombre claire est refusée, trop m
 | Filtre par classe | Un bouton à côté de la recherche ouvre une **feuille** depuis le bas de l'écran : « Toutes les classes » et les huit classes sur deux colonnes, chacune avec son nombre de recrues. Le filtre actif s'affiche en étiquette qu'on peut retirer. Les rangées de pastilles, qui débordent de l'écran, sont refusées. | Décidé |
 | Pagination | 24 cartes par page ; « Précédente », « Page N sur M », « Suivante ». | Décidé |
 | Carte | Vignette du personnage sur son décor, pseudo, pastille et nom de la classe. | Décidé |
-| Vignettes | Des images rendues par un seul moteur 3D, jamais 24 scènes 3D vivantes : les navigateurs limitent le nombre de contextes WebGL. | Proposé |
+| Vignettes | Des images rendues par un seul moteur 3D, jamais 24 scènes 3D vivantes : les navigateurs limitent le nombre de contextes WebGL. | Décidé |
 | Fiche | En haut, le **pseudo** et le bouton de fermeture ; puis la scène 3D, la classe et la date d'arrivée, une phrase de verdict, les quatre statistiques en barres, « 30 points, répartis à l'inscription selon le pseudo », et la carte du sort. | Décidé |
 | Scène de la fiche | Le **socle reste immobile** au sol ; le personnage tourne lentement sur lui-même et **flotte** au-dessus, en montant et descendant. Son ombre sur le socle suit sa hauteur. On peut le faire tourner du doigt. | Décidé |
 
@@ -179,7 +179,7 @@ au site et à la vidéo.
 | 3 | Visuels des 24 sorts. | À dessiner ; les pictogrammes du prototype sont refusés. |
 | 4 | Pilotage de Blender : serveur MCP ou script Python. | Tranché le 2026-11-21 : script Python, le MCP en atelier (§ 7). |
 | 5 | Ancre `dos`. | À confirmer avec la première cape ou les premières ailes. |
-| 6 | Couleurs d'interface et typographie (§ 2). | À confirmer à la première PR du site. |
+| 6 | Couleurs d'interface et typographie (§ 2). | Tranché le 2026-11-21 : confirmées à l'arrêt visuel de la première page du site (PR #39), avec les thèmes (§ 1) et les vignettes (§ 3). |
 
 ## 10. Captures des prototypes
 

@@ -34,3 +34,9 @@ export {
 	runTick,
 	type TickReport,
 } from "./tick.ts";
+export {
+	listVisiblePlayers,
+	type VisiblePlayer,
+	type VisiblePlayersPage,
+	type VisiblePlayersQuery,
+} from "./visible-players.ts";
