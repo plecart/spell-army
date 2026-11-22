@@ -9,14 +9,17 @@ export interface CommandRun {
 }
 
 /**
- * Lance par Node, hors de Vitest, le point d'entrée `script` de `scripts/` avec `args`, dans
- * l'environnement du test complété par `env`. C'est la frontière que les tests en processus ne voient
- * pas : Node charge le point d'entrée et les paquets en retirant leurs types.
+ * Lance par Node, hors de Vitest, le point d'entrée `script` de `scripts/` avec `args`, depuis `cwd`
+ * (celui du test à défaut), dans l'environnement du test complété par `env` : une variable à
+ * `undefined` en est retirée, Node ne transmettant pas une valeur `undefined` (`child_process`,
+ * Node 24.3). C'est la frontière que les tests en processus ne voient pas : Node charge le point
+ * d'entrée et les paquets en retirant leurs types.
  */
 export function runScript(
 	script: string,
 	args: string[],
-	env: Record<string, string>,
+	env: Record<string, string | undefined>,
+	cwd?: string,
 ): Promise<CommandRun> {
 	const entryPoint = fileURLToPath(
 		new URL(`../scripts/${script}`, import.meta.url),
@@ -25,7 +28,7 @@ export function runScript(
 		execFile(
 			process.execPath,
 			[entryPoint, ...args],
-			{ env: { ...process.env, ...env } },
+			{ cwd, env: { ...process.env, ...env } },
 			(error, stdout, stderr) =>
 				resolve({ code: Number(error?.code ?? 0), stdout, stderr }),
 		);

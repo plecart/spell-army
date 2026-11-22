@@ -30,12 +30,15 @@ export const ADDED: WikiSpell = {
 export const withImage = (number: number, image: WikiSpell["image"]) =>
 	POOL.map((spell) => (spell.number === number ? { ...spell, image } : spell));
 
-/** Un dossier de sortie, encore absent, dans un dossier temporaire effacé à la fin du test. */
-export async function outputFolder(): Promise<string> {
-	const root = await mkdtemp(join(tmpdir(), "wiki-"));
-	onTestFinished(() => rm(root, { recursive: true, force: true }));
-	return join(root, "wiki");
+/** Un dossier temporaire vide, effacé à la fin du test. */
+export async function emptyFolder(): Promise<string> {
+	const folder = await mkdtemp(join(tmpdir(), "wiki-"));
+	onTestFinished(() => rm(folder, { recursive: true, force: true }));
+	return folder;
 }
+
+/** Un dossier de sortie, encore absent, dans un dossier temporaire effacé à la fin du test. */
+export const outputFolder = async () => join(await emptyFolder(), "wiki");
 
 /** Les fichiers de `folder`, sous-dossiers compris, en chemins relatifs à barres obliques. */
 export async function filesOf(folder: string): Promise<string[]> {
