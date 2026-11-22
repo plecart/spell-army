@@ -250,7 +250,8 @@ function modelEffect({ base, degats, soin }: ToolEffect): Effect {
 /**
  * Le sort d'une ligne de la table, que `donnees` rend sans lire `recipe`, `form` et `effect` : le
  * modèle de `combat`, validé avant d'être écrit. Le schéma de sortie de chaque outil le revalide
- * une fois traduit.
+ * une fois traduit ; le wiki, par `validateSpell`. L'image de la ligne, résumée ou en octets, n'y
+ * entre pas.
  */
 export function spellOf({
 	number,
@@ -260,7 +261,7 @@ export function spellOf({
 	effect,
 	weight,
 	description,
-}: SpellRecord): Spell {
+}: Omit<SpellRecord, "image">): Spell {
 	return {
 		number,
 		name,

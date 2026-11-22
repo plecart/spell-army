@@ -5,6 +5,7 @@ export {
 } from "./calibration-settings.ts";
 export {
 	createClient,
+	EMPTY_DATABASE_URL,
 	type Executor,
 	postgresErrorCode,
 } from "./client.ts";
@@ -35,6 +36,7 @@ export {
 	type ImageSummary,
 	insertSpell,
 	listSpells,
+	listSpellsWithImages,
 	type NewSpell,
 	readDrawablePool,
 	readSpell,

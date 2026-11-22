@@ -12,6 +12,10 @@ export function createClient(url: string) {
 	return drizzle(url);
 }
 
+/** Le refus d'une commande du dépôt lancée sans base : `DATABASE_URL` absente ou vide. */
+export const EMPTY_DATABASE_URL =
+	"DATABASE_URL est vide : renseigne-la dans le shell ou dans le fichier .env de la racine.";
+
 /** Le client que rend `createClient`, ou une transaction ouverte sur lui. */
 export type Executor = PgDatabase<NodePgQueryResultHKT>;
 

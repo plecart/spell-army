@@ -29,6 +29,11 @@ export interface SpellImage {
 	type: string;
 }
 
+/** Un sort tel que la table `spells` le porte, avec les octets et le type de son image, ou `null`. */
+export type SpellWithImage = Omit<SpellRecord, "image"> & {
+	image: SpellImage | null;
+};
+
 /** Ce qu'une modification peut changer d'un sort ; `image: null` la retire. */
 export interface SpellPatch {
 	weight?: number;
@@ -74,6 +79,24 @@ function recordNumbered(number: number, [row]: RecordRow[]): SpellRecord {
 		throw new Error(`Aucun sort de numéro ${number}.`);
 	}
 	return toRecord(row);
+}
+
+/**
+ * Les sorts de la réserve, par numéro croissant, poids 0 compris, chacun avec les octets de son image
+ * et leur type, ou `null` sans image : de quoi publier toute la réserve, le wiki du jeu. Ni filtre ni
+ * validation : le tri des tirables et le modèle de `combat` reviennent à l'appelant.
+ */
+export async function listSpellsWithImages(
+	executor: Executor,
+): Promise<SpellWithImage[]> {
+	const rows = await executor.select().from(spells).orderBy(spells.number);
+	return rows.map(({ image, imageType, ...spell }) => ({
+		...spell,
+		image:
+			image === null || imageType === null
+				? null
+				: { bytes: image, type: imageType },
+	}));
 }
 
 /** Les sorts de la réserve, par numéro croissant. */

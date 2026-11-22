@@ -1,15 +1,14 @@
-import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { modelFiles } from "donnees";
 import { glb } from "personnages/test/glb";
 import { describe, expect, onTestFinished, test } from "vitest";
 import { depositModel, REQUIRED_VARIABLES } from "../scripts/deposit-model.ts";
+import { runScript } from "./commande.ts";
 import { CONFORMING, DEVIATIONS, NON_CONFORMING } from "./fichiers-3d.ts";
 import {
 	ENDPOINT_URL,
@@ -21,9 +20,6 @@ import {
 import { sha256 } from "./octets.ts";
 
 const ENV = { MCP_URL: ENDPOINT_URL, MCP_TOKEN: TOKEN };
-const ENTRY_POINT = fileURLToPath(
-	new URL("../scripts/deposer-3d.ts", import.meta.url),
-);
 
 /** Un dossier temporaire, effacé à la fin du test, où chaque JSON de `files` est écrit en GLB. */
 async function folderWith(files: Record<string, unknown>): Promise<string> {
@@ -191,20 +187,9 @@ async function listen(serve: Serve): Promise<string> {
 	return `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/mcp`;
 }
 
-/** Lance le point d'entrée par Node, hors de Vitest : son code de sortie et ses deux flux. */
-function runEntryPoint(args: string[], env: Record<string, string>) {
-	return new Promise<{ code: number; stdout: string; stderr: string }>(
-		(resolve) => {
-			execFile(
-				process.execPath,
-				[ENTRY_POINT, ...args],
-				{ env: { ...process.env, ...env } },
-				(error, stdout, stderr) =>
-					resolve({ code: Number(error?.code ?? 0), stdout, stderr }),
-			);
-		},
-	);
-}
+/** Lance `deposer-3d.ts` par Node, hors de Vitest : son code de sortie et ses deux flux. */
+const runEntryPoint = (args: string[], env: Record<string, string>) =>
+	runScript("deposer-3d.ts", args, env);
 
 // La frontière que les tests en processus ne voient pas : Node, sans Vitest, charge le point
 // d'entrée et `personnages` en retirant leurs types.
