@@ -45,6 +45,9 @@ export const NEUTRAL_PROFILE: Readonly<Profile> = {
 	speed: 1,
 };
 
+/** Le nombre d'attaques d'un monstre (game design § 3, « Attaques »). */
+export const ATTACK_COUNT = { min: 2, max: 4 } as const;
+
 /**
  * Le coefficient moyen des attaques d'un monstre (game design § 3, « Puissance d'une attaque »),
  * dans l'unité de l'annexe B.
