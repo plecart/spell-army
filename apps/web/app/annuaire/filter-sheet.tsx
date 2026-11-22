@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useRef } from "react";
-import { isBackdropClick } from "../backdrop.ts";
+import { isBackdropClick } from "../sheet-backdrop.ts";
 
 /**
  * Le bouton du filtre par classe et la feuille qu'il ouvre depuis le bas de l'écran (direction
