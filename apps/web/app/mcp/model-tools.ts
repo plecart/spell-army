@@ -1,4 +1,8 @@
-import { type ModelTarget, storeModelFile } from "donnees";
+import {
+	MAX_MONSTER_NAME_LENGTH,
+	type ModelTarget,
+	storeModelFile,
+} from "donnees";
 import { changeClassDefaultModel } from "joueurs";
 import { checkModel, describeDeviations, MAX_MODEL_BYTES } from "personnages";
 import { z } from "zod";
@@ -7,7 +11,6 @@ import { DEPOSIT_COMMAND } from "./deposit-command.ts";
 import type { McpTool } from "./tool.ts";
 import { CLASS_OF, CLASSES } from "./vocabulary.ts";
 
-const MAX_MONSTER_NAME_LENGTH = 64;
 const ONE_OWNER =
 	"L'entrée doit donner la classe ou le monstre, l'un des deux exactement.";
 
