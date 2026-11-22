@@ -5,7 +5,7 @@ import { createClient, EMPTY_DATABASE_URL, updateSpell } from "donnees";
 import { createMigratedDatabase } from "donnees/test/base-de-test";
 import { describe, expect, inject, onTestFinished, test } from "vitest";
 import { runScript } from "./commande.ts";
-import { emptyFolder, filesOf, outputFolder } from "./wiki.ts";
+import { emptyFolder, filesOf, IMAGE_BYTES, outputFolder } from "./wiki.ts";
 
 /** Lance `wiki.ts` par Node, hors de Vitest, depuis `cwd` : son code de sortie et ses deux flux. */
 const runWiki = (
@@ -24,9 +24,8 @@ describe("la commande wiki, lancée par Node", () => {
 		const url = await createMigratedDatabase(inject("testDatabaseUrl"));
 		const db = createClient(url);
 		onTestFinished(() => db.$client.end());
-		const bytes = [137, 80, 78, 71];
 		await updateSpell(db, 6, {
-			image: { bytes: new Uint8Array(bytes), type: "image/png" },
+			image: { bytes: new Uint8Array(IMAGE_BYTES), type: "image/png" },
 		});
 		const folder = await outputFolder();
 		expect(await runWiki([folder], { DATABASE_URL: url })).toEqual({
