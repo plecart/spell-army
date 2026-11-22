@@ -30,6 +30,13 @@ export interface Monster {
 	trait: string;
 }
 
+/**
+ * Ce que fixe la création d'un monstre, et que joue la simulation (game design § 3) : son profil et
+ * ses attaques. Ses stats n'en font pas partie : elles se dimensionnent sur chaque armée
+ * (`sizeMonster`).
+ */
+export type MonsterDesign = Pick<Monster, "profile" | "attacks">;
+
 /** Le profil neutre : chaque stat garde son budget. */
 export const NEUTRAL_PROFILE: Readonly<Profile> = {
 	life: 1,
@@ -49,8 +56,17 @@ export const REFERENCE_ATTACKS: readonly MonsterAttack[] = [
 ];
 
 /**
+ * Le monstre de référence (game design § 6, « Équilibre ») : profil neutre, attaques de référence.
+ * Celui de l'équilibre et de la mesure d'un sort (`measureSpell`), et le défaut de `victoryShare`.
+ */
+export const REFERENCE_DESIGN: MonsterDesign = {
+	profile: NEUTRAL_PROFILE,
+	attacks: REFERENCE_ATTACKS,
+};
+
+/**
  * Les stats d'un monstre (game design § 3, « Profil » ; § 6, « Calcul du prochain monstre ») :
- * pour chaque stat, budget × multiplicateur du profil × facteur d'échelle du profil.
+ * pour chaque stat, budget × multiplicateur du profil × facteur d'échelle du monstre.
  *
  * @example un budget de Vie 1 000, le golem de lave (Vie ×1,5) au facteur 1,165 : Vie 1 747,5.
  */

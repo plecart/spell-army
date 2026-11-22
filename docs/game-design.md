@@ -1,6 +1,6 @@
 # Wizard Army — Game design
 
-État au 2026-11-17. Ce document détaille la section « Combat et calibrage » du
+État au 2026-11-22. Ce document détaille la section « Combat et calibrage » du
 [cadrage](etudes/00-cadrage.md), qui fait foi en cas de désaccord (rang 1 des sources de vérité). Il
 remplace l'[étude 05](etudes/05-game-design.md), non retenue.
 
@@ -59,7 +59,7 @@ magicien parfait.
 | Tirage sans remise | Comme pour l'armée : chaque attaque sort une fois avant qu'une autre ne ressorte (pas quatre souffles d'affilée). | Proposé |
 | Puissance d'une attaque | Coefficient × stat du monstre selon la recette, **sans efficacité** (le monstre n'a pas de lanceur). Coefficient moyen des attaques d'un monstre : **×0,78**, dans l'unité de l'annexe B (§ 6, « Équilibre »). | Décidé |
 | Particularité | Une par monstre : résiste à la magie de X %, faible contre une classe, se régénère… Effets détaillés plus tard. | Décidé (effets ouverts) |
-| Profil | Chaque monstre répartit son budget à sa façon (un golem de lave : beaucoup de Vie, peu de Vitesse), sans changer sa difficulté (§ 6). Des multiplicateurs de moyenne 1 n'y suffisent pas (mesuré : golem de lave, Vie ×1,5 et Vitesse ×0,5, laisse 100 % de victoire à budget égal) : chaque profil reçoit un **facteur d'échelle** trouvé une fois par simulation, pour que le monstre égal à l'armée lui laisse 50 % (golem de lave : ×1,165). | Proposé |
+| Profil | Chaque monstre répartit son budget à sa façon (un golem de lave : beaucoup de Vie, peu de Vitesse), sans changer sa difficulté (§ 6). Des multiplicateurs de moyenne 1 n'y suffisent pas (mesuré : golem de lave, Vie ×1,5 et Vitesse ×0,5, laisse 100 % de victoire à budget égal) : chaque profil reçoit un **facteur d'échelle** trouvé une fois par simulation, pour que le monstre égal à l'armée lui laisse 50 % (golem de lave : ×1,165). La simulation joue le profil **et les attaques** du monstre : deux monstres de même profil mais d'attaques différentes reçoivent des facteurs différents (précision du 2026-11-22). | Proposé |
 | Pas d'éléments | Aucun système feu / eau / … au MVP. | Décidé |
 
 ## 4. Le combat

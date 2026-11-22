@@ -1,5 +1,5 @@
 import type { Fighter } from "./army.ts";
-import type { Profile } from "./monster.ts";
+import type { MonsterDesign } from "./monster.ts";
 import { victoryShare } from "./simulation.ts";
 
 /** L'échantillon d'une simulation : ses graines, et l'armée de chacune, que construit l'appelant. */
@@ -16,21 +16,22 @@ const SCALE_RANGE = { low: 1 / 8, high: 8 };
 const SCALE_PRECISION = 1e-3;
 
 /**
- * Le facteur d'échelle d'un profil (game design § 3, « Profil ») : celui pour lequel le monstre
- * égal à l'armée, à ce profil, lui laisse 50 % de victoires sur l'échantillon. Trouvé par
- * bissection de ÷8 à ×8, jusqu'à une largeur de 0,001, les mêmes graines et les mêmes armées à
- * chaque essai : `armyOf` est appelé une fois par graine.
+ * Le facteur d'échelle d'un monstre (game design § 3, « Profil ») : celui pour lequel le monstre
+ * égal à l'armée, au profil de `design` et qui joue ses attaques, lui laisse 50 % de victoires sur
+ * l'échantillon `sample` — deux monstres de même profil mais d'attaques différentes reçoivent des
+ * facteurs différents. Trouvé par bissection de ÷8 à ×8, jusqu'à une largeur de 0,001, les mêmes
+ * graines et les mêmes armées à chaque essai : `armyOf` est appelé une fois par graine.
  *
- * @example le golem de lave (Vie ×1,5, Vitesse ×0,5) : ×1,165 (§ 3).
+ * @example le golem de lave (Vie ×1,5, Vitesse ×0,5) aux attaques de référence : ×1,165 (§ 3).
  * @throws {RangeError} si l'échantillon est vide, ou si aucun facteur de ÷8 à ×8 ne laisse 50 %.
  */
 export function scaleFactor(
-	profile: Profile,
+	design: MonsterDesign,
 	{ seeds, armyOf }: Sample,
 ): number {
 	const trials = seeds.map((seed) => ({ seed, army: armyOf(seed) }));
 	const evenOrBetter = (scale: number) =>
-		victoryShare(trials, profile, scale) >= EVEN;
+		victoryShare(trials, design, scale) >= EVEN;
 	let { low, high } = SCALE_RANGE;
 	if (!evenOrBetter(low) || evenOrBetter(high)) {
 		throw new RangeError(

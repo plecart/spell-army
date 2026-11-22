@@ -2,9 +2,8 @@ import { type Fighter, summarize } from "./army.ts";
 import { fight } from "./fight.ts";
 import {
 	type Monster,
-	NEUTRAL_PROFILE,
-	type Profile,
-	REFERENCE_ATTACKS,
+	type MonsterDesign,
+	REFERENCE_DESIGN,
 	sizeMonster,
 } from "./monster.ts";
 
@@ -18,33 +17,34 @@ export interface Trial {
 const SIMULATION_POOL_VERSION = "simulation";
 
 /**
- * La part des combats que l'armée gagne contre le monstre de référence égal à elle (`armyWins`),
- * chaque combat sur sa graine.
+ * La part des combats de `trials` que l'armée gagne, de 0 à 1, chacun sur sa graine contre le
+ * monstre égal à elle, de profil et d'attaques `design`, au facteur `scale` (`armyWins`). Par
+ * défaut, le monstre de référence au facteur 1.
  *
  * @throws {RangeError} si l'échantillon ne compte aucun combat.
  */
 export function victoryShare(
 	trials: readonly Trial[],
-	profile: Profile = NEUTRAL_PROFILE,
+	design: MonsterDesign = REFERENCE_DESIGN,
 	scale = 1,
 ): number {
-	return shareOf(trials.map((trial) => armyWins(trial, profile, scale)));
+	return shareOf(trials.map((trial) => armyWins(trial, design, scale)));
 }
 
 /**
- * Vrai si l'armée gagne le combat de sa graine contre le monstre de référence égal à elle : budget =
- * ses stats réelles (game design § 6), dimensionné par `sizeMonster` au profil et au facteur donnés,
- * avec `REFERENCE_ATTACKS`. Profil neutre et facteur 1 : le monstre « de sa force » du § 6,
- * « Équilibre ».
+ * Vrai si l'armée gagne le combat de sa graine contre le monstre égal à elle : budget = ses stats
+ * réelles (game design § 6), dimensionné par `sizeMonster` au profil de `design` et au facteur
+ * `scale` ; le monstre joue les attaques de `design`. Par défaut, `REFERENCE_DESIGN` au facteur 1 :
+ * le monstre « de sa force » du § 6, « Équilibre ».
  */
 export function armyWins(
 	{ seed, army }: Trial,
-	profile: Profile = NEUTRAL_PROFILE,
+	design: MonsterDesign = REFERENCE_DESIGN,
 	scale = 1,
 ): boolean {
 	const log = fight({
 		army,
-		monster: referenceMonster(army, profile, scale),
+		monster: monsterEqualTo(army, design, scale),
 		seed,
 		poolVersion: SIMULATION_POOL_VERSION,
 	});
@@ -63,15 +63,18 @@ export function shareOf(outcomes: readonly boolean[]): number {
 	return outcomes.filter(Boolean).length / outcomes.length;
 }
 
-/** Le monstre de référence égal à `army`, au profil et au facteur donnés, sans particularité. */
-function referenceMonster(
+/**
+ * Le monstre égal à `army`, de profil et d'attaques `design`, au facteur `scale`, sans
+ * particularité.
+ */
+function monsterEqualTo(
 	army: readonly Fighter[],
-	profile: Profile,
+	{ profile, attacks }: MonsterDesign,
 	scale: number,
 ): Monster {
 	return {
 		stats: sizeMonster(summarize(army).stats, profile, scale),
-		attacks: REFERENCE_ATTACKS,
+		attacks,
 		profile,
 		trait: "aucune",
 	};
