@@ -157,6 +157,9 @@ export function publishedTools(names: readonly string[]) {
 	return listTools(registry).filter(({ name }) => names.includes(name));
 }
 
+/** Une description publiée, d'un outil ou d'un champ : au moins un caractère hors des blancs. */
+export const nonBlank = expect.stringMatching(/\S/);
+
 /** La sortie d'un appel réussi : son `structuredContent`, que son texte JSON répète. */
 export function outputOf({
 	content,

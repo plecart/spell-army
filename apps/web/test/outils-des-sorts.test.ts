@@ -29,6 +29,7 @@ import {
 	connectToRegistry,
 	expectRefusal,
 	INFINITE,
+	nonBlank,
 	outputOf,
 	publishedTools,
 	registry,
@@ -139,7 +140,6 @@ const NEW_SPELL = {
 };
 
 const SPELL_TOOLS = ["lister_sorts", "ajouter_sort", "modifier_sort"];
-const nonBlank = expect.stringMatching(/\S/);
 
 async function listSpellsThroughTool(client: Client) {
 	const { sorts } = outputOf(

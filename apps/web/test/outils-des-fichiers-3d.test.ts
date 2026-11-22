@@ -16,6 +16,7 @@ import {
 	auditOf,
 	auditRows,
 	connectToRegistry,
+	nonBlank,
 	outputOf,
 	publishedTools,
 } from "./montage.ts";
@@ -23,7 +24,6 @@ import { storeMonster } from "./monstres.ts";
 import { base64, fingerprint, sha256 } from "./octets.ts";
 
 const MODEL_TOOLS = ["deposer_fichier_3d", "regler_modele_classe"];
-const nonBlank = expect.stringMatching(/\S/);
 
 /** Les fichiers rangés et les modèles par défaut, lus en base. */
 async function stored(db: Executor) {

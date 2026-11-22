@@ -27,6 +27,7 @@ import {
 	connectToRegistry,
 	expectRefusal,
 	INFINITE,
+	nonBlank,
 	outputOf,
 	publishedTools,
 	registry,
@@ -36,7 +37,6 @@ import { storeMonster } from "./monstres.ts";
 import { base64 } from "./octets.ts";
 
 const MONSTER_TOOLS = ["lister_monstres", "creer_monstre", "retirer_monstre"];
-const nonBlank = expect.stringMatching(/\S/);
 
 // L'échantillon réduit des tests : les graines 1 à 20, contre 2 000 dans le registre.
 const LAST_SEED = 20;
