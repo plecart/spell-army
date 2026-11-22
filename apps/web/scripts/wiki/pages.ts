@@ -12,9 +12,10 @@ import {
 } from "personnages";
 import { CLASS_NAMES } from "../../app/annuaire/address.ts";
 import type { ImageType } from "../../app/mcp/image.ts";
+import { STAT_NAMES } from "../../app/stat-names.ts";
 import type { WikiFiles } from "./folder.ts";
 import type { Passages } from "./passages.ts";
-import { STAT_NAMES, spellText } from "./spell-text.ts";
+import { spellText } from "./spell-text.ts";
 
 /** Un sort à publier : le modèle de `combat`, et son image ou `null`. */
 export type WikiSpell = Spell & { image: SpellImage | null };

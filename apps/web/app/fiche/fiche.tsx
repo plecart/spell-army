@@ -1,7 +1,8 @@
 import type { PlayerSheet } from "joueurs";
-import { characterOf, STAT_KEYS, type StatKey } from "personnages";
+import { characterOf, STAT_KEYS } from "personnages";
 import { CLASS_NAMES } from "../annuaire/address.ts";
 import { classColor } from "../class-style.ts";
+import { STAT_NAMES } from "../stat-names.ts";
 import { arrivalOf } from "./arrival.ts";
 import { LiveStage } from "./live-stage.tsx";
 import { Sheet, type SheetClose } from "./sheet.tsx";
@@ -11,14 +12,7 @@ import { verdictPhraseOf } from "./verdict-phrase.ts";
 // L'identifiant du titre de la fiche, qui nomme la feuille qui la porte (`aria-labelledby`).
 const FICHE_TITLE_ID = "fiche-title";
 
-// Le nom de chaque stat à l'écran, et son plafond, une barre pleine (game design § 1,
-// « Statistiques »).
-const STAT_LABELS: Record<StatKey, string> = {
-	life: "Vie",
-	strength: "Force",
-	magic: "Magie",
-	speed: "Vitesse",
-};
+// Le plafond d'une stat, une barre pleine (game design § 1, « Statistiques »).
 const STAT_MAX = 15;
 
 /**
@@ -44,7 +38,7 @@ export function Fiche({ player }: { player: PlayerSheet }) {
 				{STAT_KEYS.map((key) => (
 					<Stat
 						key={key}
-						label={STAT_LABELS[key]}
+						label={STAT_NAMES[key]}
 						value={character.stats[key]}
 					/>
 				))}

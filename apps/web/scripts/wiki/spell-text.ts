@@ -12,8 +12,9 @@ import {
 	type Recipe,
 	type Spell,
 } from "combat";
-import { STAT_KEYS, type StatKey } from "personnages";
+import { STAT_KEYS } from "personnages";
 import { CLASS_NAMES } from "../../app/annuaire/address.ts";
+import { STAT_NAMES } from "../../app/stat-names.ts";
 
 /** La recette, la forme et l'effet d'un sort, en mots. */
 export interface SpellText {
@@ -21,14 +22,6 @@ export interface SpellText {
 	form: string;
 	effect: string;
 }
-
-/** Le nom de chaque stat (game design § 1, « Statistiques »). */
-export const STAT_NAMES = {
-	life: "Vie",
-	strength: "Force",
-	magic: "Magie",
-	speed: "Vitesse",
-} as const satisfies Record<StatKey, string>;
 
 // Neuf décimales au plus, la tolérance d'arrondi des règles de `combat` (`rules.ts`) : l'arrondi
 // binaire s'efface (1,4 − 1 y vaut 0,3999999999999999), et un coefficient saisi garde jusqu'à neuf
