@@ -251,6 +251,32 @@ describe("les pages du wiki", () => {
 			.toContain(`- **Nom** : ${shown}\n`);
 	});
 
+	test.each([
+		[
+			"un nom de sort coupé par un saut de ligne et une tabulation tient sur sa ligne d'index, ses blancs réduits à une espace",
+			"Pluie\r\n\td'essai",
+			"| [Pluie d'essai](Sort-25-Pluie-d'essai) |",
+		],
+		[
+			"un nom de sort qui porte « &amp; » l'affiche tel quel, sans le décoder",
+			"Feu &amp; glace",
+			"| [Feu \\&amp; glace](Sort-25-Feu-amp-glace) |",
+		],
+	])("%s", async (_, name, row) => {
+		const wiki = await generated([...POOL, { ...ADDED, name }]);
+		expect(await wiki.page("Sorts")).toContain(row);
+	});
+
+	test("un nom de sort décomposé (NFD) donne la page de sa forme composée : « Épée », pas « E-pe-e »", async () => {
+		const wiki = await generated([
+			...POOL,
+			{ ...ADDED, name: "E\u0301pe\u0301e" },
+		]);
+		expect(
+			(await wiki.files()).filter((file) => file.startsWith("Sort-25-")),
+		).toEqual(["Sort-25-\u00c9p\u00e9e.md"]);
+	});
+
 	test("une image d'un type inconnu arrête la génération, qui nomme le sort", async () => {
 		await expect(
 			generated(

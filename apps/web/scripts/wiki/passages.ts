@@ -1,7 +1,8 @@
 // Les passages des documents que le wiki recopie, lus à la génération : le concept au cadrage, la
 // puissance d'un sort et le combat au game design. Les sections se découpent par leurs titres `## `,
-// comme `packages/combat/test/annexe-b.ts` lit l'annexe B. Un passage introuvable arrête la
-// génération en le nommant, jamais une page vide ; les statuts internes n'y sont pas recopiés.
+// comme `packages/combat/test/annexe-b.ts` lit l'annexe B. Un passage introuvable ou incomplet
+// arrête la génération en le nommant, jamais une page vide ; les statuts internes n'y sont pas
+// recopiés.
 import { readFile } from "node:fs/promises";
 
 /** Les passages recopiés, en Markdown, sans statut interne. */
@@ -85,12 +86,18 @@ function power(gameDesign: string): string {
 	if (start < 0) {
 		throw new Error(`${GAME_DESIGN} : bloc « ${POWER} » introuvable au § 2.`);
 	}
-	return blocks.slice(start, start + POWER_BLOCKS).join(BLOCK_SEPARATOR);
+	const passage = blocks.slice(start, start + POWER_BLOCKS);
+	if (passage.length < POWER_BLOCKS) {
+		throw new Error(
+			`${GAME_DESIGN} : bloc « ${POWER} » incomplet au § 2 : sa formule ou le paragraphe qui la suit manque.`,
+		);
+	}
+	return passage.join(BLOCK_SEPARATOR);
 }
 
 /**
  * Les passages que recopie le wiki, extraits du texte des deux documents. Lève une erreur qui nomme
- * le document et la section, la puce ou le bloc introuvable.
+ * le document et la section, la puce ou le bloc introuvable, ou le bloc incomplet.
  */
 export function passagesOf({ cadrage, gameDesign }: Documents): Passages {
 	return {

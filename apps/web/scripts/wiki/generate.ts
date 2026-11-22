@@ -58,10 +58,10 @@ function drawableSpells(spells: readonly WikiSpell[]): WikiSpell[] {
  * Écrit dans `folder` toutes les pages du wiki et les images des sorts, puis rend ce qui a été
  * écrit. Les passages viennent des documents du dépôt, les sorts de `source`.
  *
- * Lève une erreur, à afficher telle quelle, avant toute écriture : un passage introuvable dans son
- * document ; un refus de la base, expliqué pour une table absente ou un droit refusé, sinon tel
- * quel ; aucun sort tirable ; un sort tirable invalide (`validateSpell`), qu'elle nomme ; un
- * dossier qui n'est pas vide (`writeFolder`).
+ * Lève une erreur, à afficher telle quelle, avant toute écriture : un passage introuvable ou
+ * incomplet dans son document ; un refus de la base, expliqué pour une table absente ou un droit
+ * refusé, sinon tel quel ; aucun sort tirable ; un sort tirable invalide (`validateSpell`), qu'elle
+ * nomme ; un dossier qui n'est pas vide (`writeFolder`).
  */
 export async function generateWiki(
 	folder: string,
