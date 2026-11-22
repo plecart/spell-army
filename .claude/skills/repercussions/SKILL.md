@@ -123,8 +123,9 @@ Jouée à **chaque** passe, avant l'arrêt possible de la sous-section suivante,
 celui de `#<N>`, plus, à une reprise dont la ligne `contradiction soldée` nomme une PR `#<m>`, le
 diff de celle-ci, ajouté aux sources ci-dessus — un amendement du game design est une source du
 wiki. La passe qu'une contradiction interrompt s'arrête avant l'étape 2 et n'écrit rien : c'est la
-reprise, qui rejoue cette confrontation entière, qui range les vides ; un vide qu'une passe
-précédente a déjà rangé s'arrête au barreau 2, l'issue qui le porte le possédant déjà.
+reprise, qui rejoue cette confrontation entière, qui range les vides ; un vide dont le critère
+figure déjà dans l'issue qui le possède (ligne « Complétée après #<N> ») ne s'ajoute pas une
+seconde fois.
 
 La section « Documentation dérivée » de `.claude/pipeline.config.md` liste ce que des commandes du
 dépôt génèrent depuis les sources — le wiki du jeu. Ce n'est **pas** une source de vérité : un
