@@ -16,7 +16,8 @@ const USAGE = "Usage : pnpm --filter web wiki <dossier>";
 try {
 	const { positionals } = parseArgs({ allowPositionals: true });
 	const [folder] = positionals;
-	if (folder === undefined || positionals.length > 1) {
+	// Un chemin vide ne nomme aucun dossier : résolu, il désignerait celui où la commande est lancée.
+	if (!folder || positionals.length > 1) {
 		throw new Error(USAGE);
 	}
 	const url = process.env.DATABASE_URL;
