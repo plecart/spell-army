@@ -8,6 +8,7 @@ export default databaseTestConfig([
 	"test/aucune-requete-libre.test.ts",
 	"test/cache-du-cdn.test.ts",
 	"test/fiche-arrivee.test.ts",
+	"test/fiche-ecran.test.tsx",
 	"test/fiche-verdict.test.ts",
 	"test/image.test.ts",
 	"test/informations.test.tsx",

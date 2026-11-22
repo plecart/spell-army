@@ -1,13 +1,6 @@
 import type { VisiblePlayer, VisiblePlayersPage } from "joueurs";
-import {
-	BACKDROPS,
-	CLASS_COLORS,
-	CLASS_KEYS,
-	type ClassKey,
-	PEDESTALS,
-	perClass,
-} from "personnages";
-import type { CSSProperties } from "react";
+import { CLASS_KEYS, type ClassKey, PEDESTALS } from "personnages";
+import { BACKDROP_IMAGES, classColor } from "../class-style.ts";
 import { instagramUrl } from "../site.ts";
 import { Figure } from "../vignettes/figure.tsx";
 import {
@@ -93,18 +86,6 @@ const COUNT_FORMAT = new Intl.NumberFormat("fr-FR");
 // `noun`, au pluriel à partir de 2 `count`.
 const plural = (count: number, noun: string) =>
 	count >= 2 ? `${noun}s` : noun;
-
-// La couleur d'une classe, en variable CSS que lisent sa pastille et sa vignette (`globals.css`).
-const classColor = (classKey: ClassKey) =>
-	({ "--class-color": CLASS_COLORS[classKey] }) as CSSProperties;
-
-// Le décor de chaque classe (direction artistique § 5), en image de fond de sa vignette.
-// ponytail: le document se répète dans chaque carte (1 à 2,5 Ko encodé, 24 fois par page) ; une
-// image par classe servie à part si le poids de la page compte.
-const BACKDROP_IMAGES = perClass(
-	(classKey) =>
-		`url("data:image/svg+xml,${encodeURIComponent(BACKDROPS[classKey])}")`,
-);
 
 // La recherche : un formulaire GET vers l'annuaire, qui garde la classe du filtre et revient à la
 // page 1.
