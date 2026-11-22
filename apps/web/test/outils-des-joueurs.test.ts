@@ -23,13 +23,13 @@ import {
 	expectRefusal,
 	flipLowBit,
 	freezeDate,
+	nonBlank,
 	outputOf,
 	publishedTools,
 	REFUSED_CODE,
 } from "./montage.ts";
 
 const PLAYER_TOOLS = ["chercher_joueur", "donner_sort", "retirer_joueur"];
-const nonBlank = expect.stringMatching(/\S/);
 
 async function search(client: Client, args: Record<string, unknown>) {
 	return client.callTool({ name: "chercher_joueur", arguments: args });

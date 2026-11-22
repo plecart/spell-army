@@ -4,6 +4,7 @@ import {
 	auditRows,
 	connectToRegistry,
 	INFINITE,
+	nonBlank,
 	outputOf,
 	publishedTools,
 } from "./montage.ts";
@@ -42,7 +43,6 @@ describe("outils des réglages du calibrage", () => {
 				),
 			],
 		);
-		const nonBlank = expect.stringMatching(/\S/);
 		expect(described).toEqual([
 			["lire_reglages", nonBlank],
 			["modifier_reglages", nonBlank],
