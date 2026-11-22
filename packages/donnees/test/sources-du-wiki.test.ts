@@ -67,19 +67,33 @@ test("le filtre de push du workflow du wiki couvre exactement ses sources du dé
 	).toEqual(sources);
 });
 
-// Le harnais de mutation ne réécrit pas `.github/workflows/` (réglage de sécurité) : les filtres
-// fautifs se construisent en mémoire, depuis le workflow du dépôt.
+// Des écarts tenus en mémoire, chacun dans une copie d'un des deux fichiers : le harnais de mutation
+// ne réécrit pas `.github/workflows/` (réglage de sécurité), et une source de la racine, sans `/`,
+// garde la branche « extension » de `REPO_PATH`, qu'aucune source actuelle n'emprunte.
 test.each([
-	["une source retirée du filtre", "      - packages/combat/src/**\n", ""],
+	[
+		"une source retirée du filtre",
+		WORKFLOW,
+		"      - packages/combat/src/**\n",
+		"",
+	],
 	[
 		"un fichier ajouté au filtre seul",
+		WORKFLOW,
 		"      - apps/web/scripts/wiki.ts\n",
 		"      - apps/web/scripts/wiki.ts\n      - apps/web/package.json\n",
 	],
-])("la comparaison rougit sur %s", (_, from, to) => {
-	const workflow = readRepoFile(WORKFLOW);
-	const faulty = workflow.replace(from, to);
-	expect(faulty, `« ${from.trim()} » absent du workflow`).not.toBe(workflow);
-	const { sources, filter } = wikiPathSets(readRepoFile(CONFIG), faulty);
+	[
+		"un fichier de la racine ajouté à la colonne seule",
+		CONFIG,
+		"(`packages/donnees/src/`)",
+		"(`packages/donnees/src/`, `pnpm-lock.yaml`)",
+	],
+])("la comparaison rougit sur %s", (_, file, from, to) => {
+	const original = readRepoFile(file);
+	const faulty = original.replace(from, to);
+	expect(faulty, `« ${from.trim()} » absent de ${file}`).not.toBe(original);
+	const read = (path: string) => (path === file ? faulty : readRepoFile(path));
+	const { sources, filter } = wikiPathSets(read(CONFIG), read(WORKFLOW));
 	expect(filter).not.toEqual(sources);
 });
