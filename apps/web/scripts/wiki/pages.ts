@@ -1,7 +1,7 @@
 // Le rendu des pages du wiki, en Markdown GitHub. Sur un wiki GitHub, le nom d'un fichier est le
 // titre de sa page et la cible de ses liens, sans « .md ». Une page n'écrit que des passages
-// recopiés des documents, des valeurs du code, la transcription des sorts (`spell-text.ts`) et des
-// titres fixes.
+// recopiés des documents, des valeurs du code, le nom, l'image et la transcription des sorts
+// (`spell-text.ts`), et des titres fixes.
 import type { Spell } from "combat";
 import type { SpellImage } from "donnees";
 import {
