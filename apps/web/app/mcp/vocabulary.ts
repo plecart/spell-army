@@ -1,3 +1,4 @@
+import type { Stat } from "combat";
 import type { PassLogEntry } from "joueurs";
 import type { ClassKey } from "personnages";
 import { z } from "zod";
@@ -19,6 +20,33 @@ export function inverse<const Names extends Record<string, string>>(
 		Object.entries(names).map(([key, name]) => [name, key]),
 	) as Inverse<Names>;
 }
+
+type Renamed<Values, Names extends Record<string, string>> = {
+	[Key in keyof Values as Key extends keyof Names
+		? Names[Key]
+		: never]: Values[Key];
+};
+
+/** `values` aux clés renommées par `names`, chaque valeur gardée, une clé absente absente. */
+export function renamed<
+	Names extends Record<string, string>,
+	Values extends Partial<Record<keyof Names, unknown>>,
+>(values: Values, names: Names): Renamed<Values, Names> {
+	return Object.fromEntries(
+		Object.entries(values).map(([key, value]) => [names[key], value]),
+	) as Renamed<Values, Names>;
+}
+
+/** Le nom de chaque stat dans les outils (game design § 1, « Statistiques »). */
+export const STATS = {
+	life: "vie",
+	strength: "force",
+	magic: "magie",
+	speed: "vitesse",
+} as const satisfies Record<Stat, string>;
+
+/** La stat du modèle de chaque nom de stat des outils. */
+export const STAT_OF = inverse(STATS);
 
 /**
  * Le nom de chaque classe dans les outils (game design § 1, « Classe »), pour chaque classe de

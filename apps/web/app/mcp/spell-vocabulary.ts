@@ -15,17 +15,18 @@ import {
 } from "combat";
 import type { SpellRecord } from "donnees";
 import { z } from "zod";
-import { CLASS_OF, CLASSES, inverse } from "./vocabulary.ts";
+import {
+	CLASS_OF,
+	CLASSES,
+	inverse,
+	renamed,
+	STAT_OF,
+	STATS,
+} from "./vocabulary.ts";
 
-// Les tables du vocabulaire fermé de `combat`, sur le modèle de `vocabulary.ts`, qui porte celle des
-// classes. Les noms viennent du game design (§ 2, « Formes », « Effets ») et de l'issue #12
-// (« Décisions », « Modèle d'un sort »).
-const STATS = {
-	life: "vie",
-	strength: "force",
-	magic: "magie",
-	speed: "vitesse",
-} as const satisfies Record<Stat, string>;
+// Les tables du vocabulaire fermé de `combat`, sur le modèle de `vocabulary.ts`, qui porte celles des
+// classes et des stats. Les noms viennent du game design (§ 2, « Formes », « Effets ») et de l'issue
+// #12 (« Décisions », « Modèle d'un sort »).
 const RECIPES = {
 	shares: "parts",
 	bestStat: "meilleure_stat",
@@ -53,7 +54,6 @@ const CATEGORIES = {
 	lifesteal: "vol_de_vie",
 } as const satisfies Record<EffectCategory, string>;
 
-const STAT_OF = inverse(STATS);
 const FORM_OF = inverse(FORMS);
 const GAUGE_OF = inverse(GAUGES);
 const BASE_OF = inverse(BASES);
@@ -170,16 +170,6 @@ export const newSpellSchema = toolSpellSchema
 		description: true,
 	})
 	.partial({ poids: true });
-
-/** `values` aux clés renommées par `names`. */
-function renamed<Names extends Record<string, string>>(
-	values: Partial<Record<keyof Names, number>>,
-	names: Names,
-): Partial<Record<Names[keyof Names], number>> {
-	return Object.fromEntries(
-		Object.entries(values).map(([key, value]) => [names[key], value]),
-	);
-}
 
 const toolLinear = ({ constant, perGauge }: Linear): ToolLinear => ({
 	constante: constant,
