@@ -1,6 +1,6 @@
 # Wizard Army — Direction artistique
 
-État au 2026-11-21. Ce document détaille la section « Modèles 3D » du [cadrage](etudes/00-cadrage.md)
+État au 2026-11-22. Ce document détaille la section « Modèles 3D » du [cadrage](etudes/00-cadrage.md)
 et l'organisation du site. Le cadrage fait foi en cas de désaccord (rang 1 des sources de vérité).
 Il a été arrêté avec le mainteneur sur des prototypes jetables, hors dépôt ; les captures du § 10 en
 gardent la trace.
@@ -50,7 +50,7 @@ Statuts, comme au cadrage :
 
 En sombre, l'ombre décalée reste noire : une ombre claire est refusée, trop marquée (Décidé).
 
-**Couleurs d'effet des sorts** (Proposé) : dégâts `#b83b26`, soin `#4f7a3a`, vol de vie `#6e1f33`.
+**Couleurs d'effet des sorts** (Décidé) : dégâts `#b83b26`, soin `#4f7a3a`, vol de vie `#6e1f33`.
 
 **Typographie** (Décidé) : Bricolage Grotesque (Google Fonts), graisses 400 à 800, une seule famille.
 
@@ -64,7 +64,7 @@ En sombre, l'ombre décalée reste noire : une ombre claire est refusée, trop m
 | Pagination | 24 cartes par page ; « Précédente », « Page N sur M », « Suivante ». | Décidé |
 | Carte | Vignette du personnage sur son décor, pseudo, pastille et nom de la classe. | Décidé |
 | Vignettes | Des images rendues par un seul moteur 3D, jamais 24 scènes 3D vivantes : les navigateurs limitent le nombre de contextes WebGL. | Décidé |
-| Fiche | En haut, le **pseudo** et le bouton de fermeture ; puis la scène 3D, la classe et la date d'arrivée, une phrase de verdict, les quatre statistiques en barres, « 30 points, répartis à l'inscription selon le pseudo », et la carte du sort. | Décidé |
+| Fiche | En haut, le **pseudo** et le bouton de fermeture ; puis la scène 3D, la classe et la date d'arrivée, une phrase de verdict, les quatre statistiques en barres, « 30 points en tout, répartis au hasard d'après le numéro du compte Instagram », et la carte du sort. | Décidé |
 | Scène de la fiche | Le **socle reste immobile** au sol ; le personnage tourne lentement sur lui-même et **flotte** au-dessus, en montant et descendant. Son ombre sur le socle suit sa hauteur. On peut le faire tourner du doigt. | Décidé |
 
 Au MVP, l'affichage 3D vit dans le site. Il ne devient le paquet commun au site et à la vidéo qu'en
