@@ -77,7 +77,7 @@ test("le filtre de push du workflow du wiki couvre exactement ses sources du dé
 test("le filtre de push du workflow du wiki le surveille lui-même", () => {
 	const workflow = readRepoFile(WORKFLOW);
 	const faulty = workflow.replace(`      - ${WORKFLOW}\n`, "");
-	expect(faulty, `${WORKFLOW} absent de son propre filtre`).not.toBe(workflow);
+	expect(faulty, `« - ${WORKFLOW} » absent de ${WORKFLOW}`).not.toBe(workflow);
 
 	expect(pushFilter(workflow)).toContain(WORKFLOW);
 	expect(pushFilter(faulty)).not.toContain(WORKFLOW);
