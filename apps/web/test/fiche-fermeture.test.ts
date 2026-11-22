@@ -15,17 +15,19 @@ test("deux appels coup sur coup n'exécutent l'action qu'une fois", () => {
 test.each([
 	{ onClose: "back", back: 1, push: [] },
 	{ onClose: "home", back: 0, push: [["/"]] },
-] as const)("deux fermetures « $onClose » coup sur coup ne naviguent qu'une fois", ({
-	onClose,
-	back,
-	push,
-}) => {
-	const router = { back: vi.fn(), push: vi.fn() };
-	const close = sheetCloseOf(onClose, router);
-	close();
-	close();
-	expect({ back: router.back.mock.calls.length, push: router.push.mock.calls }).toEqual({
-		back,
-		push,
-	});
-});
+] as const)(
+	"deux fermetures « $onClose » coup sur coup ne naviguent qu'une fois",
+	({ onClose, back, push }) => {
+		const router = { back: vi.fn(), push: vi.fn() };
+		const close = sheetCloseOf(onClose, router);
+		close();
+		close();
+		expect({
+			back: router.back.mock.calls.length,
+			push: router.push.mock.calls,
+		}).toEqual({
+			back,
+			push,
+		});
+	},
+);
