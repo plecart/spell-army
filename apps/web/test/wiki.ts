@@ -26,6 +26,9 @@ export const ADDED: WikiSpell = {
 	image: null,
 };
 
+/** Les octets d'une image, le début d'une signature PNG : le wiki les recopie sans les décoder. */
+export const IMAGE_BYTES = [137, 80, 78, 71];
+
 /** La réserve de départ, le sort n° `number` avec `image`. */
 export const withImage = (number: number, image: WikiSpell["image"]) =>
 	POOL.map((spell) => (spell.number === number ? { ...spell, image } : spell));

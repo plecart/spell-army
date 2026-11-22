@@ -2,11 +2,11 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { type WikiFiles, writeFolder } from "../scripts/wiki/folder.ts";
-import { filesOf, outputFolder } from "./wiki.ts";
+import { filesOf, IMAGE_BYTES, outputFolder } from "./wiki.ts";
 
 const FILES: WikiFiles = new Map<string, string | Uint8Array>([
 	["Home.md", "Accueil\n"],
-	["images/sort-6.png", new Uint8Array([137, 80, 78, 71])],
+	["images/sort-6.png", new Uint8Array(IMAGE_BYTES)],
 ]);
 
 describe("le dossier du wiki", () => {

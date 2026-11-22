@@ -1,7 +1,7 @@
 import { CLASS_KEYS } from "personnages";
 import { describe, expect, test } from "vitest";
 import { CLASS_NAMES } from "../app/annuaire/address.ts";
-import { ADDED, generated, POOL, withImage } from "./wiki.ts";
+import { ADDED, generated, IMAGE_BYTES, POOL, withImage } from "./wiki.ts";
 
 // Un statut interne des documents, en mot entier et quelle que soit la casse : « Décidé »,
 // « (décidé) », « Proposé », « Ouvert », « ouverts ».
@@ -192,11 +192,10 @@ describe("les pages du wiki", () => {
 	])(
 		"un sort avec une image %s a son visuel : le fichier %s, que sa page montre",
 		async (type, path) => {
-			const bytes = [137, 80, 78, 71];
 			const wiki = await generated(
-				withImage(6, { bytes: new Uint8Array(bytes), type }),
+				withImage(6, { bytes: new Uint8Array(IMAGE_BYTES), type }),
 			);
-			expect(await wiki.bytes(path)).toEqual(bytes);
+			expect(await wiki.bytes(path)).toEqual(IMAGE_BYTES);
 			expect(await wiki.page("Sort-6-Boule-de-feu")).toContain(
 				`\n\n![Boule de feu](${path})\n`,
 			);
@@ -205,7 +204,7 @@ describe("les pages du wiki", () => {
 
 	test("un sort sans image n'a aucune balise d'image", async () => {
 		const wiki = await generated(
-			withImage(6, { bytes: new Uint8Array([1]), type: "image/png" }),
+			withImage(6, { bytes: new Uint8Array(IMAGE_BYTES), type: "image/png" }),
 		);
 		expect(await wiki.page("Sort-1-Coup-d'épée")).not.toContain("![");
 	});
@@ -280,7 +279,7 @@ describe("les pages du wiki", () => {
 	test("une image d'un type inconnu arrête la génération, qui nomme le sort", async () => {
 		await expect(
 			generated(
-				withImage(6, { bytes: new Uint8Array([1]), type: "image/gif" }),
+				withImage(6, { bytes: new Uint8Array(IMAGE_BYTES), type: "image/gif" }),
 			),
 		).rejects.toThrow(
 			"Le sort n° 6 a une image d'un type inconnu : image/gif.",

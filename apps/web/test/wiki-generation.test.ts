@@ -3,14 +3,20 @@ import { refusedQuery } from "donnees/test/erreur-postgres";
 import { describe, expect, test } from "vitest";
 import { generateWiki } from "../scripts/wiki/generate.ts";
 import { passagesOf, readDocuments } from "../scripts/wiki/passages.ts";
-import { generated, outputFolder, POOL, withImage } from "./wiki.ts";
+import {
+	generated,
+	IMAGE_BYTES,
+	outputFolder,
+	POOL,
+	withImage,
+} from "./wiki.ts";
 
 const DOCUMENTS = await readDocuments();
 
 describe("la génération du wiki", () => {
 	test("deux générations sur les mêmes entrées sont identiques octet pour octet", async () => {
 		const spells = withImage(6, {
-			bytes: new Uint8Array([137, 80, 78, 71]),
+			bytes: new Uint8Array(IMAGE_BYTES),
 			type: "image/png",
 		});
 		const first = await generated(spells);
