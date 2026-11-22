@@ -24,7 +24,7 @@ const LOADED = MANIFESTS.flatMap((manifest) => {
 		readFileSync(new URL(manifest, REPO_ROOT), "utf8"),
 	);
 	return Object.entries<string>(scripts).flatMap(([name, command]) =>
-		[...command.matchAll(ENV_FILE)].map(([, path]) => [
+		[...command.matchAll(ENV_FILE)].map(([, path = ""]) => [
 			`${manifest} › ${name}`,
 			posix.join(posix.dirname(manifest), path),
 		]),
