@@ -31,12 +31,16 @@ const STAT_HEADERS = STAT_KEYS.map((stat) => STAT_NAMES[stat]);
 
 // Ce qui sépare les mots d'un nom de page de sort : tout sauf les lettres, les chiffres et
 // l'apostrophe, donc tout caractère qu'interdit Windows (`\ / : * ? " < > |`) ou qu'un lien
-// Markdown lirait.
+// Markdown lirait. Le nom est d'abord composé (NFC) : décomposée, une lettre porte son accent en
+// marque combinante, qui n'est pas une lettre et couperait le mot.
 const NAME_SEPARATORS = /[^\p{L}\p{N}']+/u;
 
-// Ce qu'un nom de sort ferait lire comme du Markdown : antislash, code, emphase, lien, HTML, cellule
-// de tableau, barré. Un antislash devant le rend littéral (GFM, « Backslash escapes »).
-const MARKDOWN_SPECIALS = /[\\`*_[\]<>|~]/g;
+// Les blancs d'un nom de sort : un seul saut de ligne couperait sa ligne de tableau.
+const BLANKS = /\s+/g;
+
+// Ce qu'un nom de sort ferait lire comme du Markdown : antislash, code, emphase, lien, HTML, entité,
+// cellule de tableau, barré. Un antislash devant le rend littéral (GFM, « Backslash escapes »).
+const MARKDOWN_SPECIALS = /[\\`*_[\]<>&|~]/g;
 
 // L'extension d'une image, par type : les trois qu'admet la table `spells` (`spells_image_type_check`).
 const IMAGE_EXTENSIONS: Readonly<Record<string, string>> = {
@@ -45,19 +49,19 @@ const IMAGE_EXTENSIONS: Readonly<Record<string, string>> = {
 	"image/webp": "webp",
 } satisfies Record<ImageType, string>;
 
-/** `text` tel quel une fois rendu en Markdown. */
-const literal = (text: string) => text.replace(MARKDOWN_SPECIALS, "\\$&");
+/** `text` tel quel une fois rendu en Markdown, sur une ligne : ses blancs réduits à une espace. */
+const literal = (text: string) =>
+	text.replace(BLANKS, " ").replace(MARKDOWN_SPECIALS, "\\$&");
 
 const link = (text: string, page: string) => `[${text}](${page})`;
 
 /**
  * La page d'un sort : « Sort-3-Charge ». Le numéro la rend unique et stable, le nom lisible ; ses
- * mots ne gardent que lettres, chiffres et apostrophes.
+ * mots, composés (NFC), ne gardent que lettres, chiffres et apostrophes.
  */
 function spellPage({ number, name }: Pick<Spell, "number" | "name">): string {
-	return ["Sort", number, ...name.split(NAME_SEPARATORS).filter(Boolean)].join(
-		"-",
-	);
+	const words = name.normalize("NFC").split(NAME_SEPARATORS).filter(Boolean);
+	return ["Sort", number, ...words].join("-");
 }
 
 /**

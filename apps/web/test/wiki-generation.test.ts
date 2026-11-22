@@ -135,4 +135,16 @@ describe("la génération du wiki", () => {
 			expect(() => passagesOf(altered)).toThrow(message);
 		},
 	);
+
+	test("un bloc « Puissance d'un sort lancé par l'armée » qui finit le § 2 sur sa formule arrête la génération, qui le nomme", () => {
+		const gameDesign = [
+			"## 2. Les sorts",
+			"**Puissance d'un sort lancé par l'armée** :",
+			"> valeur = coefficient du sort × stat de l'armée",
+			"## 4. Le combat",
+		].join("\n\n");
+		expect(() => passagesOf({ ...DOCUMENTS, gameDesign })).toThrow(
+			"docs/game-design.md : bloc « Puissance d'un sort lancé par l'armée » incomplet au § 2 : sa formule ou le paragraphe qui la suit manque.",
+		);
+	});
 });
