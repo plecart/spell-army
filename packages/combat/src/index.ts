@@ -16,6 +16,8 @@ export {
 	type SpellMeasureInput,
 } from "./measure.ts";
 export {
+	ATTACK_COUNT,
+	MEAN_COEFFICIENT,
 	type Monster,
 	type MonsterAttack,
 	type MonsterDesign,

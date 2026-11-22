@@ -1,4 +1,6 @@
 import {
+	ATTACK_COUNT,
+	MEAN_COEFFICIENT,
 	type MonsterDesign,
 	type Sample,
 	type Spell,
@@ -33,6 +35,11 @@ import { renamed, STAT_OF, STATS } from "./vocabulary.ts";
 
 /** Un texte saisi : sans les blancs qui l'entourent, de 1 à `max` caractères. */
 const text = (max: number) => z.string().trim().min(1).max(max);
+
+// Les règles d'un monstre (game design § 3) que disent les descriptions : le nombre d'attaques, et
+// leur coefficient moyen en notation française.
+const ATTACK_COUNT_TEXT = `${ATTACK_COUNT.min} à ${ATTACK_COUNT.max}`;
+const MEAN_COEFFICIENT_TEXT = `×${String(MEAN_COEFFICIENT).replace(".", ",")}`;
 
 // Une part en % d'une recette d'attaque, facultative comme celle d'une recette de sort, dans les deux
 // vocabulaires.
@@ -80,7 +87,7 @@ const toolMonster = z.strictObject({
 			}),
 		)
 		.describe(
-			`De 2 à 4 attaques, de noms distincts d'au plus ${MAX_NAME_LENGTH} caractères. La recette : des parts entières en % de la Force et de la Magie du monstre, de somme 100. Le coefficient : un nombre > 0, ×1,0 pour un coup normal ; la moyenne des coefficients vaut ×0,78 au centième.`,
+			`De ${ATTACK_COUNT_TEXT} attaques, de noms distincts d'au plus ${MAX_NAME_LENGTH} caractères. La recette : des parts entières en % de la Force et de la Magie du monstre, de somme 100. Le coefficient : un nombre > 0, ×1,0 pour un coup normal ; la moyenne des coefficients vaut ${MEAN_COEFFICIENT_TEXT} au centième.`,
 		),
 	facteur_echelle: z
 		.number()
@@ -267,7 +274,7 @@ export function createMonsterTool(
 	return {
 		name: "creer_monstre",
 		title: "Créer un monstre",
-		description: `Crée le monstre d'un chapitre d'une saison : son nom, unique toutes saisons confondues ; son profil, un multiplicateur ≥ 0 par stat ; de 2 à 4 attaques de noms distincts, chacune une recette en parts entières de la Force et de la Magie, de somme 100, et un coefficient > 0, de moyenne ×0,78 au centième ; sa particularité, un texte sans effet. Calcule son facteur d'échelle, celui pour lequel le monstre égal à l'armée lui laisse 50 % de victoires, en simulant son profil et ses attaques contre des armées tirées dans la réserve en base, sur les graines 1 à ${grouped(lastSeed)}. Refuse sans rien écrire un monstre invalide, un nom ou un chapitre déjà pris, et un monstre qu'aucun facteur d'échelle n'équilibre. Rend le monstre créé, comme lister_monstres ; son fichier 3D se dépose ensuite par deposer_fichier_3d. Un monstre se corrige par retirer_monstre, puis creer_monstre.`,
+		description: `Crée le monstre d'un chapitre d'une saison : son nom, unique toutes saisons confondues ; son profil, un multiplicateur ≥ 0 par stat ; de ${ATTACK_COUNT_TEXT} attaques de noms distincts, chacune une recette en parts entières de la Force et de la Magie, de somme 100, et un coefficient > 0, de moyenne ${MEAN_COEFFICIENT_TEXT} au centième ; sa particularité, un texte sans effet. Calcule son facteur d'échelle, celui pour lequel le monstre égal à l'armée lui laisse 50 % de victoires, en simulant son profil et ses attaques contre des armées tirées dans la réserve en base, sur les graines 1 à ${grouped(lastSeed)}. Refuse sans rien écrire un monstre invalide, un nom ou un chapitre déjà pris, et un monstre qu'aucun facteur d'échelle n'équilibre. Rend le monstre créé, comme lister_monstres ; son fichier 3D se dépose ensuite par deposer_fichier_3d. Un monstre se corrige par retirer_monstre, puis creer_monstre.`,
 		annotations: {
 			readOnlyHint: false,
 			destructiveHint: false,

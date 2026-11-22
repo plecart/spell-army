@@ -1,4 +1,5 @@
 import {
+	ATTACK_COUNT,
 	MEAN_COEFFICIENT,
 	type MonsterAttack,
 	type MonsterDesign,
@@ -47,8 +48,6 @@ const SPELL_LOWEST_SHARE = 1;
 const ATTACK_LOWEST_SHARE = 0;
 /** Les stats que peut prendre la recette d'une attaque de monstre. */
 const ATTACK_RECIPE_STATS: readonly string[] = ["strength", "magic"];
-/** Le nombre d'attaques d'un monstre (game design § 3, « Attaques »). */
-const ATTACK_COUNT = { min: 2, max: 4 } as const;
 /** Le coefficient moyen des attaques se vérifie au centième. */
 const HUNDREDTHS = 100;
 

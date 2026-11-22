@@ -198,6 +198,17 @@ describe("outils des monstres : tools/list", () => {
 		const [create] = publishedTools(["creer_monstre"]);
 		expect(create?.description).toContain("sur les graines 1 à 2 000");
 	});
+
+	test("creer_monstre et son champ attaques disent les règles du game design § 3 : de 2 à 4 attaques, de coefficient moyen ×0,78", () => {
+		const [create] = publishedTools(["creer_monstre"]);
+		const attacks = create?.inputSchema.properties?.attaques as {
+			description?: string;
+		};
+		for (const text of [create?.description, attacks.description]) {
+			expect(text).toMatch(/de 2 à 4 attaques/i);
+			expect(text).toContain("×0,78 au centième");
+		}
+	});
 });
 
 // Le format saisi de creer_monstre, balayé en une passe sur son schéma d'entrée : chaque champ, à
