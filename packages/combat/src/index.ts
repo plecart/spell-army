@@ -18,9 +18,11 @@ export {
 export {
 	type Monster,
 	type MonsterAttack,
+	type MonsterDesign,
 	NEUTRAL_PROFILE,
 	type Profile,
 	REFERENCE_ATTACKS,
+	REFERENCE_DESIGN,
 	sizeMonster,
 } from "./monster.ts";
 export {
