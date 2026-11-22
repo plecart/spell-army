@@ -1,6 +1,14 @@
 import { expect, test } from "vitest";
-import { type ClassKey, VERDICT_LEVELS, verdictOf } from "../src/index.ts";
-import { population } from "./identifiants.ts";
+import {
+	type ClassKey,
+	characterOf,
+	type StatKey,
+	type Stats,
+	scoringStatsOf,
+	VERDICT_LEVELS,
+	verdictOf,
+} from "../src/index.ts";
+import { idsOf, population } from "./identifiants.ts";
 
 const LEVELS = ["ill_born", "weak", "average", "gifted", "excellent"];
 
@@ -40,4 +48,29 @@ test("sur les identifiants 1 à 100 000, la part de chaque niveau dans chaque cl
 		Object.keys(SHARES_BY_CLASS).sort(),
 	);
 	expect(deviations).toEqual([]);
+});
+
+test.each<[ClassKey, StatKey[]]>([
+	["vampire", ["magic", "speed"]],
+	["wizard", ["magic"]],
+])("le score d'un %s compte ses stats fortes : %j", (classKey, expected) => {
+	for (const id of idsOf(classKey, 10)) {
+		expect(scoringStatsOf(characterOf(id))).toEqual(expected);
+	}
+});
+
+// Un paysan a ses quatre stats fortes : son score ne compte que la meilleure.
+test.each<[string, Stats, StatKey[]]>([
+	[
+		"sa meilleure stat",
+		{ life: 7, strength: 5, magic: 13, speed: 5 },
+		["magic"],
+	],
+	[
+		"à égalité, la première de STAT_KEYS",
+		{ life: 8, strength: 7, magic: 8, speed: 7 },
+		["life"],
+	],
+])("le score d'un paysan compte %s", (_, stats, expected) => {
+	expect(scoringStatsOf({ class: "peasant", stats })).toEqual(expected);
 });
