@@ -97,16 +97,24 @@ describe("la génération du wiki", () => {
 		});
 	});
 
-	test("une erreur sans code se nomme par le message de sa cause la plus profonde", async () => {
+	test.each([
+		{
+			form: "par le message de sa cause la plus profonde",
+			cause: new Error("Connection terminated unexpectedly"),
+			reason: "Connection terminated unexpectedly",
+		},
+		{
+			form: "sans message, par son nom",
+			cause: new AggregateError([]),
+			reason: "AggregateError",
+		},
+	])("une erreur sans code se nomme $form", async ({ cause, reason }) => {
 		await expect(
 			generateWiki(await outputFolder(), async () => {
-				throw new Error("enveloppe", {
-					cause: new Error("Connection terminated unexpectedly"),
-				});
+				throw new Error("enveloppe", { cause });
 			}),
 		).rejects.toMatchObject({
-			message:
-				"La lecture des sorts a échoué : Connection terminated unexpectedly.",
+			message: `La lecture des sorts a échoué : ${reason}.`,
 		});
 	});
 
@@ -154,7 +162,22 @@ describe("la génération du wiki", () => {
 	// place — le tableau du § 2 — serait recopié sans rien signaler.
 	const TITLE = "**Puissance d'un sort lancé par l'armée** :";
 	const FORMULA = "> valeur = coefficient du sort × stat de l'armée";
-	const PARAGRAPH = "La stat de l'armée est la somme de celles de ses personnages.";
+	const PARAGRAPH =
+		"La stat de l'armée est la somme de celles de ses personnages.";
+	// Un paragraphe qui s'ouvre sur du gras ou du gras italique reste un paragraphe.
+	test.each([
+		"**La stat** de l'armée est la somme.",
+		"***La stat*** de l'armée est la somme.",
+	])("un paragraphe qui s'ouvre sur « %s » suit la formule", (paragraph) => {
+		const gameDesign = [
+			"## 2. Les sorts",
+			TITLE,
+			FORMULA,
+			paragraph,
+			"## 4. Le combat",
+		].join("\n\n");
+		expect(passagesOf({ ...DOCUMENTS, gameDesign }).power).toContain(paragraph);
+	});
 	const TABLE = "| Sort | Effet |\n|---|---|\n| Boule de feu | dégâts |";
 	// Un bloc de chaque forme qui n'est pas un paragraphe, à la place du paragraphe.
 	const NOT_PARAGRAPHS = {
@@ -164,12 +187,17 @@ describe("la génération du wiki", () => {
 		"une liste à puces": "- un lanceur",
 		"une liste numérotée": "1. un lanceur",
 		"un bloc de code": "```\nvaleur\n```",
+		"un code entre tildes": "~~~\nvaleur\n~~~",
+		"un code indenté": "    valeur",
+		"un bloc HTML": "<div>valeur</div>",
+		"une ligne de séparation": "---",
 	};
 	test.each([
 		{ form: "qui finit le § 2 sur sa formule", blocks: [TITLE, FORMULA] },
-		{ form: "sans sa formule", blocks: [TITLE, PARAGRAPH, TABLE] },
+		{ form: "sans sa formule", blocks: [TITLE, PARAGRAPH, PARAGRAPH] },
 		...Object.entries(NOT_PARAGRAPHS).map(([kind, block]) => ({
-			form: `dont la formule est suivie d'${kind}`,
+			// Vitest tronque `$form` à 40 caractères : chaque nom reste court, donc distinct.
+			form: `formule puis ${kind}`,
 			blocks: [TITLE, FORMULA, block],
 		})),
 	])(
