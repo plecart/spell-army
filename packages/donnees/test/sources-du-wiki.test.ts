@@ -27,8 +27,10 @@ function wikiRepoPaths(config: string) {
 		rows,
 		"une seule ligne du wiki dans « Documentation dérivée »",
 	).toHaveLength(1);
-	const paths = [...rows[0].split("|")[2].matchAll(/`([^`]+)`/g)]
-		.map(([, word]) => word)
+	const [row = ""] = rows;
+	const sources = row.split("|")[2] ?? "";
+	const paths = [...sources.matchAll(/`([^`]+)`/g)]
+		.map(([, word = ""]) => word)
 		.filter((word) => REPO_PATH.test(word));
 	// Sans chemin, les comparaisons passeraient à vide : la population se recompte à chaque exécution.
 	expect(paths.length).toBeGreaterThan(0);
