@@ -23,7 +23,7 @@ export interface SpellText {
 }
 
 /** Le nom de chaque stat (game design § 1, « Statistiques »). */
-const STAT_NAMES = {
+export const STAT_NAMES = {
 	life: "Vie",
 	strength: "Force",
 	magic: "Magie",
