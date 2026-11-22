@@ -1,5 +1,5 @@
 import { type Executor, excludedPlayers, players } from "donnees";
-import { and, desc, eq, notExists } from "drizzle-orm";
+import { and, desc, eq, notExists, type SQL } from "drizzle-orm";
 import { type ClassKey, characterOf, perClass } from "personnages";
 import { containsIgnoringCase } from "./search.ts";
 
@@ -41,7 +41,8 @@ export interface VisiblePlayersPage {
 
 /**
  * Lit une page des joueurs visibles : ceux dont l'identifiant n'est pas dans `excluded_players`
- * (ADR 0003, « RGPD »). C'est la seule voie par laquelle l'annuaire lit des joueurs.
+ * (ADR 0003, « RGPD »). Le site ne lit les joueurs que par elle et par `readVisiblePlayer`, toutes
+ * deux sous cette garde (`notExcluded`).
  *
  * La recherche est un « contient » insensible à la casse sur le pseudo (`containsIgnoringCase`),
  * où `_`, caractère de pseudo, est pris littéralement. Les joueurs se rangent du plus récent au
@@ -86,12 +87,7 @@ async function readVisiblePlayers(
 		.from(players)
 		.where(
 			and(
-				notExists(
-					executor
-						.select()
-						.from(excludedPlayers)
-						.where(eq(excludedPlayers.instagramId, players.instagramId)),
-				),
+				notExcluded(executor),
 				needle ? containsIgnoringCase(players.username, needle) : undefined,
 			),
 		)
@@ -100,6 +96,19 @@ async function readVisiblePlayers(
 		...row,
 		classKey: characterOf(row.instagramId).class,
 	}));
+}
+
+/**
+ * La garde des lectures de joueurs visibles : l'identifiant du joueur n'est pas dans
+ * `excluded_players` (ADR 0003, « RGPD »).
+ */
+export function notExcluded(executor: Executor): SQL {
+	return notExists(
+		executor
+			.select()
+			.from(excludedPlayers)
+			.where(eq(excludedPlayers.instagramId, players.instagramId)),
+	);
 }
 
 // La page `page` de `items`, ramenée dans [1, `pageCount`], et le nombre de pages, au moins 1.
