@@ -16,10 +16,10 @@ import { elementsOf, render, textOf } from "./balisage.ts";
 // Les pages s'appellent ici comme des fonctions, hors d'une requête et du routeur de Next.js, où
 // `connection()` et le `useRouter()` de la feuille lèveraient : l'un attend, l'autre rend un routeur
 // vide, que le rendu au serveur n'appelle pas.
-vi.mock(import("next/server.js"), () => ({
+vi.mock(import("next/server"), () => ({
 	connection: async () => undefined,
 }));
-vi.mock(import("next/navigation.js"), async (importOriginal) => ({
+vi.mock(import("next/navigation"), async (importOriginal) => ({
 	...(await importOriginal()),
 	useRouter: () => ({}) as never,
 }));

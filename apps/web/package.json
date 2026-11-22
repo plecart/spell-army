@@ -7,7 +7,7 @@
 		"build": "next build",
 		"deposer-3d": "node --env-file-if-exists=../../.env scripts/deposer-3d.ts",
 		"test": "vitest run",
-		"typecheck": "next typegen && tsc",
+		"typecheck": "next typegen && tsc && tsc -p scripts",
 		"wiki": "node --env-file-if-exists=../../.env scripts/wiki.ts"
 	},
 	"dependencies": {
