@@ -5,7 +5,7 @@ import { validateSpell } from "combat";
 import { postgresErrorCode } from "donnees";
 import { writeFolder } from "./folder.ts";
 import { type WikiSpell, wikiPages } from "./pages.ts";
-import { readPassages } from "./passages.ts";
+import { passagesOf, readDocuments } from "./passages.ts";
 
 /** La lecture des sorts, poids 0 compris : la génération ne publie que les tirables. */
 export type SpellSource = () => Promise<readonly WikiSpell[]>;
@@ -67,7 +67,7 @@ export async function generateWiki(
 	folder: string,
 	source: SpellSource,
 ): Promise<WikiSummary> {
-	const passages = await readPassages();
+	const passages = passagesOf(await readDocuments());
 	const files = wikiPages(passages, drawableSpells(await readSpells(source)));
 	await writeFolder(folder, files);
 	const pages = [...files.values()].filter(
