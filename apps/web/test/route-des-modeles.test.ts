@@ -46,11 +46,13 @@ describe("route /api/modeles/[classe]", () => {
 			status: response.status,
 			type: response.headers.get("content-type"),
 			cache: response.headers.get("cache-control"),
+			sniffing: response.headers.get("x-content-type-options"),
 			body: new Uint8Array(await response.arrayBuffer()),
 		}).toEqual({
 			status: 200,
 			type: "model/gltf-binary",
 			cache: "public, max-age=3600, s-maxage=3600",
+			sniffing: "nosniff",
 			body: model,
 		});
 		expect((await get(GET, "golem")).status).toBe(404);
