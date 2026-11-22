@@ -50,6 +50,7 @@ export {
 	type NewSpell,
 	readDrawablePool,
 	readSpell,
+	readSpellImage,
 	type SpellImage,
 	type SpellPatch,
 	type SpellRecord,
