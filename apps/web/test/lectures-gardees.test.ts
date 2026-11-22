@@ -114,10 +114,55 @@ const FORMS: [
 	],
 ];
 
-// Les autres voies — `drizzle-orm`, `pg`, un module calculé, le client donné ailleurs qu'en premier
-// argument de la lecture — et ce qui reste permis : une constante de `donnees`, un homonyme local
-// d'une table, le client donné à la lecture, même sous d'autres noms. `apps/web` ne dépend ni de
-// `drizzle-orm` ni de `pg` : leurs imports ne s'y résolvent pas.
+// Les lectures gardées, chacune avec un argument qui suit le client.
+const READINGS: [name: string, rest: string][] = [
+	["listVisiblePlayers", '{ search: "", page: 1 }'],
+	["readVisiblePlayer", '"1"'],
+];
+
+// Le dénombrement des façons de donner le client à une lecture gardée, chacune éprouvée sur chaque
+// lecture : le libellé, la source, puis ce que le relevé y trouve. Seul le client appelé tel quel
+// en premier argument de la lecture est permis, même sous d'autres noms.
+const READING_FORMS: [
+	(name: string) => string,
+	(name: string, rest: string) => string,
+	string[],
+][] = [
+	[
+		(name) => `le client donné à ${name} par une fonction intermédiaire`,
+		(name, rest) =>
+			`import { ${name} } from "joueurs";\nimport { database } from "./environment.ts";\nconst open = (client: () => unknown) => client();\nawait ${name}(open(database), ${rest});`,
+		["database"],
+	],
+	[
+		(name) => `le client donné à ${name} en second argument`,
+		(name) =>
+			`import { ${name} } from "joueurs";\nimport { database } from "./environment.ts";\nawait ${name}({} as never, database());`,
+		["database"],
+	],
+	[
+		(name) => `le client donné à une fonction locale du nom de ${name}`,
+		(name, rest) =>
+			`import { database } from "./environment.ts";\nconst ${name} = (..._: unknown[]) => 0;\n${name}(database(), ${rest});`,
+		["database"],
+	],
+	[
+		(name) => `le client donné à ${name}`,
+		(name, rest) =>
+			`import { ${name} } from "joueurs";\nimport { database } from "./environment.ts";\nawait ${name}(database(), ${rest});`,
+		[],
+	],
+	[
+		(name) => `le client donné à ${name}, sous d'autres noms`,
+		(name, rest) =>
+			`import { ${name} as read } from "joueurs";\nimport { database as db } from "./environment.ts";\nawait read(db(), ${rest});`,
+		[],
+	],
+];
+
+// Les autres voies — `drizzle-orm`, `pg`, un module calculé, le client donné à autre chose qu'une
+// lecture gardée — et ce qui reste permis : une constante de `donnees`, un homonyme local d'une
+// table. `apps/web` ne dépend ni de `drizzle-orm` ni de `pg` : leurs imports ne s'y résolvent pas.
 const OTHER_CASES: [string, string, string[]][] = [
 	[
 		"une requête de drizzle-orm",
@@ -140,23 +185,8 @@ const OTHER_CASES: [string, string, string[]][] = [
 		["database"],
 	],
 	[
-		"le client donné à la lecture par une fonction intermédiaire",
-		'import { listVisiblePlayers } from "joueurs";\nimport { database } from "./environment.ts";\nconst open = (client: () => unknown) => client();\nawait listVisiblePlayers(open(database), { search: "", page: 1 });',
-		["database"],
-	],
-	[
-		"le client donné à la lecture en second argument",
-		'import { listVisiblePlayers } from "joueurs";\nimport { database } from "./environment.ts";\nawait listVisiblePlayers({} as never, database());',
-		["database"],
-	],
-	[
 		"le client donné à une autre fonction de joueurs",
 		'import { listPasses } from "joueurs";\nimport { database } from "./environment.ts";\nawait listPasses(database(), 10);',
-		["database"],
-	],
-	[
-		"le client donné à une fonction locale du nom de la lecture",
-		'import { database } from "./environment.ts";\nconst listVisiblePlayers = (..._: unknown[]) => 0;\nlistVisiblePlayers(database(), { search: "", page: 1 });',
 		["database"],
 	],
 	[
@@ -169,16 +199,6 @@ const OTHER_CASES: [string, string, string[]][] = [
 		'import { INSTAGRAM_USERNAME_PATTERN } from "donnees";\nvoid INSTAGRAM_USERNAME_PATTERN;',
 		[],
 	],
-	[
-		"le client donné à la lecture",
-		'import { listVisiblePlayers } from "joueurs";\nimport { database } from "./environment.ts";\nawait listVisiblePlayers(database(), { search: "", page: 1 });',
-		[],
-	],
-	[
-		"le client donné à la lecture, sous d'autres noms",
-		'import { listVisiblePlayers as list } from "joueurs";\nimport { database as db } from "./environment.ts";\nawait list(db(), { search: "", page: 1 });',
-		[],
-	],
 ];
 
 const CASES: [string, string, string[]][] = [
@@ -187,6 +207,13 @@ const CASES: [string, string, string[]][] = [
 			`${form} de ${target.name}`,
 			source(target),
 			reads(target),
+		]),
+	),
+	...READING_FORMS.flatMap(([label, source, reads]) =>
+		READINGS.map(([name, rest]): [string, string, string[]] => [
+			label(name),
+			source(name, rest),
+			reads,
 		]),
 	),
 	...OTHER_CASES,
@@ -201,7 +228,7 @@ const CASE_READS = playerReads(
 	),
 );
 
-describe("la lecture des joueurs visibles est la seule voie de l'annuaire", () => {
+describe("le site ne lit les joueurs que par les lectures gardées", () => {
 	test("aucun fichier du site ne lit les joueurs autrement", () => {
 		const files = siteFiles();
 		// L'inventaire : un relevé vide sur une liste vide ne prouverait rien.

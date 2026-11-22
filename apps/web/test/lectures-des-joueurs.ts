@@ -1,4 +1,4 @@
-// Le relevé des lectures de joueurs qui contourneraient `listVisiblePlayers`, fait par le
+// Le relevé des lectures de joueurs qui contourneraient les lectures gardées, fait par le
 // vérificateur de TypeScript 7 (`typescript/unstable/sync`, l'API du compilateur livrée avec
 // `tsc`) sur le projet `apps/web` : chaque identifiant se résout jusqu'à sa déclaration, à travers
 // renommages, espaces de noms et réexports. Pas d'expression régulière sur la source : elle imite
@@ -30,17 +30,22 @@ const ROOT = fileURLToPath(new URL("../../../", import.meta.url))
 	.replace(/\/$/, "");
 const APP = `${ROOT}/apps/web/app`;
 
-// Les cibles : ce par quoi un fichier lirait des joueurs, par fichier de déclaration (relatif à la
-// racine du dépôt) et nom. Le client `database` n'est permis qu'importé, puis donné tel quel à
-// `listVisiblePlayers`.
-const TARGETS: Record<string, readonly string[]> = {
+/** Des noms, rangés sous le fichier qui les déclare, relatif à la racine du dépôt. */
+type Declarations = Readonly<Record<string, readonly string[]>>;
+
+// Les cibles : ce par quoi un fichier lirait des joueurs. Le client `database` n'est permis
+// qu'importé, puis donné tel quel à une lecture gardée.
+const TARGETS: Declarations = {
 	"packages/donnees/src/schema.ts": ["players", "excludedPlayers"],
 	"packages/donnees/src/client.ts": ["createClient"],
 	"apps/web/app/environment.ts": ["database"],
 };
-const LIST_VISIBLE_PLAYERS = {
-	file: "packages/joueurs/src/visible-players.ts",
-	name: "listVisiblePlayers",
+
+// Les lectures gardées : celles de `joueurs` qui écartent les joueurs de `excluded_players`
+// (ADR 0003, « RGPD »), seules à recevoir le client d'un fichier du site.
+const GUARDED_READINGS: Declarations = {
+	"packages/joueurs/src/visible-players.ts": ["listVisiblePlayers"],
+	"packages/joueurs/src/visible-player.ts": ["readVisiblePlayer"],
 };
 
 // Les modules dont un import, même de type, écrirait une requête à la main.
@@ -52,13 +57,16 @@ function declaredIn(symbol: TsSymbol, file: string): boolean {
 	return path?.endsWith(`/${file.toLowerCase()}`) ?? false;
 }
 
+/** Vrai si `symbol` porte l'un des noms que `declarations` range sous son fichier. */
+function declaredAmong(symbol: TsSymbol, declarations: Declarations): boolean {
+	return Object.entries(declarations).some(
+		([file, names]) => names.includes(symbol.name) && declaredIn(symbol, file),
+	);
+}
+
 /** Le nom de cible de `symbol`, résolu, s'il en est une. */
 function targetOf(symbol: TsSymbol): string | undefined {
-	return Object.entries(TARGETS).some(
-		([file, names]) => names.includes(symbol.name) && declaredIn(symbol, file),
-	)
-		? symbol.name
-		: undefined;
+	return declaredAmong(symbol, TARGETS) ? symbol.name : undefined;
 }
 
 /**
@@ -128,7 +136,7 @@ function nodesOf(file: SourceFile) {
  *
  * - une référence à une cible (`players`, `excludedPlayers`, `createClient`, `database`) sous
  *   quelque nom, espace de noms ou réexport que ce soit, sauf `database` importé puis appelé sans
- *   argument en premier argument de `listVisiblePlayers` ;
+ *   argument en premier argument d'une lecture gardée (`GUARDED_READINGS`) ;
  * - l'espace de noms entier d'un module qui exporte une cible (`import * as`, `export * from`,
  *   `import()`) : chacune de ses cibles ;
  * - un alias que le vérificateur ne résout pas (`non résolu : <nom>`) — import par défaut d'un
@@ -208,7 +216,7 @@ function identifierReads(
 }
 
 /**
- * Vrai si `node` est appelé sans argument en premier argument de `listVisiblePlayers`, selon la
+ * Vrai si `node` est appelé sans argument en premier argument d'une lecture gardée, selon la
  * déclaration que `targets` donne à chaque identifiant du fichier.
  */
 function handsClientToReading(
@@ -229,10 +237,7 @@ function handsClientToReading(
 		? outer.expression.name
 		: outer.expression;
 	const reading = targets.get(callee);
-	return (
-		reading?.name === LIST_VISIBLE_PLAYERS.name &&
-		declaredIn(reading, LIST_VISIBLE_PLAYERS.file)
-	);
+	return reading !== undefined && declaredAmong(reading, GUARDED_READINGS);
 }
 
 /**
