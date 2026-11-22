@@ -30,6 +30,7 @@ export {
 	type EffectCategory,
 	effectCategory,
 	spellKey,
+	validateMonster,
 	validateSpell,
 } from "./rules.ts";
 export { type Sample, scaleFactor } from "./scale.ts";

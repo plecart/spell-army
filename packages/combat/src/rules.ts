@@ -1,10 +1,17 @@
 import {
+	MEAN_COEFFICIENT,
+	type MonsterAttack,
+	type MonsterDesign,
+	type Profile,
+} from "./monster.ts";
+import {
 	type Effect,
 	type EffectBase,
 	type Form,
 	FULL_RECIPE,
 	type Linear,
 	type Recipe,
+	STATS,
 	type Shares,
 	type Spell,
 } from "./spell.ts";
@@ -34,6 +41,14 @@ const TEXT_FIELDS = [
 	["name", "le nom"],
 	["description", "la description"],
 ] as const;
+/** La plus petite part d'une recette de sort : une part nulle s'y omet. */
+const SPELL_LOWEST_SHARE = 1;
+/** La plus petite part d'une recette d'attaque du monstre : une part nulle y est admise. */
+const ATTACK_LOWEST_SHARE = 0;
+/** Le nombre d'attaques d'un monstre (game design § 3, « Attaques »). */
+const ATTACK_COUNT = { min: 2, max: 4 } as const;
+/** Le coefficient moyen des attaques se vérifie au centième. */
+const HUNDREDTHS = 100;
 
 /**
  * La catégorie d'un effet, toujours déduite, jamais saisie : dégâts seuls → `damage`, soin seul →
@@ -116,17 +131,22 @@ export function validateSpell(candidate: Omit<Spell, "number">): string[] {
 
 function recipeErrors(recipe: Recipe): string[] {
 	if (recipe.kind === "bestStat") return [];
-	const shares = sharesOf(recipe.shares);
-	const errors = shares
+	return sharesErrors(recipe.shares, SPELL_LOWEST_SHARE);
+}
+
+/** Les parts d'une recette : chacune un entier de `lowest` à 100, leur somme 100. */
+function sharesErrors(shares: Shares, lowest: number): string[] {
+	const parts = sharesOf(shares);
+	const errors = parts
 		.filter(
 			([, share]) =>
-				!(Number.isInteger(share) && share >= 1 && share <= FULL_RECIPE),
+				!(Number.isInteger(share) && share >= lowest && share <= FULL_RECIPE),
 		)
 		.map(
 			([stat, share]) =>
-				`la part « ${stat} » de la recette doit être un entier de 1 à ${FULL_RECIPE}, reçu : ${share}`,
+				`la part « ${stat} » de la recette doit être un entier de ${lowest} à ${FULL_RECIPE}, reçu : ${share}`,
 		);
-	const total = shares.reduce((sum, [, share]) => sum + share, 0);
+	const total = parts.reduce((sum, [, share]) => sum + share, 0);
 	if (total !== FULL_RECIPE) {
 		errors.push(
 			`les parts de la recette doivent faire ${FULL_RECIPE} %, reçu : ${total} %`,
@@ -189,7 +209,7 @@ function linearErrors(
 	const { constant, perGauge } = linear;
 	const errors: string[] = [];
 	const ends = GAUGE_ENDS.map((gauge) => valueAt(linear, gauge));
-	if (!ends.every((value) => Number.isFinite(value) && value >= 0)) {
+	if (!ends.every(isFiniteNonNegative)) {
 		errors.push(
 			`le coefficient de ${label} doit être un nombre fini ≥ 0 aux deux bouts de la jauge, reçu : constant ${constant}, perGauge ${perGauge}`,
 		);
@@ -227,7 +247,7 @@ function mixedErrors({ base, damage, heal }: Effect): string[] {
 }
 
 function weightErrors(weight: number): string[] {
-	return Number.isFinite(weight) && weight >= 0
+	return isFiniteNonNegative(weight)
 		? []
 		: [`le poids doit être un nombre fini ≥ 0, reçu : ${weight}`];
 }
@@ -235,6 +255,72 @@ function weightErrors(weight: number): string[] {
 function textErrors(candidate: Omit<Spell, "number">): string[] {
 	return TEXT_FIELDS.filter(([field]) => candidate[field].trim() === "").map(
 		([, label]) => `${label} ne doit pas être vide`,
+	);
+}
+
+/**
+ * Les règles de validité d'un monstre (game design § 3), en messages d'erreur en français ; aucun
+ * message : le monstre est valide. Toutes les règles enfreintes sont rendues, pas la première. Le
+ * type et la présence des champs reviennent à la validation de l'entrée. Le moteur ne valide pas ce
+ * qu'il simule : un monstre se valide ici, avant son facteur d'échelle (`scaleFactor`).
+ *
+ * - Attaques (« Attaques ») : de 2 à 4, de noms deux à deux distincts.
+ * - Recette d'une attaque : des parts entières de 0 à 100 dont la somme fait 100.
+ * - Coefficient d'une attaque : un nombre fini > 0.
+ * - Coefficient moyen (« Puissance d'une attaque ») : la moyenne simple des coefficients vaut ×0,78
+ *   au centième.
+ * - Profil : chaque multiplicateur un nombre fini ≥ 0. Une Vie ×0 passe : aucun facteur ne
+ *   l'équilibre, et c'est `scaleFactor` qui la refuse.
+ */
+export function validateMonster({ profile, attacks }: MonsterDesign): string[] {
+	return [
+		...attackCountErrors(attacks),
+		...attackNameErrors(attacks),
+		...attacks.flatMap(attackErrors),
+		...meanCoefficientErrors(attacks),
+		...profileErrors(profile),
+	];
+}
+
+function attackCountErrors({ length }: readonly MonsterAttack[]): string[] {
+	const { min, max } = ATTACK_COUNT;
+	return length >= min && length <= max
+		? []
+		: [`un monstre doit avoir de ${min} à ${max} attaques, reçu : ${length}`];
+}
+
+function attackNameErrors(attacks: readonly MonsterAttack[]): string[] {
+	const names = attacks.map(({ name }) => name);
+	const repeated = names.filter((name, index) => names.indexOf(name) !== index);
+	return [...new Set(repeated)].map(
+		(name) => `le nom d'attaque « ${name} » doit être unique dans le monstre`,
+	);
+}
+
+function attackErrors({ name, recipe, coefficient }: MonsterAttack): string[] {
+	const coefficientErrors =
+		Number.isFinite(coefficient) && coefficient > 0
+			? []
+			: [`le coefficient doit être un nombre fini > 0, reçu : ${coefficient}`];
+	return [
+		...sharesErrors(recipe, ATTACK_LOWEST_SHARE),
+		...coefficientErrors,
+	].map((error) => `l'attaque « ${name} » : ${error}`);
+}
+
+function meanCoefficientErrors(attacks: readonly MonsterAttack[]): string[] {
+	const total = attacks.reduce((sum, { coefficient }) => sum + coefficient, 0);
+	const hundredths = Math.round((total / attacks.length) * HUNDREDTHS);
+	if (hundredths === Math.round(MEAN_COEFFICIENT * HUNDREDTHS)) return [];
+	return [
+		`le coefficient moyen des attaques doit valoir ${MEAN_COEFFICIENT} au centième, reçu : ${hundredths / HUNDREDTHS}`,
+	];
+}
+
+function profileErrors(profile: Profile): string[] {
+	return STATS.filter((stat) => !isFiniteNonNegative(profile[stat])).map(
+		(stat) =>
+			`le multiplicateur « ${stat} » du profil doit être un nombre fini ≥ 0, reçu : ${profile[stat]}`,
 	);
 }
 
@@ -246,6 +332,11 @@ function valueAt({ constant, perGauge }: Linear, gauge: number): number {
 /** Une part qui vaut 0 aux deux bouts de la jauge : elle ne fait rien. */
 function isZero(linear: Linear): boolean {
 	return GAUGE_ENDS.every((gauge) => valueAt(linear, gauge) === 0);
+}
+
+/** Un nombre fini ≥ 0 : ni négatif, ni NaN, ni infini. */
+function isFiniteNonNegative(value: number): boolean {
+	return Number.isFinite(value) && value >= 0;
 }
 
 /** Les parts d'une recette, en paires `[stat, part]` ; une part `undefined` est absente. */

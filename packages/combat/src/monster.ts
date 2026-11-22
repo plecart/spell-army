@@ -19,9 +19,9 @@ export type Profile = Record<Stat, number>;
 
 /**
  * Un monstre (game design § 3) : ses stats, déjà dimensionnées sur l'armée ; ses attaques, de 2 à 4
- * — leur nombre se valide à la création du monstre, le combat n'en exige qu'une ; son profil,
- * porté au journal sans effet au combat ; sa particularité, un texte sans effet au MVP (§ 10,
- * point 4).
+ * — leur nombre se valide à la création du monstre (`validateMonster`), le combat n'en exige
+ * qu'une ; son profil, porté au journal sans effet au combat ; sa particularité, un texte sans
+ * effet au MVP (§ 10, point 4).
  */
 export interface Monster {
 	stats: Stats;
@@ -46,13 +46,19 @@ export const NEUTRAL_PROFILE: Readonly<Profile> = {
 };
 
 /**
+ * Le coefficient moyen des attaques d'un monstre (game design § 3, « Puissance d'une attaque »),
+ * dans l'unité de l'annexe B.
+ */
+export const MEAN_COEFFICIENT = 0.78;
+
+/**
  * Les attaques du monstre de référence, celui des simulations d'équilibre (game design § 6,
  * « Équilibre ») : une de Force, une de Magie, chacune au coefficient moyen ×0,78 du § 3 — le § 6
  * ne fixe que ce coefficient moyen, la composition est celle-ci.
  */
 export const REFERENCE_ATTACKS: readonly MonsterAttack[] = [
-	{ name: "Griffes", recipe: { strength: 100 }, coefficient: 0.78 },
-	{ name: "Sortilège", recipe: { magic: 100 }, coefficient: 0.78 },
+	{ name: "Griffes", recipe: { strength: 100 }, coefficient: MEAN_COEFFICIENT },
+	{ name: "Sortilège", recipe: { magic: 100 }, coefficient: MEAN_COEFFICIENT },
 ];
 
 /**
