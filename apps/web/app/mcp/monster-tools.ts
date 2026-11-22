@@ -26,6 +26,7 @@ import {
 	spellOf,
 } from "./spell-vocabulary.ts";
 import { type McpTool, refuseIfAny } from "./tool.ts";
+import { renamed, STAT_OF, STATS } from "./vocabulary.ts";
 
 // Le bestiaire (issue #20) : un monstre dans les noms français des outils, ses schémas Zod, sa
 // traduction dans le modèle de `combat` (`MonsterDesign`) et retour, et les trois outils.
@@ -59,10 +60,10 @@ const toolMonster = z.strictObject({
 	),
 	profil: z
 		.strictObject({
-			vie: z.number(),
-			force: z.number(),
-			magie: z.number(),
-			vitesse: z.number(),
+			[STATS.life]: z.number(),
+			[STATS.strength]: z.number(),
+			[STATS.magic]: z.number(),
+			[STATS.speed]: z.number(),
 		})
 		.describe(
 			"Le multiplicateur de chaque stat, qui répartit le budget du monstre (game design § 3, « Profil ») : un nombre ≥ 0, 1 gardant le budget.",
@@ -71,7 +72,10 @@ const toolMonster = z.strictObject({
 		.array(
 			z.strictObject({
 				nom: text(MAX_NAME_LENGTH),
-				recette: z.strictObject({ force: share, magie: share }),
+				recette: z.strictObject({
+					[STATS.strength]: share,
+					[STATS.magic]: share,
+				}),
 				coefficient: z.number(),
 			}),
 		)
@@ -116,15 +120,10 @@ type NewToolMonster = z.output<typeof newMonster>;
 /** Le profil et les attaques d'un monstre à créer, dans le modèle de `combat`. */
 function modelDesign({ profil, attaques }: NewToolMonster): MonsterDesign {
 	return {
-		profile: {
-			life: profil.vie,
-			strength: profil.force,
-			magic: profil.magie,
-			speed: profil.vitesse,
-		},
+		profile: renamed(profil, STAT_OF),
 		attacks: attaques.map(({ nom, recette, coefficient }) => ({
 			name: nom,
-			recipe: { strength: recette.force, magic: recette.magie },
+			recipe: renamed(recette, STAT_OF),
 			coefficient,
 		})),
 	};
@@ -138,22 +137,17 @@ function designOf({ profile, attacks }: MonsterRecord): MonsterDesign {
 	return storedDesign.parse({ profile, attacks });
 }
 
-/** Un monstre de la table dans le vocabulaire des outils, champ par champ. */
+/** Un monstre de la table dans le vocabulaire des outils, les stats sous les noms de `STATS`. */
 function toToolMonster(record: MonsterRecord): ToolMonster {
 	const { profile, attacks } = designOf(record);
 	return {
 		saison: record.season,
 		chapitre: record.chapter,
 		nom: record.name,
-		profil: {
-			vie: profile.life,
-			force: profile.strength,
-			magie: profile.magic,
-			vitesse: profile.speed,
-		},
+		profil: renamed(profile, STATS),
 		attaques: attacks.map(({ name, recipe, coefficient }) => ({
 			nom: name,
-			recette: { force: recipe.strength, magie: recipe.magic },
+			recette: renamed(recipe, STATS),
 			coefficient,
 		})),
 		facteur_echelle: record.scaleFactor,
