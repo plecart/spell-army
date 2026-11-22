@@ -1,4 +1,5 @@
 import {
+	findMonsterByName,
 	MAX_MONSTER_NAME_LENGTH,
 	type ModelTarget,
 	storeModelFile,
@@ -28,7 +29,9 @@ const deposit = z
 			.min(1)
 			.max(MAX_MONSTER_NAME_LENGTH)
 			.optional()
-			.describe("Le nom du monstre dont c'est le fichier, sans classe."),
+			.describe(
+				"Le nom du monstre dont c'est le fichier, sans classe : un monstre déjà créé par creer_monstre.",
+			),
 		contenu: boundedBase64("le fichier", MAX_MODEL_BYTES).describe(
 			"Les octets du fichier GLB en base64, qu'écrit la commande deposer-3d et jamais le modèle.",
 		),
@@ -59,7 +62,7 @@ const setting = z.strictObject({
 export const depositModelTool: McpTool<typeof deposit> = {
 	name: "deposer_fichier_3d",
 	title: "Déposer un fichier 3D",
-	description: `Range le fichier GLB d'une classe ou d'un monstre s'il respecte le contrat du fichier 3D (direction artistique § 7), et rend son identifiant, sa taille et son empreinte SHA-256 ; regler_modele_classe en fait le modèle par défaut d'une classe. Un fichier non conforme est refusé, ses écarts listés un par ligne. Ne passe jamais le contenu dans l'appel : donne au mainteneur la commande ${DEPOSIT_COMMAND}. Elle se lance dans son clone du dépôt, vérifie le fichier sur son poste, puis l'envoie elle-même à cet outil.`,
+	description: `Range le fichier GLB d'une classe ou d'un monstre s'il respecte le contrat du fichier 3D (direction artistique § 7), et rend son identifiant, sa taille et son empreinte SHA-256 ; regler_modele_classe en fait le modèle par défaut d'une classe. Le monstre doit exister : creer_monstre d'abord, puis le dépôt de son fichier, qui reste rangé sous son nom si le monstre est retiré. Un fichier non conforme est refusé, ses écarts listés un par ligne. Ne passe jamais le contenu dans l'appel : donne au mainteneur la commande ${DEPOSIT_COMMAND}. Elle se lance dans son clone du dépôt, vérifie le fichier sur son poste, puis l'envoie elle-même à cet outil.`,
 	annotations: {
 		readOnlyHint: false,
 		destructiveHint: false,
@@ -73,6 +76,14 @@ export const depositModelTool: McpTool<typeof deposit> = {
 		empreinte: z.string(),
 	}),
 	run: async (executor, { classe, monstre, contenu }) => {
+		if (
+			monstre !== undefined &&
+			(await findMonsterByName(executor, monstre)) === undefined
+		) {
+			throw new Error(
+				`Aucun monstre ne porte le nom « ${monstre} » : crée-le d'abord par creer_monstre, puis dépose son fichier.`,
+			);
+		}
 		const bytes = Buffer.from(contenu, "base64");
 		const deviations = checkModel(bytes);
 		if (deviations.length > 0) {

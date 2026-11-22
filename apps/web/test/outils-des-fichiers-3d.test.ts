@@ -19,6 +19,7 @@ import {
 	outputOf,
 	publishedTools,
 } from "./montage.ts";
+import { storeMonster } from "./monstres.ts";
 import { base64, fingerprint, sha256 } from "./octets.ts";
 
 const MODEL_TOOLS = ["deposer_fichier_3d", "regler_modele_classe"];
@@ -193,12 +194,33 @@ describe("deposer_fichier_3d", () => {
 
 	test("un fichier de monstre est rangé sous son nom sans les blancs qui l'entourent", async () => {
 		const { db, client } = await connectToRegistry();
+		await storeMonster(db);
 		const bytes = glb(CONFORMING);
 		outputOf(
 			await deposit(client, { monstre: " limace ", contenu: base64(bytes) }),
 		);
 		const [row] = await auditOf(db, "deposer_fichier_3d");
 		expect(row?.after).toMatchObject({ identifiant: 1, monstre: "limace" });
+	});
+
+	test("le fichier d'un monstre qu'aucun monstre ne porte est refusé : le message le dit et rappelle l'ordre, seule la ligne d'audit en erreur s'écrit", async () => {
+		const { db, client } = await connectToRegistry();
+		await storeMonster(db);
+		const message =
+			"Aucun monstre ne porte le nom « Limace » : crée-le d'abord par creer_monstre, puis dépose son fichier.";
+		expect(
+			await deposit(client, {
+				monstre: "Limace",
+				contenu: base64(glb(CONFORMING)),
+			}),
+		).toMatchObject({
+			content: [{ type: "text", text: message }],
+			isError: true,
+		});
+		expect(await auditOf(db, "deposer_fichier_3d")).toEqual([
+			expect.objectContaining({ succeeded: false, error: message }),
+		]);
+		expect(await stored(db)).toEqual({ files: [], defaults: [] });
 	});
 
 	test("un fichier non conforme est refusé avec ses écarts, un par ligne : seule la ligne d'audit en erreur s'écrit", async () => {
@@ -438,6 +460,7 @@ describe("regler_modele_classe", () => {
 		"%s : refusé, une ligne d'audit en erreur, le modèle par défaut inchangé",
 		async (_, fichier, message) => {
 			const { db, client } = await connectToRegistry();
+			await storeMonster(db);
 			await depositFor(client, { classe: "magicien" });
 			await depositFor(client, { monstre: "limace" });
 			await depositFor(client, { classe: "golem" });

@@ -11,6 +11,7 @@ import { simulationArmies } from "personnages";
 import { z } from "zod";
 import { boundedBase64, grouped } from "./bounds.ts";
 import { readImageInfo } from "./image.ts";
+import { SAMPLE_LAST_SEED, sampleSeeds } from "./sample.ts";
 import {
 	newSpellSchema,
 	spellOf,
@@ -18,7 +19,7 @@ import {
 	toolSpellSchema,
 	toToolSpell,
 } from "./spell-vocabulary.ts";
-import type { McpTool } from "./tool.ts";
+import { type McpTool, refuseIfAny } from "./tool.ts";
 
 // Les bornes d'une image (issue #12, « Image »), en nombres, puis en mots qui en dérivent. Le texte
 // en base64 se borne par `boundedBase64` (`test/outils-des-sorts.test.ts` en éprouve les deux
@@ -52,13 +53,6 @@ const modification = z
 	// Le `refine` ne passe pas dans le schéma JSON : outre le numéro, un des trois champs au moins.
 	.meta({ minProperties: 2 });
 
-// L'échantillon de mesurer_sort : les graines 1 à 2 000, comme l'équilibre (issue #19, critère
-// « Équilibre »). Relevé le 2026-11-21 sur le poste de développement (Node 24.3), deux appels par
-// `callTool` : 14,3 et 13,7 s, de l'ordre de la dizaine de secondes, loin des 300 s de
-// `maxDuration` de la route MCP même sur une fonction trois fois plus lente ; un pic de mémoire de
-// 0,3 Go pour tout le processus de test, la mesure ne gardant qu'une armée à la fois.
-const MEASURED_SEEDS = 2000;
-
 const share = z.number().min(0).max(1);
 
 const measurement = z.strictObject({
@@ -79,13 +73,6 @@ const measurement = z.strictObject({
 			"L'échantillon : les graines de premiere à derniere, chacune un combat avec le sort et un sans.",
 		),
 });
-
-/** Refuse l'appel par les messages de `errors`, un par ligne, s'il y en a. */
-function refuseIfAny(errors: string[]): void {
-	if (errors.length > 0) {
-		throw new Error(errors.join("\n"));
-	}
-}
 
 /**
  * L'image donnée en base64, ses octets et son type ; une erreur qui dit la borne franchie (issue
@@ -207,11 +194,9 @@ export const updateSpellTool: McpTool<typeof modification> = {
  * tenir de transaction, et sa ligne d'audit s'écrit après. Il n'écrit rien d'autre.
  */
 export function measureSpellTool(
-	lastSeed = MEASURED_SEEDS,
+	lastSeed = SAMPLE_LAST_SEED,
 ): McpTool<typeof newSpellSchema> {
-	const seeds = Array.from({ length: lastSeed }, (_, index) =>
-		String(index + 1),
-	);
+	const seeds = sampleSeeds(lastSeed);
 	return {
 		name: "mesurer_sort",
 		title: "Mesurer un sort candidat",

@@ -48,6 +48,16 @@ export interface McpTool<Input extends z.ZodObject = z.ZodObject> {
 	run(executor: Executor, input: z.output<Input>): Promise<ToolOutcome>;
 }
 
+/**
+ * Refuse l'appel d'un outil par les messages de `errors`, un par ligne, s'il y en a : `callTool` en
+ * fait un refus audité.
+ */
+export function refuseIfAny(errors: string[]): void {
+	if (errors.length > 0) {
+		throw new Error(errors.join("\n"));
+	}
+}
+
 /** Message d'un appel refusé sans message propre : une ligne d'audit en erreur en porte toujours un. */
 const UNNAMED_ERROR = "Erreur sans message";
 
