@@ -9,6 +9,7 @@ export default databaseTestConfig([
 	"test/cache-du-cdn.test.ts",
 	"test/fiche-arrivee.test.ts",
 	"test/fiche-ecran.test.tsx",
+	"test/fiche-fermeture.test.ts",
 	"test/fiche-mouvement.test.ts",
 	"test/fiche-verdict.test.ts",
 	"test/image.test.ts",

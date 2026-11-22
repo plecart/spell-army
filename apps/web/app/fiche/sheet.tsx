@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation.js";
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { isBackdropClick } from "../backdrop.ts";
+import { once } from "../once.ts";
 
 /**
  * Où mène la fermeture de la fiche : `"back"` revient d'un pas dans l'historique, à l'annuaire
@@ -16,7 +17,8 @@ export type SheetClose = "back" | "home";
  * `<dialog>` modal, ouvert au montage et nommé par le titre `labelledBy`, qui monte du bas de
  * l'écran et défile en lui-même (`globals.css`, `.sheet`). Le navigateur y porte le focus et rend
  * inerte le reste de la page. Le bouton « Fermer », Échap et un appui hors de la feuille la
- * ferment par la route, selon `onClose` ; le retour du navigateur la ferme aussi, par la route.
+ * ferment par la route, selon `onClose`, une seule fois : un second geste avant que la route ne
+ * retire la feuille ne fait rien. Le retour du navigateur la ferme aussi, par la route.
  * Démontée, la feuille rend le focus à l'élément qui l'avait à son ouverture, la carte d'origine,
  * s'il est encore dans la page : un `<dialog>` retiré par la navigation ne le rend pas.
  */
@@ -44,7 +46,14 @@ export function Sheet({
 			}
 		};
 	}, []);
-	const close = () => (onClose === "back" ? router.back() : router.push("/"));
+	// La fermeture que partagent les gestes de la feuille, gardée : un double clic sur « Fermer », ou
+	// « Fermer » puis Échap, reculerait sinon de deux pas, hors de l'annuaire laissé derrière, voire
+	// hors du site. Créée au montage, elle garde l'`onClose` de la page, qui n'en change pas, et le
+	// `back` et le `push` du routeur, ceux de son instance unique (next 16.4.6,
+	// `client/components/navigation.js`, `useRouter`).
+	const [close] = useState(() =>
+		once(() => (onClose === "back" ? router.back() : router.push("/"))),
+	);
 	return (
 		// biome-ignore lint/a11y/useKeyWithClickEvents: au clavier, Échap ferme déjà la feuille ; ce clic n'est que l'appui hors de la feuille.
 		<dialog
