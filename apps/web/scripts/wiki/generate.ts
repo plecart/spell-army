@@ -24,19 +24,26 @@ const READ_REFUSALS: Readonly<Record<string, string>> = {
 	"42501": "Lecture refusée : le rôle n'a pas SELECT sur spells.",
 };
 
+// Un segment entre guillemets droits d'un message d'erreur.
+const QUOTED = /"[^"]*"/g;
+
 /**
- * La raison d'un échec, lue sur la cause la plus profonde de `error`, sans rien de `DATABASE_URL` :
- * une erreur qui porte un `code` — de Node (`connect ECONNREFUSED`, `code ERR_INVALID_URL`) ou de
- * Postgres (`code 3D000`) — se nomme par lui, son message pouvant citer l'hôte, le port, le rôle ou
- * la base ; une autre, par son message ; une valeur qui n'est pas une erreur, par sa chaîne.
+ * La raison d'un échec, lue sur la cause la plus profonde de `error`, sans ce que les formes
+ * relevées citeraient de `DATABASE_URL` : une erreur qui porte un `code` — de Node (`connect
+ * ECONNREFUSED`, `code ERR_INVALID_URL`) ou de Postgres (`code 3D000`) — se nomme par lui, son
+ * message pouvant citer l'hôte, le port, le rôle ou la base ; une autre, par son message, ses segments entre guillemets masqués — pg y cite la valeur
+ * d'un paramètre de l'URL (`Invalid sslnegotiation value: "…"`, pg 8.23.1) —, à défaut par son nom ;
+ * une valeur qui n'est pas une erreur, par sa chaîne. Sans point final.
  */
 function failureReason(error: unknown): string {
 	let root = error;
 	while (root instanceof Error && root.cause !== undefined) root = root.cause;
 	if (!(root instanceof Error)) return String(root);
 	const { code, syscall } = root as { code?: unknown; syscall?: unknown };
-	if (typeof code !== "string") return root.message;
-	return `${typeof syscall === "string" ? syscall : "code"} ${code}`;
+	if (typeof code === "string") {
+		return `${typeof syscall === "string" ? syscall : "code"} ${code}`;
+	}
+	return (root.message.replace(QUOTED, '"…"') || root.name).replace(/\.$/, "");
 }
 
 /**
@@ -80,7 +87,7 @@ function drawableSpells(spells: readonly WikiSpell[]): WikiSpell[] {
  *
  * Lève une erreur, à afficher telle quelle, avant toute écriture : un passage introuvable ou
  * incomplet dans son document ; un échec de lecture des sorts, expliqué pour une table absente ou
- * un droit refusé, sinon nommé par sa raison, sans rien de `DATABASE_URL` ; aucun sort tirable ; un
+ * un droit refusé, sinon nommé par sa raison (`failureReason`) ; aucun sort tirable ; un
  * sort tirable invalide (`validateSpell`), ou dont l'image est d'un type inconnu (`wikiPages`),
  * qu'elle nomme ; un dossier qui n'est pas vide (`writeFolder`).
  */
