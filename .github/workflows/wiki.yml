@@ -25,7 +25,9 @@ on:
       - apps/web/scripts/wiki/**
       - .github/workflows/wiki.yml
   # Chaque nuit : un sort ajouté ou modifié par le serveur MCP, hors de tout merge, paraît au plus
-  # tard le lendemain. Décalé du `schedule` de `ci.yml`.
+  # tard le lendemain, tant que GitHub ne désactive pas ce workflow, comme `ci.yml` le note, dans un
+  # dépôt public resté 60 jours sans activité (docs/exploitation.md, « Publication »). Décalé du
+  # `schedule` de `ci.yml`.
   schedule:
     - cron: "43 3 * * *"
   workflow_dispatch:
