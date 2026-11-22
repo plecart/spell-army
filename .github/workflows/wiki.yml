@@ -9,7 +9,8 @@ permissions:
   contents: read
 
 on:
-  # Le filtre suit les sources déclarées dans `.claude/pipeline.config.md`, « Documentation dérivée ».
+  # Une source du dépôt ajoutée au wiki dans `.claude/pipeline.config.md`, « Documentation
+  # dérivée », s'ajoute aussi à ce filtre, dans le même commit.
   push:
     branches: [main]
     paths:
@@ -49,10 +50,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Clone sans jeton (le dépôt est public) : le jeton n'entre qu'au push, jamais dans
+      # `.git/config` pendant que la génération lit le secret de la base.
       - name: Clone du wiki
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" "$RUNNER_TEMP/wiki"
+        run: git clone --depth 1 "https://github.com/${GITHUB_REPOSITORY}.wiki.git" "$RUNNER_TEMP/wiki"
       # Tout le wiki est généré : on retire tout, hors `.git`, pour qu'une page disparue des
       # sources (sort passé au poids 0, sort retiré) disparaisse aussi du wiki.
       - name: Vide le clone, hors .git
@@ -65,6 +66,8 @@ jobs:
       # identique octet pour octet, et rien n'est commité quand l'index ne change pas.
       - name: Publie si une page a changé
         working-directory: ${{ runner.temp }}/wiki
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git add -A
           if git diff --cached --quiet; then
@@ -72,4 +75,4 @@ jobs:
             exit 0
           fi
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "docs: régénère le wiki depuis ${GITHUB_SHA}"
-          git push origin HEAD
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" HEAD
