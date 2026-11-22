@@ -5,6 +5,7 @@ import {
 	findSpellByKey,
 	insertSpell,
 	listSpells,
+	listSpellsWithImages,
 	type NewSpell,
 	readDrawablePool,
 	readSpell,
@@ -251,6 +252,26 @@ describe("sorts", () => {
 			25,
 			26,
 		]);
+	});
+
+	test("listSpellsWithImages rend chaque sort par numéro croissant, poids 0 compris, avec les octets et le type de son image, ou null sans image", async () => {
+		const db = await freshDatabase();
+		await insertSpell(db, { ...NEW_SPELL, weight: 0 });
+		// Modifiée, la ligne du n° 6 change de place dans la table : sans tri, elle se lirait la dernière.
+		await updateSpell(db, 6, { image: PNG_IMAGE });
+		const read = (await listSpellsWithImages(db)).map(
+			({ image, ...spell }) => ({
+				...spell,
+				image: image && { bytes: [...image.bytes], type: image.type },
+			}),
+		);
+		expect
+			.soft(read.map(({ number }) => number))
+			.toEqual([...STARTING_NUMBERS, 25]);
+		expect.soft(read[5]?.image).toEqual({ bytes: [...ABC], type: "image/png" });
+		expect
+			.soft(read[24])
+			.toEqual({ number: 25, ...NEW_SPELL, weight: 0, image: null });
 	});
 
 	test("la réserve tirable rend chaque sort en { id, weight } par numéro, le numéro en texte, poids 0 compris", async () => {

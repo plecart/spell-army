@@ -46,6 +46,7 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - run local    : `pnpm --filter web dev`   # Next.js en développement, sur 127.0.0.1 seulement ; lit le `.env` racine, sans écraser une variable déjà posée
 - modèles 3D   : `pnpm --filter personnages modeles`   # Blender 5.3 sur le poste, hors CI
 - rendus 3D    : `pnpm --filter personnages rendus`   # Blender 5.3 sur le poste, hors CI
+- wiki         : `pnpm --filter web wiki <dossier>`   # écrit les pages du wiki dans un dossier vide ; lit les sorts de la base de `DATABASE_URL`
 
 ## Qualité
 - seuil de couverture : aucun
