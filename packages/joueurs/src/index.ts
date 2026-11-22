@@ -35,6 +35,10 @@ export {
 	type TickReport,
 } from "./tick.ts";
 export {
+	type PlayerSheet,
+	readVisiblePlayer,
+} from "./visible-player.ts";
+export {
 	listVisiblePlayers,
 	type VisiblePlayer,
 	type VisiblePlayersPage,
