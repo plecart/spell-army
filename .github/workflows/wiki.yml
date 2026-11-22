@@ -1,0 +1,75 @@
+# Publie le wiki du jeu (issue #43) : régénère toutes ses pages depuis les sources du dépôt et la
+# table `spells` de `wa-prod`, puis les pousse sur le dépôt wiki. Documentation dérivée
+# (`.claude/pipeline.config.md`, « Documentation dérivée ») : une édition à la main du wiki est
+# écrasée à la publication suivante. Les actions sont épinglées par SHA, comme dans `ci.yml`.
+name: Wiki
+
+# Lecture seule par défaut ; seul le job de publication élève ses droits (convention de `ci.yml`).
+permissions:
+  contents: read
+
+on:
+  # Le filtre suit les sources déclarées dans `.claude/pipeline.config.md`, « Documentation dérivée ».
+  push:
+    branches: [main]
+    paths:
+      - docs/game-design.md
+      - docs/etudes/00-cadrage.md
+      - packages/personnages/src/**
+      - packages/combat/src/**
+      - packages/donnees/src/**
+      - apps/web/app/annuaire/address.ts
+      - apps/web/app/mcp/spell-vocabulary.ts
+      - apps/web/scripts/wiki.ts
+      - apps/web/scripts/wiki/**
+      - .github/workflows/wiki.yml
+  # Chaque nuit : un sort ajouté ou modifié par le serveur MCP, hors de tout merge, paraît au plus
+  # tard le lendemain. Décalé du `schedule` de `ci.yml`.
+  schedule:
+    - cron: "43 3 * * *"
+  workflow_dispatch:
+
+# Une publication à la fois, sans annuler celle qui tourne : la suivante repart de l'état poussé.
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Clone du wiki
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" "$RUNNER_TEMP/wiki"
+      # Tout le wiki est généré : on retire tout, hors `.git`, pour qu'une page disparue des
+      # sources (sort passé au poids 0, sort retiré) disparaisse aussi du wiki.
+      - name: Vide le clone, hors .git
+        run: find "$RUNNER_TEMP/wiki" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+      - name: Génère les pages
+        env:
+          DATABASE_URL: ${{ secrets.WIKI_DATABASE_URL }}
+        run: pnpm --filter web wiki "$RUNNER_TEMP/wiki"
+      # Deux publications sur les mêmes sources ne créent aucun commit : la génération est
+      # identique octet pour octet, et rien n'est commité quand l'index ne change pas.
+      - name: Publie si une page a changé
+        working-directory: ${{ runner.temp }}/wiki
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Wiki à jour : rien à publier."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "docs: régénère le wiki depuis ${GITHUB_SHA}"
+          git push origin HEAD

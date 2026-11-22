@@ -154,6 +154,20 @@ nomme (`contradiction`, étape 5) : la passe reprend, les étapes 2 à 7 suivent
 Démarrée par une autre, cette session-ci prévient alors son parent (étape 6). Ce skill **n'amende
 jamais un document lui-même**.
 
+#### Confronter le delta à la documentation dérivée
+
+La section « Documentation dérivée » de `.claude/pipeline.config.md` liste ce que des commandes du
+dépôt génèrent depuis les sources — le wiki du jeu. Ce n'est **pas** une source de vérité : un
+écart entre elle et le delta n'est jamais une contradiction `decisions-vs-doc`, et ce skill ne
+l'écrit jamais. Pour chaque documentation dérivée dont le delta touche une source :
+
+- **le générateur couvre déjà ce que le delta change** — une valeur, une ligne de tableau, un sort
+  d'une forme et d'un effet connus → rien à faire : sa publication la régénère ;
+- **le delta ajoute ce que le générateur ignore** — nouvelle classe, nouvelle forme ou nouvel effet
+  de sort, nouveau type de contenu (un bestiaire) → c'est un **vide** à combler, rangé par
+  « Création d'issues en cours de cycle » (`.claude/rules/contraintes.md`) : critère d'une issue
+  ouverte qui possède le sujet, sinon brouillon montré au mainteneur.
+
 ### 2. Sélectionner les issues à examiner
 
 Sur le dépôt de `.claude/pipeline.config.md`, un `releveur` rend les trois sélections

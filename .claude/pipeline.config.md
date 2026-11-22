@@ -23,6 +23,16 @@ game design, apparence et contrat des fichiers 3D pour la direction artistique.
 
 Toute référence croisée cite un **§ ou un titre de section**, jamais un numéro de ligne.
 
+## Documentation dérivée
+Sortie d'une commande du dépôt, **jamais une source de vérité** : elle n'entre pas dans la table
+des rangs, ne s'édite jamais à la main — toute édition est écrasée à la publication suivante —, et
+un écart entre elle et une source n'est jamais une contradiction `decisions-vs-doc`. Lue par
+`repercussions` (« Confronter le delta à la documentation dérivée »).
+
+| Documentation | Sources | Commande | Publication |
+|---|---|---|---|
+| wiki GitHub (`wizard-army-v2.wiki.git`) : accueil, classes, sorts tirables, combat | `docs/etudes/00-cadrage.md` § 1 ; `docs/game-design.md` § 2 et § 4 ; classes et plages (`packages/personnages/src/`) ; libellés des classes (`apps/web/app/annuaire/address.ts`) ; modèle et validation des sorts (`packages/combat/src/`, `apps/web/app/mcp/spell-vocabulary.ts`) ; générateur (`apps/web/scripts/wiki.ts`, `apps/web/scripts/wiki/`) ; table `spells` de `wa-prod` | `wiki` | `.github/workflows/wiki.yml` : merge sur `main` qui touche une source du dépôt, chaque nuit (pour la table `spells`), à la demande |
+
 ## Stack
 - langages : TypeScript
 - frameworks : Next.js (App Router) sur Vercel, Drizzle ORM, Postgres Neon
