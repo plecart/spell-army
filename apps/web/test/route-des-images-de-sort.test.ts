@@ -42,11 +42,13 @@ describe("route /api/sorts/[numero]/image", () => {
 			status: response.status,
 			type: response.headers.get("content-type"),
 			cache: response.headers.get("cache-control"),
+			sniffing: response.headers.get("x-content-type-options"),
 			body: new Uint8Array(await response.arrayBuffer()),
 		}).toEqual({
 			status: 200,
 			type: IMAGE.type,
 			cache: "public, max-age=3600, s-maxage=3600",
+			sniffing: "nosniff",
 			body: IMAGE.bytes,
 		});
 		expect((await get(GET, "4")).status).toBe(404);
