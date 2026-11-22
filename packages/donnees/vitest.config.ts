@@ -7,5 +7,6 @@ export default databaseTestConfig([
 	"test/exception-audit.test.ts",
 	"test/migrate-command.test.ts",
 	"test/refus-dependabot.test.ts",
+	"test/surcharges-pnpm.test.ts",
 	"test/version-node.test.ts",
 ]);

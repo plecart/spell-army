@@ -12,6 +12,23 @@ allowBuilds:
   protobufjs: false
   ssh2: false
 
+# Surcharges qui ferment des avis de l'outillage de dev, posées le 2026-11-22. Chacune ne monte le
+# paquet vulnérable que sous le seul paquet qui le tire, dont la plage n'admet pas la version
+# corrigée. Réexamen : le test `packages/donnees/test/surcharges-pnpm.test.ts` rougit quand ce
+# parent ne figure plus dans le verrou, et son message dit quoi retirer.
+# - GHSA-67mh-4wv8-2f99 : esbuild <= 0.24.2, corrigé en 0.25.0. Sans surcharge, esbuild 0.18.20
+#   par drizzle-kit > @esbuild-kit/esm-loader > @esbuild-kit/core-utils 3.3.2, qui le borne à
+#   ~0.18.20. drizzle-kit 0.31.11 ne charge jamais @esbuild-kit : son seul fichier publié qui le
+#   nomme est son package.json.
+# - GHSA-3g3m-2fjr-6pw4 : glob >= 9.0.0, <= 14.0.1, corrigé en 14.0.2. Sans surcharge, glob 10.5.0
+#   par testcontainers > archiver 7 (directement et par zip-stream) > archiver-utils 5.0.2, qui le
+#   borne à ^10.0.0 et n'en emploie que `require('glob').sync`, que glob 14 expose sous `require`.
+#   Le minimatch 9.0.9 de ce glob 10.5.0 (GHSA-g3hv-75wg-m249 : minimatch >= 7.0.0, < 11.0.1)
+#   tombe avec lui.
+overrides:
+  "@esbuild-kit/core-utils>esbuild": ^0.25.0
+  "archiver-utils>glob": ^14.0.2
+
 # Avis que `pnpm audit` ignore. GHSA-fc5q-39xc-vjpf : picomatch <= 4.0.7, ReDoS sur un
 # extglob fourni par l'attaquant, sans version corrigée. picomatch ne sert qu'à l'outillage de dev
 # et de test (tous ses chemins passent par vitest), et n'y lit que les motifs de notre
