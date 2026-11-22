@@ -1,17 +1,24 @@
 import type { PlayerSheet } from "joueurs";
-import { characterOf, STAT_KEYS } from "personnages";
+import { characterOf, STAT_KEYS, type StatKey } from "personnages";
 import { CLASS_NAMES } from "../annuaire/address.ts";
 import { classColor } from "../class-style.ts";
 import { arrivalOf } from "./arrival.ts";
 import { LiveStage } from "./live-stage.tsx";
 import { Sheet, type SheetClose } from "./sheet.tsx";
 import { SpellCard } from "./spell-card.tsx";
-import { STAT_LABELS, verdictPhraseOf } from "./verdict-phrase.ts";
+import { verdictPhraseOf } from "./verdict-phrase.ts";
 
 // L'identifiant du titre de la fiche, qui nomme la feuille qui la porte (`aria-labelledby`).
 const FICHE_TITLE_ID = "fiche-title";
 
-// Le plafond d'une stat (game design § 1, « Statistiques ») : une barre pleine.
+// Le nom de chaque stat à l'écran, et son plafond, une barre pleine (game design § 1,
+// « Statistiques »).
+const STAT_LABELS: Record<StatKey, string> = {
+	life: "Vie",
+	strength: "Force",
+	magic: "Magie",
+	speed: "Vitesse",
+};
 const STAT_MAX = 15;
 
 /**
@@ -43,7 +50,8 @@ export function Fiche({ player }: { player: PlayerSheet }) {
 				))}
 			</ul>
 			<p className="points">
-				30 points, répartis à l'inscription selon le pseudo.
+				30 points en tout, répartis au hasard d'après le numéro du compte
+				Instagram.
 			</p>
 			<h3>Son sort</h3>
 			<SpellCard spell={spell} poolSize={poolSize} />

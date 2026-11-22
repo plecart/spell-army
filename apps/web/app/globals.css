@@ -594,16 +594,15 @@ h1 a:hover {
 	font-weight: 800;
 }
 
-/* Pleine à la couleur de l'effet, au texte clair dans les deux thèmes : sous `color-scheme: light`,
-   `light-dark()` de `--surface` y rend la surface claire. */
+/* Pleine à la couleur de l'effet, au texte clair dans les deux thèmes : la surface claire
+   (direction artistique § 2), fixe. */
 .effect {
 	flex: none;
 	padding: 0.125rem 0.625rem;
 	border: var(--border);
 	border-radius: 999px;
 	background: var(--effect-color);
-	color: var(--surface);
-	color-scheme: light;
+	color: #fffaf0;
 	font-size: 0.75rem;
 	font-weight: 800;
 	text-transform: uppercase;

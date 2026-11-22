@@ -2,9 +2,8 @@ import { expect, test } from "vitest";
 import {
 	type ClassKey,
 	characterOf,
-	type StatKey,
+	STAT_KEYS,
 	type Stats,
-	scoringStatsOf,
 	VERDICT_LEVELS,
 	verdictOf,
 } from "../src/index.ts";
@@ -50,27 +49,30 @@ test("sur les identifiants 1 à 100 000, la part de chaque niveau dans chaque cl
 	expect(deviations).toEqual([]);
 });
 
-test.each<[ClassKey, StatKey[]]>([
-	["vampire", ["magic", "speed"]],
-	["wizard", ["magic"]],
-])("le score d'un %s compte ses stats fortes : %j", (classKey, expected) => {
-	for (const id of idsOf(classKey, 10)) {
-		expect(scoringStatsOf(characterOf(id))).toEqual(expected);
-	}
-});
-
-// Un paysan a ses quatre stats fortes : son score ne compte que la meilleure.
-test.each<[string, Stats, StatKey[]]>([
+// Le score d'une classe : la somme de ses stats fortes, ou la meilleure quand les quatre le sont.
+test.each<[ClassKey, string, (stats: Stats) => number]>([
+	["vampire", "Magie + Vitesse", ({ magic, speed }) => magic + speed],
+	["wizard", "Magie", ({ magic }) => magic],
 	[
+		"peasant",
 		"sa meilleure stat",
-		{ life: 7, strength: 5, magic: 13, speed: 5 },
-		["magic"],
+		(stats) => Math.max(...STAT_KEYS.map((key) => stats[key])),
 	],
-	[
-		"à égalité, la première de STAT_KEYS",
-		{ life: 8, strength: 7, magic: 8, speed: 7 },
-		["life"],
-	],
-])("le score d'un paysan compte %s", (_, stats, expected) => {
-	expect(scoringStatsOf({ class: "peasant", stats })).toEqual(expected);
-});
+])(
+	"le verdict d'un %s ne dépend que de %s, et monte avec, du mal né à l'excellent",
+	(classKey, _, scoreOf) => {
+		const characters = idsOf(classKey, 2_000).map((id) => characterOf(id));
+		// Les niveaux atteints à chaque score, du plus bas au plus haut.
+		const levelsByScore = [
+			...Map.groupBy(characters, ({ stats }) => scoreOf(stats)),
+		]
+			.sort(([a], [b]) => a - b)
+			.map(([, group]) => [...new Set(group.map(verdictOf))]);
+
+		expect(levelsByScore.filter((levels) => levels.length > 1)).toEqual([]);
+		const ladder = levelsByScore.flat();
+		expect(
+			ladder.filter((level, index) => level !== ladder[index - 1]),
+		).toEqual(LEVELS);
+	},
+);
