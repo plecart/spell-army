@@ -1,20 +1,11 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { refusedQuery } from "donnees/test/erreur-postgres";
 import { describe, expect, test } from "vitest";
 import { generateWiki } from "../scripts/wiki/generate.ts";
-import { type Documents, passagesOf } from "../scripts/wiki/passages.ts";
+import { passagesOf, readDocuments } from "../scripts/wiki/passages.ts";
 import { generated, outputFolder, POOL, withImage } from "./wiki.ts";
 
-const DOCUMENTS: Documents = {
-	cadrage: readFileSync(
-		new URL("../../../docs/etudes/00-cadrage.md", import.meta.url),
-		"utf8",
-	),
-	gameDesign: readFileSync(
-		new URL("../../../docs/game-design.md", import.meta.url),
-		"utf8",
-	),
-};
+const DOCUMENTS = await readDocuments();
 
 describe("la génération du wiki", () => {
 	test("deux générations sur les mêmes entrées sont identiques octet pour octet", async () => {

@@ -107,11 +107,8 @@ export function passagesOf({ cadrage, gameDesign }: Documents): Passages {
 	};
 }
 
-/** Les passages, lus dans les documents du dépôt ; les erreurs de `passagesOf` ou de lecture. */
-export async function readPassages(): Promise<Passages> {
+/** Le texte des deux documents, lu dans le dépôt ; une erreur de Node s'il ne se lit pas. */
+export async function readDocuments(): Promise<Documents> {
 	const read = (path: string) => readFile(new URL(path, ROOT), "utf8");
-	return passagesOf({
-		cadrage: await read(CADRAGE),
-		gameDesign: await read(GAME_DESIGN),
-	});
+	return { cadrage: await read(CADRAGE), gameDesign: await read(GAME_DESIGN) };
 }
