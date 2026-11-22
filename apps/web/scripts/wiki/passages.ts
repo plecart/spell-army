@@ -1,0 +1,110 @@
+// Les passages des documents que le wiki recopie, lus à la génération : le concept au cadrage, la
+// puissance d'un sort et le combat au game design. Les sections se découpent par leurs titres `## `,
+// comme `packages/combat/test/annexe-b.ts` lit l'annexe B. Un passage introuvable arrête la
+// génération en le nommant, jamais une page vide ; les statuts internes n'y sont pas recopiés.
+import { readFile } from "node:fs/promises";
+
+/** Les passages recopiés, en Markdown, sans statut interne. */
+export interface Passages {
+	/** Cadrage, § 1 « Ce qui est ferme », la puce « Le concept », sur une ligne. */
+	concept: string;
+	/** Game design, § 2 : le bloc « Puissance d'un sort lancé par l'armée », sa formule et le paragraphe qui la suit. */
+	power: string;
+	/** Game design, § 4 « Le combat », entier. */
+	combat: string;
+}
+
+/** Le texte des deux documents. */
+export interface Documents {
+	cadrage: string;
+	gameDesign: string;
+}
+
+const CADRAGE = "docs/etudes/00-cadrage.md";
+const GAME_DESIGN = "docs/game-design.md";
+const ROOT = new URL("../../../../", import.meta.url);
+
+const BLOCK_SEPARATOR = "\n\n";
+// La puce « Le concept » et ses lignes de suite, indentées de deux espaces.
+const CONCEPT = /^- (\*\*Le concept\*\* :.*(?:\n {2}.*)*)/m;
+const POWER = "Puissance d'un sort lancé par l'armée";
+// Son titre en gras, la formule en citation, et le paragraphe qui la suit.
+const POWER_BLOCKS = 3;
+
+// Les statuts internes des documents, que le wiki ne montre pas : entre parenthèses après un titre,
+// « (décidé) », et en colonne d'un tableau.
+const INLINE_STATUS = / \((?:décidé|proposé|ouvert)\)/giu;
+const STATUS_COLUMN = "Statut";
+// Une barre verticale de tableau, hors d'une barre échappée par un antislash (GFM, « Tables »).
+const CELL_SEPARATOR = /(?<!\\)\|/;
+
+/** Un tableau sans sa colonne « Statut » ; tout autre bloc tel quel. */
+function withoutStatusColumn(block: string): string {
+	if (!block.startsWith("|")) return block;
+	const rows = block.split("\n").map((row) => row.split(CELL_SEPARATOR));
+	const column = rows[0]?.findIndex((cell) => cell.trim() === STATUS_COLUMN);
+	if (column === undefined || column < 0) return block;
+	return rows.map((cells) => cells.toSpliced(column, 1).join("|")).join("\n");
+}
+
+/** `markdown` sans ses statuts internes. */
+function withoutStatuses(markdown: string): string {
+	return markdown
+		.replace(INLINE_STATUS, "")
+		.split(BLOCK_SEPARATOR)
+		.map(withoutStatusColumn)
+		.join(BLOCK_SEPARATOR);
+}
+
+/** Le corps de la section `## <title>` de `document`, que `name` nomme dans l'erreur s'il manque. */
+function section(document: string, name: string, title: string): string {
+	const found = document
+		.split(/^## /m)
+		.find((candidate) => candidate.split("\n", 1)[0] === title);
+	if (found === undefined) {
+		throw new Error(`${name} : section « ${title} » introuvable.`);
+	}
+	return found.slice(title.length).trim();
+}
+
+function concept(cadrage: string): string {
+	const bullet = CONCEPT.exec(
+		section(cadrage, CADRAGE, "1. Ce qui est ferme"),
+	)?.[1];
+	if (bullet === undefined) {
+		throw new Error(`${CADRAGE} : puce « Le concept » introuvable au § 1.`);
+	}
+	return bullet.replace(/\n +/g, " ");
+}
+
+function power(gameDesign: string): string {
+	const blocks = section(gameDesign, GAME_DESIGN, "2. Les sorts").split(
+		BLOCK_SEPARATOR,
+	);
+	const start = blocks.findIndex((block) => block.startsWith(`**${POWER}**`));
+	if (start < 0) {
+		throw new Error(`${GAME_DESIGN} : bloc « ${POWER} » introuvable au § 2.`);
+	}
+	return blocks.slice(start, start + POWER_BLOCKS).join(BLOCK_SEPARATOR);
+}
+
+/**
+ * Les passages que recopie le wiki, extraits du texte des deux documents. Lève une erreur qui nomme
+ * le document et la section, la puce ou le bloc introuvable.
+ */
+export function passagesOf({ cadrage, gameDesign }: Documents): Passages {
+	return {
+		concept: withoutStatuses(concept(cadrage)),
+		power: withoutStatuses(power(gameDesign)),
+		combat: withoutStatuses(section(gameDesign, GAME_DESIGN, "4. Le combat")),
+	};
+}
+
+/** Les passages, lus dans les documents du dépôt ; les erreurs de `passagesOf` ou de lecture. */
+export async function readPassages(): Promise<Passages> {
+	const read = (path: string) => readFile(new URL(path, ROOT), "utf8");
+	return passagesOf({
+		cadrage: await read(CADRAGE),
+		gameDesign: await read(GAME_DESIGN),
+	});
+}
