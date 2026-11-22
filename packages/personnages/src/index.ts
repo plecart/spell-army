@@ -22,7 +22,6 @@ export {
 export { BACKDROPS, PEDESTALS, type Pedestal } from "./scenery.ts";
 export { drawSpell, type SpellEntry } from "./spell.ts";
 export {
-	scoringStatsOf,
 	VERDICT_LEVELS,
 	type VerdictLevel,
 	verdictOf,

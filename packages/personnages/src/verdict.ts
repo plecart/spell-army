@@ -55,7 +55,7 @@ export function verdictOf(character: Character): VerdictLevel {
  * maximum de l'annexe A, dans l'ordre de `STAT_KEYS` ; quand les quatre le sont, la meilleure
  * seule, la première de `STAT_KEYS` à égalité.
  */
-export function scoringStatsOf(character: Character): StatKey[] {
+function scoringStatsOf(character: Character): StatKey[] {
 	return scoringStats(
 		character.stats,
 		strongStatsOf(CLASS_RANGES[character.class]),

@@ -31,10 +31,10 @@ describe("fiche d'une recrue", () => {
 		const html = renderFiche();
 		expect(html).toMatch(/<h2 id="fiche-title">@nathan_croque<\/h2>/);
 		expect(elementsOf(html, "p", "class-name").map(textOf)).toEqual([
-			"Vampire Recrue depuis le 9 novembre",
+			"Vampire Recrue depuis le 9 novembre 2026",
 		]);
 		expect(elementsOf(html, "p", "verdict").map(textOf)).toEqual([
-			"Un vampire dans la moyenne\u00a0: Magie 7, Vitesse 9.",
+			"Un vampire dans la moyenne. Ni héros, ni boulet.",
 		]);
 	});
 
@@ -91,10 +91,10 @@ describe("fiche d'une recrue", () => {
 		});
 	});
 
-	test("« 30 points, répartis à l'inscription selon le pseudo. », puis le titre « Son sort »", () => {
+	test("« 30 points en tout, répartis au hasard d'après le numéro du compte Instagram. », puis le titre « Son sort »", () => {
 		const html = renderFiche();
 		expect(elementsOf(html, "p", "points").map(textOf)).toEqual([
-			"30 points, répartis à l'inscription selon le pseudo.",
+			"30 points en tout, répartis au hasard d'après le numéro du compte Instagram.",
 		]);
 		expect(html).toContain("<h3>Son sort</h3>");
 	});

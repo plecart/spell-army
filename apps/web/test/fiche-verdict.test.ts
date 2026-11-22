@@ -1,32 +1,15 @@
 import { characterOf, type VerdictLevel, verdictOf } from "personnages";
+import { population } from "personnages/test/identifiants";
 import { expect, test } from "vitest";
-import { STAT_LABELS, verdictPhraseOf } from "../app/fiche/verdict-phrase.ts";
+import { verdictPhraseOf } from "../app/fiche/verdict-phrase.ts";
 
-// Les phrases s'écrivent ici en toutes lettres, une espace insécable (U+00A0) avant le deux-points.
-
-// Un vampire de chaque niveau, trouvé par `idsOf` et `verdictOf` : ses deux stats fortes sont citées.
+// Un vampire de chaque niveau, trouvé par `idsOf` et `verdictOf`.
 test.each<[VerdictLevel, string, string]>([
-	[
-		"ill_born",
-		"21",
-		"Un vampire mal né\u00a0: Magie 6, Vitesse 6. Heureusement, l'armée est nombreuse.",
-	],
-	[
-		"weak",
-		"17",
-		"Un vampire un peu juste\u00a0: Magie 8, Vitesse 7. Le courage fera le reste.",
-	],
-	["average", "4", "Un vampire dans la moyenne\u00a0: Magie 7, Vitesse 9."],
-	[
-		"gifted",
-		"20",
-		"Un vampire doué\u00a0: Magie 11, Vitesse 8. Le monstre n'a qu'à bien se tenir.",
-	],
-	[
-		"excellent",
-		"60",
-		"Un vampire d'exception\u00a0: Magie 8, Vitesse 12. Les bardes en parlent déjà.",
-	],
+	["ill_born", "21", "Un vampire mal né. Heureusement, l'armée est nombreuse."],
+	["weak", "17", "Un vampire un peu juste. Le courage fera le reste."],
+	["average", "4", "Un vampire dans la moyenne. Ni héros, ni boulet."],
+	["gifted", "20", "Un vampire doué. Le monstre n'a qu'à bien se tenir."],
+	["excellent", "60", "Un vampire d'exception. Les bardes en parlent déjà."],
 ])("un vampire %s (« %s ») : %s", (level, id, phrase) => {
 	const character = characterOf(id);
 	expect({
@@ -36,36 +19,14 @@ test.each<[VerdictLevel, string, string]>([
 	}).toEqual({ class: "vampire", level, phrase });
 });
 
-test.each([
-	[
-		"un paysan ne cite que sa meilleure stat",
-		"57",
-		"Un paysan d'exception\u00a0: Magie 13. Les bardes en parlent déjà.",
-	],
-	[
-		"un paysan à égalité cite la première de STAT_KEYS (Vie 8, Magie 8)",
-		"74",
-		"Un paysan mal né\u00a0: Vie 8. Heureusement, l'armée est nombreuse.",
-	],
-	[
-		"une fée s'accorde au féminin",
-		"51",
-		"Une fée douée\u00a0: Magie 13, Vitesse 12. Le monstre n'a qu'à bien se tenir.",
-	],
-	[
-		"un magicien ne cite que Magie",
-		"11",
-		"Un magicien dans la moyenne\u00a0: Magie 12.",
-	],
-])("%s (« %s »)", (_, id, phrase) => {
-	expect(verdictPhraseOf(characterOf(id))).toBe(phrase);
+test("une fée s'accorde au féminin (« 51 »)", () => {
+	expect(verdictPhraseOf(characterOf("51"))).toBe(
+		"Une fée douée. Le monstre n'a qu'à bien se tenir.",
+	);
 });
 
-test("les stats se nomment Vie, Force, Magie et Vitesse", () => {
-	expect(STAT_LABELS).toEqual({
-		life: "Vie",
-		strength: "Force",
-		magic: "Magie",
-		speed: "Vitesse",
-	});
+// Les barres de la fiche montrent les stats : la phrase n'en cite aucune valeur.
+test("aucune phrase de verdict ne contient de chiffre, sur les identifiants 1 à 100 000", () => {
+	const phrases = new Set(population().map(verdictPhraseOf));
+	expect([...phrases].filter((phrase) => /\d/.test(phrase))).toEqual([]);
 });
