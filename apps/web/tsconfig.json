@@ -2,10 +2,16 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"jsx": "react-jsx",
-		// `next` n'a pas de champ `exports` : sous `nodenext`, TypeScript ne résout pas le sous-chemin
-		// sans extension de `next/font/google`, que Next.js compile par son propre chargeur de polices.
+		// `next` n'a pas de champ `exports` : sous `nodenext`, TypeScript ne résout ses sous-chemins
+		// qu'avec leur extension (`next/server.js`), que le compilateur de Next.js résout aussi. Ces
+		// chemins-ci ne servent qu'aux deux sous-chemins sans extension que le compilateur remplace
+		// lui-même : `next/font/google`, par son chargeur de polices, et `next/link`, dont l'import par
+		// défaut se type en module ES (`next-link.d.ts`). Le compilateur lit aussi ces chemins : un
+		// chemin vers un `.d.ts` lui rend un module vide (mesuré : `connection` de `next/server` y
+		// valait `undefined` sous `next start`).
 		"paths": {
-			"next/font/google": ["./node_modules/next/font/google/index.d.ts"]
+			"next/font/google": ["./node_modules/next/font/google/index.d.ts"],
+			"next/link": ["./next-link.d.ts"]
 		}
 	},
 	"include": [

@@ -11,7 +11,7 @@ const font = Bricolage_Grotesque({ subsets: ["latin"] });
 
 export const metadata: Metadata = { title: "Wizard Army" };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children, fiche }: LayoutProps<"/">) {
 	return (
 		<html lang="fr" className={font.className} suppressHydrationWarning>
 			<head>
@@ -21,7 +21,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 				/>
 			</head>
 			<body>
-				<SiteFrame settings={siteSettings()}>{children}</SiteFrame>
+				<SiteFrame settings={siteSettings()}>
+					{children}
+					{fiche}
+				</SiteFrame>
 			</body>
 		</html>
 	);

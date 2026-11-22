@@ -292,7 +292,19 @@ h1 a:hover {
 
 .card {
 	min-width: 0;
+}
+
+/* Toute la carte est le lien vers la fiche : il porte le contenu, et son anneau de focus entoure la
+   bordure de la carte. */
+.card a {
+	display: block;
 	padding: 0.375rem 0.375rem 0.625rem;
+	border-radius: inherit;
+	text-decoration: none;
+}
+
+.card a:focus-visible {
+	outline-offset: 4px;
 }
 
 /* La vignette : le décor de la classe sur une teinte de sa couleur, le personnage par-dessus. */
@@ -397,6 +409,11 @@ h1 a:hover {
 	background: rgb(0 0 0 / 45%);
 }
 
+/* Sous une feuille ouverte, la page ne défile pas : seule la feuille défile. */
+:root:has(.sheet:modal) {
+	overflow: hidden;
+}
+
 .sheet-body {
 	padding: 1rem 1rem 1.5rem;
 }
@@ -457,7 +474,17 @@ h1 a:hover {
 
 /* La fiche d'une recrue (direction artistique § 3, « Fiche ») : à la couleur de sa classe. */
 
+/* Le bouton « Fermer » de la feuille flotte à droite ; le titre de la fiche se range à côté, à sa
+   hauteur (3rem, celle de `.icon-button`). */
+.sheet-close {
+	float: right;
+	margin-left: 1rem;
+}
+
 .fiche h2 {
+	display: flex;
+	align-items: center;
+	min-height: 3rem;
 	font-size: 1.5rem;
 	overflow-wrap: anywhere;
 }
