@@ -14,4 +14,5 @@ export default databaseTestConfig([
 	"test/route-du-tic.test.ts",
 	"test/route.test.ts",
 	"test/vignettes.test.ts",
+	"test/wiki-transcription.test.ts",
 ]);

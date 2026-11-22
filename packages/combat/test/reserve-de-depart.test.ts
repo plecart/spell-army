@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { expect, test } from "vitest";
 import {
 	effectCategory,
@@ -6,40 +5,7 @@ import {
 	spellKey,
 	validateSpell,
 } from "../src/index.ts";
-
-// L'annexe B du game design, lue à la source : le test confronte la réserve au document, jamais
-// la réserve à elle-même. Une ligne du tableau : `| # | Sort | Recette | Forme | Effet |`.
-const ANNEX_B = annexBRows(
-	readFileSync(
-		new URL("../../../docs/game-design.md", import.meta.url),
-		"utf8",
-	),
-);
-
-interface AnnexRow {
-	number: number;
-	name: string;
-	recipe: string;
-	form: string;
-	effect: string;
-}
-
-function annexBRows(gameDesign: string): AnnexRow[] {
-	const annex = gameDesign
-		.split(/^## /m)
-		.find((section) => section.startsWith("Annexe B"));
-	return [
-		...(annex ?? "").matchAll(
-			/^\| (\d+) \| ([^|]+) \| ([^|]+) \| ([^|]+) \| ([^|]+) \|/gm,
-		),
-	].map(([, number, name = "", recipe = "", form = "", effect = ""]) => ({
-		number: Number(number),
-		name,
-		recipe,
-		form,
-		effect,
-	}));
-}
+import { ANNEX_B, type AnnexRow } from "./annexe-b.ts";
 
 // Le vocabulaire de l'annexe B, dans celui du modèle d'un sort. Un mot absent de ce vocabulaire ne
 // rencontre aucune valeur du sort : le test rougit.
