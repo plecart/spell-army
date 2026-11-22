@@ -10,6 +10,7 @@ import { describe, expect, onTestFinished, test } from "vitest";
 import { depositModel, REQUIRED_VARIABLES } from "../scripts/deposit-model.ts";
 import { runScript } from "./commande.ts";
 import { CONFORMING, DEVIATIONS, NON_CONFORMING } from "./fichiers-3d.ts";
+import { storeMonster } from "./monstres.ts";
 import {
 	ENDPOINT_URL,
 	fetchFrom,
@@ -66,7 +67,8 @@ describe("la commande deposer-3d", () => {
 	});
 
 	test("un chemin relatif se lit depuis INIT_CWD, le dossier d'où pnpm est lancé", async () => {
-		const { serve } = await recordingEndpoint();
+		const { db, serve } = await recordingEndpoint();
+		await storeMonster(db);
 		const folder = await folderWith({ "limace.glb": CONFORMING });
 		const deposited = await depositModel(
 			{ file: "limace.glb", monstre: "limace" },

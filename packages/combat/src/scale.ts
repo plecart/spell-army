@@ -35,7 +35,7 @@ export function scaleFactor(
 	let { low, high } = SCALE_RANGE;
 	if (!evenOrBetter(low) || evenOrBetter(high)) {
 		throw new RangeError(
-			`aucun facteur d'échelle de ${low} à ${high} ne laisse 50 % de victoires à l'armée`,
+			`aucun facteur d'échelle de ÷${1 / low} à ×${high} ne laisse 50 % de victoires à l'armée`,
 		);
 	}
 	while (high - low > SCALE_PRECISION) {

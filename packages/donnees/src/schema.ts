@@ -172,8 +172,11 @@ export const classDefaultModels = pgTable("class_default_models", {
 
 /**
  * La borne haute du nom d'un monstre, en caractères, que partagent ses fichiers 3D, rattachés à lui
- * par le nom (issue #20, « Décisions », 4 et 7). Contrôlée sur `monsters`, et lue par l'outil
- * `deposer_fichier_3d` d'`apps/web`.
+ * par le nom (issue #20, « Décisions », 4 et 7). Contrôlée sur `monsters`, et lue par les outils
+ * des monstres et `deposer_fichier_3d` d'`apps/web`. La base compte des caractères (`char_length`,
+ * des points de code), et Zod aussi, pas des unités UTF-16 (zod 4.6.7, `$ZodCheckMaxLength`) : un
+ * nom que Zod accepte, la base l'accepte. `test/monstres.test.ts` et
+ * `apps/web/test/outils-des-monstres.test.ts` l'éprouvent hors du plan multilingue de base.
  */
 export const MAX_MONSTER_NAME_LENGTH = 64;
 

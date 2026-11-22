@@ -78,7 +78,7 @@ describe("le facteur d'échelle d'un monstre", () => {
 			"un profil qu'aucun facteur de ÷8 à ×8 n'équilibre",
 			{ ...GOLEM, profile: { ...LAVA_GOLEM, life: 0 } },
 			["1"],
-			"aucun facteur d'échelle de 0.125 à 8 ne laisse 50 % de victoires à l'armée",
+			"aucun facteur d'échelle de ÷8 à ×8 ne laisse 50 % de victoires à l'armée",
 		],
 	])("%s est refusé", (_, design, seeds, message) => {
 		expect(() =>

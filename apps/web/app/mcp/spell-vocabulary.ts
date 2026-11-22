@@ -60,8 +60,8 @@ const BASE_OF = inverse(BASES);
 
 // Les longueurs d'un nom et d'une description : bornées, comme toute chaîne d'une entrée d'outil
 // (`test/aucune-requete-libre.test.ts`), au-delà des textes de la réserve de départ.
-const MAX_NAME_LENGTH = 100;
-const MAX_DESCRIPTION_LENGTH = 500;
+export const MAX_NAME_LENGTH = 100;
+export const MAX_DESCRIPTION_LENGTH = 500;
 
 /**
  * Le nom qui discrimine une variante, en `enum` d'une valeur : le schéma JSON le publie fermé, là

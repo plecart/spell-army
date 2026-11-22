@@ -1,5 +1,10 @@
 import type { FollowerProvider } from "joueurs";
 import { depositModelTool, setClassModelTool } from "./model-tools.ts";
+import {
+	createMonsterTool,
+	listMonstersTool,
+	removeMonsterTool,
+} from "./monster-tools.ts";
 import { listPassesTool, relaunchPassTool } from "./pass-tools.ts";
 import {
 	giveSpellTool,
@@ -30,6 +35,9 @@ export function createRegistry(
 		addSpellTool,
 		updateSpellTool,
 		measureSpellTool(),
+		listMonstersTool,
+		createMonsterTool(),
+		removeMonsterTool,
 		depositModelTool,
 		setClassModelTool,
 		listPassesTool,

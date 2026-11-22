@@ -18,7 +18,8 @@ export async function freshDatabase() {
 /**
  * Fait échouer, par un déclencheur, toute ligne que `event` touche dans `table` et qui remplit
  * `when`, une condition SQL sur `new` ou `old` — toutes sans condition —, sous le code Postgres
- * `code`, P0001 par défaut, et le message « panne injectée ». Rend de quoi retirer la panne.
+ * `code`, P0001 par défaut, au nom de la contrainte `constraint` s'il est donné, et le message
+ * « panne injectée ». Rend de quoi retirer la panne.
  */
 export async function injectFailure(
 	db: Executor,
@@ -27,17 +28,21 @@ export async function injectFailure(
 		table,
 		when,
 		code = "P0001",
+		constraint,
 	}: {
 		event: "insert" | "update" | "delete";
 		table: string;
 		when?: string;
 		code?: string;
+		constraint?: string;
 	},
 ): Promise<() => Promise<unknown>> {
 	const name = `fail_on_${event}_${table}`;
+	const constraintClause =
+		constraint === undefined ? "" : `, constraint = '${constraint}'`;
 	await db.execute(
 		sql.raw(`create function ${name}() returns trigger language plpgsql
-			as $$ begin raise exception 'panne injectée' using errcode = '${code}'; end $$`),
+			as $$ begin raise exception 'panne injectée' using errcode = '${code}'${constraintClause}; end $$`),
 	);
 	await db.execute(
 		sql.raw(`create trigger ${name} before ${event} on ${table} for each row

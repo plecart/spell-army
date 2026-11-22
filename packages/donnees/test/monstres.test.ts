@@ -28,6 +28,10 @@ const GOLEM: NewMonster = {
 	trait: "Sa peau de lave brûle qui la frappe.",
 };
 
+// Un caractère hors du plan multilingue de base, U+1F40C (escargot) : un point de code, deux unités
+// UTF-16.
+const ASTRAL = String.fromCodePoint(0x1f40c);
+
 /** Le golem, ses champs `fields` changés. */
 function monster(fields: Partial<NewMonster>): NewMonster {
 	return { ...GOLEM, ...fields };
@@ -132,6 +136,11 @@ describe("monstres", () => {
 			{ name: "é".repeat(65) },
 			"monsters_name_check",
 		],
+		[
+			"un nom de 65 caractères hors du plan multilingue de base",
+			{ name: ASTRAL.repeat(65) },
+			"monsters_name_check",
+		],
 		["une particularité vide", { trait: "" }, "monsters_trait_check"],
 		["une particularité blanche", { trait: " \t\n" }, "monsters_trait_check"],
 		["un facteur 0", { scaleFactor: 0 }, "monsters_scale_factor_check"],
@@ -156,12 +165,16 @@ describe("monstres", () => {
 		},
 	);
 
-	// Le côté accepté : la borne elle-même. Un « é » pèse deux octets en UTF-8, et la borne du nom
-	// compte des caractères.
+	// Le côté accepté : la borne elle-même. Un « é » pèse deux octets en UTF-8, `ASTRAL` deux unités
+	// UTF-16, et la borne du nom compte des caractères.
 	test.each<[string, Partial<NewMonster>]>([
 		["la saison 1 et le chapitre 1", { season: 1, chapter: 1 }],
 		["un nom d'un caractère", { name: "é" }],
 		["un nom de 64 caractères", { name: "é".repeat(64) }],
+		[
+			"un nom de 64 caractères hors du plan multilingue de base",
+			{ name: ASTRAL.repeat(64) },
+		],
 	])("la base accepte %s", async (_, fields) => {
 		const db = await freshDatabase();
 		const stored = await insertMonster(db, monster(fields));
