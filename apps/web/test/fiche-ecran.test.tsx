@@ -63,6 +63,14 @@ describe("fiche d'une recrue", () => {
 		);
 	});
 
+	// La vignette figée ne rend rien au serveur : son absence ne se lit pas dans ce balisage, elle se
+	// vérifie au navigateur, avec une seule scène vivante.
+	test("la scène tient dans un seul cadre, décoratif : tout ce qu'elle montre est écrit sur la fiche", () => {
+		const frames = elementsOf(renderFiche(), "div", "vignette");
+		expect(frames).toHaveLength(1);
+		expect(frames[0]).toMatch(/^<div class="vignette" aria-hidden="true"/);
+	});
+
 	test("les quatre statistiques de characterOf, libellé et valeur, chacune en barre décorative sur 15", () => {
 		const { life, strength, magic, speed } = characterOf(
 			RECRUIT.instagramId,

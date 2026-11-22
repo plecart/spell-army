@@ -1,9 +1,9 @@
 import type { PlayerSheet } from "joueurs";
-import { characterOf, PEDESTALS, STAT_KEYS } from "personnages";
+import { characterOf, STAT_KEYS } from "personnages";
 import { CLASS_NAMES } from "../annuaire/address.ts";
-import { BACKDROP_IMAGES, classColor } from "../class-style.ts";
-import { Figure } from "../vignettes/figure.tsx";
+import { classColor } from "../class-style.ts";
 import { arrivalOf } from "./arrival.ts";
+import { LiveStage } from "./live-stage.tsx";
 import { Sheet, type SheetClose } from "./sheet.tsx";
 import { SpellCard } from "./spell-card.tsx";
 import { STAT_LABELS, verdictPhraseOf } from "./verdict-phrase.ts";
@@ -26,13 +26,7 @@ export function Fiche({ player }: { player: PlayerSheet }) {
 	return (
 		<article className="fiche" style={classColor(classKey)}>
 			<h2 id={FICHE_TITLE_ID}>@{username}</h2>
-			{/* La vignette figée, en attendant la scène 3D animée. */}
-			<div
-				className="vignette"
-				style={{ backgroundImage: BACKDROP_IMAGES[classKey] }}
-			>
-				<Figure classKey={classKey} pedestal={PEDESTALS[classKey]} />
-			</div>
+			<LiveStage classKey={classKey} />
 			<p className="class-name">
 				<span className="dot" />
 				{CLASS_NAMES[classKey].label}

@@ -1,6 +1,7 @@
-// La scène d'une vignette : le personnage sur son socle, sous la caméra et la lumière des rendus de
-// validation (`packages/personnages/blender/render_previews.py`), pour que la vignette ressemble à
-// ce que le mainteneur y a jugé. Sans fond : le décor est celui de la carte.
+// La scène d'une vignette, que la scène vivante de la fiche reprend : le personnage sur son socle,
+// sous la caméra et la lumière des rendus de validation
+// (`packages/personnages/blender/render_previews.py`), pour que la vignette ressemble à ce que le
+// mainteneur y a jugé. Sans fond : le décor est celui de la carte ou de la fiche.
 import type { Pedestal } from "personnages";
 import {
 	BufferAttribute,
@@ -24,7 +25,8 @@ import {
 const FIELD_OF_VIEW = 28; // champ vertical, en degrés
 const CAMERA = [0, 1.24, 6.4] as const;
 const TARGET = [0, 1.12, 0] as const;
-const TURN = 0.38; // le personnage tourné autour de la verticale, en radians
+/** L'orientation du personnage autour de la verticale, en radians : celle des vignettes. */
+export const TURN = 0.38;
 const SKY = "#ffffff";
 const GROUND = "#8a7d66";
 const HEMISPHERE = 1.4;
@@ -42,8 +44,10 @@ const PAINT = { roughness: 0.45, clearcoat: 0.55, clearcoatRoughness: 0.35 };
 const MATTE = { roughness: 0.8 };
 
 /**
- * La scène d'une vignette et sa caméra : `figure`, le modèle d'une classe, tourné et posé à
- * `pedestal.lift` au-dessus de son socle, sous un ciel et deux lampes, sans ombre portée.
+ * La scène d'une vignette et sa caméra, pour une image carrée : `figure`, le modèle d'une classe,
+ * dans la pose `"personnage"`, tournée de `TURN` et posée à `pedestal.lift` au-dessus de son socle,
+ * où son ombre douce s'appelle `"ombre"` ; sous un ciel et deux lampes, sans ombre portée.
+ * `release` la libère.
  */
 export function stageOf(
 	figure: Object3D,
@@ -68,6 +72,22 @@ export function stageOf(
 	camera.position.set(...CAMERA);
 	camera.lookAt(...TARGET);
 	return { scene, camera };
+}
+
+/**
+ * Libère les géométries et les matériaux de `scene`, une scène de `stageOf`, tant que le moteur qui
+ * l'a rendue est là : c'est lui qui en retire les tampons. Les modèles n'ont pas de texture
+ * (direction artistique § 7).
+ */
+export function release(scene: Scene): void {
+	scene.traverse((object) => {
+		if (object instanceof Mesh) {
+			object.geometry.dispose();
+			for (const material of [object.material].flat()) {
+				material.dispose();
+			}
+		}
+	});
 }
 
 /**

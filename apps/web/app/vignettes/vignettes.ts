@@ -1,10 +1,11 @@
 // Les vignettes des cartes (direction artistique § 3, « Vignettes ») : un seul moteur three.js dans
 // le navigateur, une image par classe présente sur la page, que toutes ses cartes reprennent —
-// jamais un contexte WebGL par carte. La fiche (#18) les reprend.
+// jamais un contexte WebGL par carte. La fiche reprend leur mise en scène (`stageOf`) dans sa scène
+// vivante, sans capture.
 import type { ClassKey, Pedestal } from "personnages";
-import { Mesh, type Scene, WebGLRenderer } from "three";
+import { WebGLRenderer } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { stageOf } from "./scene.ts";
+import { release, stageOf } from "./scene.ts";
 
 /** Le rendu d'une classe sur son socle : l'adresse de son image, nulle quand elle ne se rend pas. */
 export type Render = (
@@ -69,23 +70,10 @@ async function renderInBrowser(
 		);
 	});
 	turn = png.catch(() => undefined);
-	// ponytail: l'adresse vit avec la page, une par classe au plus ; la révoquer si la fiche (#18)
-	// en crée davantage.
+	// ponytail: l'adresse vit avec la page, une par classe au plus, et la fiche n'en crée aucune ; la
+	// révoquer si un rendu en crée davantage.
 	const blob = await png.finally(() => release(scene));
 	return blob && URL.createObjectURL(blob);
-}
-
-// Libère les géométries et les matériaux de `scene` ; les modèles n'ont pas de texture (direction
-// artistique § 7).
-function release(scene: Scene): void {
-	scene.traverse((object) => {
-		if (object instanceof Mesh) {
-			object.geometry.dispose();
-			for (const material of [object.material].flat()) {
-				material.dispose();
-			}
-		}
-	});
 }
 
 /**
