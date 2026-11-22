@@ -1,7 +1,7 @@
 // Le rendu des pages du wiki, en Markdown GitHub. Sur un wiki GitHub, le nom d'un fichier est le
 // titre de sa page et la cible de ses liens, sans « .md ». Une page n'écrit que des passages
-// recopiés des documents, des valeurs du code et la transcription des sorts (`spell-text.ts`) : le
-// wiki ne peut pas contredire ses sources.
+// recopiés des documents, des valeurs du code, la transcription des sorts (`spell-text.ts`) et des
+// titres fixes.
 import type { Spell } from "combat";
 import type { SpellImage } from "donnees";
 import {
@@ -144,8 +144,8 @@ function spellSheet(spell: WikiSpell): string {
 /**
  * Les fichiers du wiki : l'accueil, le combat, l'index des classes et une page par classe de
  * `CLASS_KEYS`, l'index des sorts et une page par sort de `spells`, dans leur ordre, puis l'image de
- * chaque sort qui en a une. Une page finit par un saut de ligne ; rien n'y dépend de l'heure ni du
- * poste : les mêmes entrées rendent les mêmes octets.
+ * chaque sort qui en a une. Une page finit par un saut de ligne ; rien n'y dépend de l'heure : les
+ * mêmes entrées rendent les mêmes octets.
  *
  * `spells` : les sorts à publier, valides (`validateSpell`) ; le tri des tirables revient à
  * l'appelant. Lève une erreur pour une image d'un type inconnu.
