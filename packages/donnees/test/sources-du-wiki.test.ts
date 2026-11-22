@@ -37,10 +37,15 @@ function wikiRepoPaths(config: string) {
 	return paths;
 }
 
+// `on.push.paths` du workflow du wiki.
+function pushFilter(workflow: string): string[] {
+	return parse(workflow).on.push.paths;
+}
+
 // Les deux ensembles à tenir égaux, triés : les sources du dépôt de la colonne, un dossier `x/`
 // écrit `x/**` comme dans le filtre ; et `on.push.paths` du workflow, privé du workflow lui-même.
 function wikiPathSets(config: string, workflow: string) {
-	const filter: string[] = parse(workflow).on.push.paths;
+	const filter = pushFilter(workflow);
 	return {
 		sources: wikiRepoPaths(config)
 			.map((path) => (path.endsWith("/") ? `${path}**` : path))
@@ -65,6 +70,17 @@ test("le filtre de push du workflow du wiki couvre exactement ses sources du dé
 		filter,
 		`${sources.length} chemins dans la colonne « Sources » de ${CONFIG}`,
 	).toEqual(sources);
+});
+
+// Le workflow est exclu de la comparaison ci-dessus : sans ce cas, le retirer de son propre filtre
+// ne rougirait rien, et un changement du workflow ne republierait plus le wiki.
+test("le filtre de push du workflow du wiki le surveille lui-même", () => {
+	const workflow = readRepoFile(WORKFLOW);
+	const faulty = workflow.replace(`      - ${WORKFLOW}\n`, "");
+	expect(faulty, `${WORKFLOW} absent de son propre filtre`).not.toBe(workflow);
+
+	expect(pushFilter(workflow)).toContain(WORKFLOW);
+	expect(pushFilter(faulty)).not.toContain(WORKFLOW);
 });
 
 // Des écarts tenus en mémoire, chacun dans une copie d'un des deux fichiers : le harnais de mutation
