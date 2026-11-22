@@ -9,6 +9,7 @@ import {
 	type NewSpell,
 	readDrawablePool,
 	readSpell,
+	readSpellImage,
 	type SpellPatch,
 	spells,
 	updateSpell,
@@ -57,6 +58,25 @@ describe("sorts", () => {
 		await expect(readSpell(db, 999)).rejects.toThrow(
 			"Aucun sort de numéro 999.",
 		);
+	});
+
+	test("readSpellImage rend les octets et le type de l'image d'un sort", async () => {
+		const db = await freshDatabase();
+		await updateSpell(db, 3, { image: PNG_IMAGE });
+		const image = await readSpellImage(db, 3);
+		expect(image && { bytes: [...image.bytes], type: image.type }).toEqual({
+			bytes: [...ABC],
+			type: "image/png",
+		});
+	});
+
+	test.each([
+		["un sort sans image", 4],
+		["un numéro absent", 999],
+	])("readSpellImage rend null pour %s", async (_, number) => {
+		const db = await freshDatabase();
+		await updateSpell(db, 3, { image: PNG_IMAGE });
+		expect(await readSpellImage(db, number)).toBeNull();
 	});
 
 	test("une clé déjà présente est refusée par l'index unique", async () => {

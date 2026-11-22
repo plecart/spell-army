@@ -42,8 +42,9 @@ export interface SpellPatch {
 }
 
 // Les colonnes d'un `SpellRecord`, l'image remplacée par sa taille et son empreinte, que Postgres
-// calcule (`octet_length`, `sha256`) : les octets ne quittent pas la base. Toutes deux sont nulles
-// sans image, que `toRecord` lit au type, nul en même temps qu'elle (`spells_image_check`).
+// calcule (`octet_length`, `sha256`) : les octets ne quittent la base que par une lecture qui rend
+// un `SpellImage`, comme `readSpellImage`. Toutes deux sont nulles sans image, que `toRecord` lit au
+// type, nul en même temps qu'elle (`spells_image_check`).
 const { image, imageType, ...spellColumns } = getTableColumns(spells);
 const recordColumns = {
 	...spellColumns,
@@ -120,6 +121,19 @@ export async function readSpell(
 			.from(spells)
 			.where(eq(spells.number, number)),
 	);
+}
+
+/** Les octets et le type de l'image du sort `number`, ou `null` sans image ou sans sort. */
+export async function readSpellImage(
+	executor: Executor,
+	number: number,
+): Promise<SpellImage | null> {
+	const [row] = await executor
+		.select({ bytes: spells.image, type: spells.imageType })
+		.from(spells)
+		.where(eq(spells.number, number));
+	// Les octets et leur type sont nuls ensemble (`spells_image_check`).
+	return row?.bytes && row.type ? { bytes: row.bytes, type: row.type } : null;
 }
 
 /**
