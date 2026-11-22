@@ -31,6 +31,6 @@ test("le runtime déclaré n'admet aucune version de Node que le refus écarte",
 	const runtime: string = JSON.parse(readRepoFile("package.json")).engines.node;
 	expect(
 		intersects(runtime, REFUSED),
-		`engines.node (${runtime}) admet une version de Node que .github/dependabot.yml refuse à @types/node (${REFUSED}) : le refus n'a plus d'objet. Monter la borne de l'ignore à la majeure qui suit le nouveau runtime, dans dependabot.yml et dans REFUSED de ce fichier (packages/donnees/test/refus-dependabot.test.ts), et @types/node à la majeure du runtime.`,
+		`engines.node (${runtime}) admet une version de Node que .github/dependabot.yml refuse à @types/node (${REFUSED}) : le refus n'a plus d'objet. Monter la borne de l'ignore à la majeure qui suit le nouveau runtime, dans dependabot.yml (règle et commentaire) et dans REFUSED de ce fichier (packages/donnees/test/refus-dependabot.test.ts), et @types/node à la majeure du runtime.`,
 	).toBe(false);
 });
