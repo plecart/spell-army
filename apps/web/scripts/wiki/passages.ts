@@ -29,8 +29,11 @@ const BLOCK_SEPARATOR = "\n\n";
 // La puce « Le concept » et ses lignes de suite, indentées de deux espaces.
 const CONCEPT = /^- (\*\*Le concept\*\* :.*(?:\n {2}.*)*)/m;
 const POWER = "Puissance d'un sort lancé par l'armée";
-// Son titre en gras, la formule en citation, et le paragraphe qui la suit.
-const POWER_BLOCKS = 3;
+// Son titre en gras, puis la formule en citation et le paragraphe qui la suit, reconnus à leur forme.
+const POWER_FORMULA = "> valeur = ";
+// Le début d'un bloc qui n'est pas un paragraphe : tableau (GFM), citation, titre, liste à puces ou
+// numérotée, code clôturé (CommonMark).
+const NOT_PARAGRAPH = /^(?:[|>#]|[-*+] |\d+[.)] |```)/;
 
 // Les statuts internes des documents, que le wiki ne montre pas : entre parenthèses après un titre,
 // « (décidé) », et en colonne d'un tableau.
@@ -86,13 +89,17 @@ function power(gameDesign: string): string {
 	if (start < 0) {
 		throw new Error(`${GAME_DESIGN} : bloc « ${POWER} » introuvable au § 2.`);
 	}
-	const passage = blocks.slice(start, start + POWER_BLOCKS);
-	if (passage.length < POWER_BLOCKS) {
+	const [title, formula, paragraph] = blocks.slice(start);
+	if (
+		!formula?.startsWith(POWER_FORMULA) ||
+		paragraph === undefined ||
+		NOT_PARAGRAPH.test(paragraph)
+	) {
 		throw new Error(
 			`${GAME_DESIGN} : bloc « ${POWER} » incomplet au § 2 : sa formule ou le paragraphe qui la suit manque.`,
 		);
 	}
-	return passage.join(BLOCK_SEPARATOR);
+	return [title, formula, paragraph].join(BLOCK_SEPARATOR);
 }
 
 /**
