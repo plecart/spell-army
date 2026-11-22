@@ -17,6 +17,18 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
+// Le contrôle qu'un texte ne soit pas blanc : au moins un caractère hors des blancs.
+function notBlank(column: PgColumn): SQL {
+	return sql`${column} ~ '[^[:space:]]'`;
+}
+
+// Le contrôle qu'un nombre soit fini et strictement positif. Postgres tient `NaN` pour plus grand
+// que tout nombre, `Infinity` compris : `> 0` l'admet, la borne haute `< 'Infinity'` l'écarte avec
+// `Infinity`.
+function positiveFinite(column: PgColumn): SQL {
+	return sql`${column} > 0 and ${column} < 'Infinity'::double precision`;
+}
+
 /**
  * Réglages du calibrage (`docs/game-design.md` § 6), en une seule ligne (`id = 1`) que pose la
  * migration `0002_reglages_de_depart`, lue et modifiée par `calibration-settings.ts`. Chaque borne
@@ -51,18 +63,13 @@ export const calibrationSettings = pgTable(
 			"calibration_settings_reference_window_days_check",
 			sql`${table.referenceWindowDays} >= 1`,
 		),
-		// Postgres tient `NaN` pour plus grand que tout nombre, `Infinity` compris : `> 0` l'admet,
-		// la borne haute `< 'Infinity'` l'écarte avec `Infinity`.
 		...[
 			table.averageRecruitLife,
 			table.averageRecruitStrength,
 			table.averageRecruitMagic,
 			table.averageRecruitSpeed,
 		].map((stat) =>
-			check(
-				`calibration_settings_${stat.name}_check`,
-				sql`${stat} > 0 and ${stat} < 'Infinity'::double precision`,
-			),
+			check(`calibration_settings_${stat.name}_check`, positiveFinite(stat)),
 		),
 		check(
 			"calibration_settings_day_two_budget_recruits_check",
@@ -99,14 +106,13 @@ export const spells = pgTable(
 	},
 	(table) => [
 		uniqueIndex("spells_key_unique").on(table.key),
-		// Même garde que les réglages : la borne haute écarte `NaN` avec `Infinity`.
+		// La garde de `positiveFinite`, 0 admis : la borne haute écarte `NaN` avec `Infinity`.
 		check(
 			"spells_weight_check",
 			sql`${table.weight} >= 0 and ${table.weight} < 'Infinity'::double precision`,
 		),
-		// Un texte non blanc : au moins un caractère hors des blancs.
 		...[table.name, table.description].map((column) =>
-			check(`spells_${column.name}_check`, sql`${column} ~ '[^[:space:]]'`),
+			check(`spells_${column.name}_check`, notBlank(column)),
 		),
 		// Les octets et leur type, ensemble ou pas du tout.
 		check(
@@ -163,6 +169,54 @@ export const classDefaultModels = pgTable("class_default_models", {
 		.notNull()
 		.references(() => modelFiles.id),
 });
+
+/**
+ * La borne haute du nom d'un monstre, en caractères, que partagent ses fichiers 3D, rattachés à lui
+ * par le nom (issue #20, « Décisions », 4 et 7). Contrôlée sur `monsters`, et lue par l'outil
+ * `deposer_fichier_3d` d'`apps/web`.
+ */
+export const MAX_MONSTER_NAME_LENGTH = 64;
+
+/**
+ * Le bestiaire (game design § 3 et § 7) : au plus un monstre par chapitre d'une saison
+ * (`monsters_season_chapter_unique`), et un nom unique toutes saisons confondues
+ * (`monsters_name_unique`). `profile` et `attacks` portent le modèle de `combat` tel quel ;
+ * `scale_factor` est le facteur d'échelle calculé à la création, `trait` la particularité. Aucune
+ * clé étrangère depuis `model_files.monster` : un monstre retiré puis recréé sous le même nom
+ * retrouve ses fichiers par le nom. Chaque borne est une contrainte `check`, nommée
+ * `monsters_<colonne>_check`. `monsters.ts` lit et écrit la table.
+ */
+export const monsters = pgTable(
+	"monsters",
+	{
+		id: integer().primaryKey().generatedAlwaysAsIdentity(),
+		season: integer().notNull(),
+		chapter: integer().notNull(),
+		name: text().notNull(),
+		profile: jsonb().notNull(),
+		attacks: jsonb().notNull(),
+		scaleFactor: doublePrecision("scale_factor").notNull(),
+		trait: text().notNull(),
+	},
+	(table) => [
+		uniqueIndex("monsters_name_unique").on(table.name),
+		uniqueIndex("monsters_season_chapter_unique").on(
+			table.season,
+			table.chapter,
+		),
+		...[table.season, table.chapter].map((ordinal) =>
+			check(`monsters_${ordinal.name}_check`, sql`${ordinal} >= 1`),
+		),
+		// La borne recopiée en clair : interpolée telle quelle, elle deviendrait un paramètre `$1` de
+		// la migration (drizzle-kit 0.31.11, mesuré le 2026-11-22).
+		check(
+			"monsters_name_check",
+			sql`${notBlank(table.name)} and char_length(${table.name}) <= ${sql.raw(String(MAX_MONSTER_NAME_LENGTH))}`,
+		),
+		check("monsters_trait_check", notBlank(table.trait)),
+		check("monsters_scale_factor_check", positiveFinite(table.scaleFactor)),
+	],
+);
 
 /**
  * La forme d'un identifiant Instagram reçu du fournisseur : un entier décimal positif, sans zéro de

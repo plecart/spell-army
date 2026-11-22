@@ -17,6 +17,14 @@ export {
 	storeModelFile,
 } from "./model-files.ts";
 export {
+	deleteMonsterByName,
+	findMonsterByName,
+	insertMonster,
+	listMonsters,
+	type MonsterRecord,
+	type NewMonster,
+} from "./monsters.ts";
+export {
 	auditLog,
 	calibrationSettings,
 	classDefaultModels,
@@ -26,7 +34,9 @@ export {
 	importPasses,
 	INSTAGRAM_ID_PATTERN,
 	INSTAGRAM_USERNAME_PATTERN,
+	MAX_MONSTER_NAME_LENGTH,
 	modelFiles,
+	monsters,
 	players,
 	type QuickPassTrigger,
 	spells,
