@@ -100,12 +100,19 @@ describe("la commande wiki, lancée par Node", () => {
 			reason: "code 3D000",
 		},
 		// L'erreur sans code de pg (connection-parameters.js, pg 8.23.1) cite entre guillemets la
-		// valeur d'un paramètre de l'URL : ses segments entre guillemets sont masqués.
+		// valeur d'un paramètre de l'URL : le message est masqué du premier au dernier guillemet, même
+		// quand la valeur en porte un.
 		{
 			form: "un paramètre d'URL refusé",
 			url: () =>
 				`postgres://u:${SECRET}@127.0.0.1:9/x?sslnegotiation=${ABSENT_BASE}`,
-			reason: 'Invalid sslnegotiation value: "…". Valid values are "…" and "…"',
+			reason: 'Invalid sslnegotiation value: "…"',
+		},
+		{
+			form: "un paramètre d'URL refusé, à guillemet",
+			url: () =>
+				`postgres://u:${SECRET}@127.0.0.1:9/x?sslnegotiation=a%22${ABSENT_BASE}`,
+			reason: 'Invalid sslnegotiation value: "…"',
 		},
 	])(
 		"$form : sortie 1, la raison, rien de DATABASE_URL, et rien n'est écrit",
