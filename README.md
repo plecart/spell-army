@@ -36,9 +36,8 @@ Les règles complètes sont dans le [game design](docs/game-design.md), l'appare
 
 - **Fait** : le socle du monorepo et sa CI, les personnages calculés, la réserve de 24 sorts,
   l'import des abonnés, le serveur MCP de pilotage, les brouillons 3D des huit classes, le moteur
-  de combat, l'annuaire des recrues et la page « Informations ».
-- **En cours** : la fiche du personnage, le bestiaire, la saison, puis
-  la mise en ligne d'une bêta.
+  de combat, l'annuaire des recrues, la fiche du personnage et la page « Informations ».
+- **En cours** : le bestiaire, la saison, puis la mise en ligne d'une bêta.
 - **Plus tard** : la vidéo de chaque combat.
 
 Le découpage vit dans les [issues](https://github.com/plecart/wizard-army-v2/issues) et les

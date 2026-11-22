@@ -316,9 +316,16 @@ h1 a:hover {
 	background-size: cover;
 }
 
-.vignette img {
+.vignette img,
+.vignette canvas {
 	display: block;
 	width: 100%;
+}
+
+/* La scène vivante de la fiche tourne au glisser horizontal ; le défilement vertical reste au
+   doigt. */
+.vignette canvas {
+	touch-action: pan-y;
 }
 
 .handle {
