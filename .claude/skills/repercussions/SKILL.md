@@ -121,8 +121,10 @@ rattacher à un fait du delta n'est pas une ancre.**
 
 Avant l'arrêt possible de la sous-section suivante, que le chemin de reprise saute (« les étapes
 2 à 7 suivent ») : jouée ici, elle l'est aussi sur un merge qui contredit un document. Démarrée
-avec une ligne `contradiction soldée`, la session l'a déjà jouée à la passe interrompue : elle
-passe.
+avec une ligne `contradiction soldée`, la session l'a déjà jouée sur le delta de `#<N>` à la passe
+interrompue : elle ne la joue que sur le diff de la PR `#<m>` que la ligne nomme, ajouté aux
+sources ci-dessus — un amendement du game design est une source du wiki —, et passe quand la ligne
+n'en nomme aucune.
 
 La section « Documentation dérivée » de `.claude/pipeline.config.md` liste ce que des commandes du
 dépôt génèrent depuis les sources — le wiki du jeu. Ce n'est **pas** une source de vérité : un
