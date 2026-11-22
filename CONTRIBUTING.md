@@ -48,9 +48,9 @@ Chaque maillon nomme qui l'exécute ; la répartition des rôles est dans `CLAUD
    ou la décision est abandonnée — ou son effet déplacé hors de ce que le document affirme.
    Déclenché par la règle `decisions-vs-doc`, à n'importe quel moment.
 4. **Répercuter** — `repercussions` après chaque merge qui la rend due (`cycle-pr` Étape 8) :
-   confronte d'abord le delta aux sources de
-   vérité (un § falsifié → `contradiction`), puis corrige la spec — corps et brief d'agent —
-   des issues dont la planification est devenue fausse. Porté par la session PR en fin de
+   confronte d'abord le delta à la documentation dérivée (ce que son générateur ignore → un vide)
+   et aux sources de vérité (un § falsifié → `contradiction`), puis corrige la spec — corps et
+   brief d'agent — des issues dont la planification est devenue fausse. Porté par la session PR en fin de
    `cycle-pr` — collecte au `releveur`, go d'édition au mainteneur dans sa fenêtre ; pour une issue
    en lots coordonnés, par la coordinatrice au merge de la PR d'intégration.
 5. **Valider** — `plan-qa` → `execution-qa` → `bug-vers-issue`, chacun dans une session de
