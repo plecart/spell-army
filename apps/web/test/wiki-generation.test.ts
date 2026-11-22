@@ -84,13 +84,30 @@ describe("la génération du wiki", () => {
 		},
 	);
 
-	test("un refus de la base sous un autre code remonte tel quel", async () => {
+	// Le message de Postgres peut citer le rôle ou la base de `DATABASE_URL` : seul son code sort.
+	test("un refus de la base sous un autre code se nomme par ce code, sans le message de Postgres", async () => {
 		const refusal = refusedQuery("28P01");
 		await expect(
 			generateWiki(await outputFolder(), async () => {
 				throw refusal;
 			}),
-		).rejects.toBe(refusal);
+		).rejects.toMatchObject({
+			message: "La lecture des sorts a échoué : code 28P01.",
+			cause: refusal,
+		});
+	});
+
+	test("une erreur sans code se nomme par le message de sa cause la plus profonde", async () => {
+		await expect(
+			generateWiki(await outputFolder(), async () => {
+				throw new Error("enveloppe", {
+					cause: new Error("Connection terminated unexpectedly"),
+				});
+			}),
+		).rejects.toMatchObject({
+			message:
+				"La lecture des sorts a échoué : Connection terminated unexpectedly.",
+		});
 	});
 
 	// Les ancres des passages recopiés : chacune retirée de son document, la génération s'arrête en
@@ -133,15 +150,37 @@ describe("la génération du wiki", () => {
 		},
 	);
 
-	test("un bloc « Puissance d'un sort lancé par l'armée » qui finit le § 2 sur sa formule arrête la génération, qui le nomme", () => {
-		const gameDesign = [
-			"## 2. Les sorts",
-			"**Puissance d'un sort lancé par l'armée** :",
-			"> valeur = coefficient du sort × stat de l'armée",
-			"## 4. Le combat",
-		].join("\n\n");
-		expect(() => passagesOf({ ...DOCUMENTS, gameDesign })).toThrow(
-			"docs/game-design.md : bloc « Puissance d'un sort lancé par l'armée » incomplet au § 2 : sa formule ou le paragraphe qui la suit manque.",
-		);
-	});
+	// Le titre doit être suivi de la formule en citation, puis d'un paragraphe : un autre bloc à leur
+	// place — le tableau du § 2 — serait recopié sans rien signaler.
+	const TITLE = "**Puissance d'un sort lancé par l'armée** :";
+	const FORMULA = "> valeur = coefficient du sort × stat de l'armée";
+	const PARAGRAPH = "La stat de l'armée est la somme de celles de ses personnages.";
+	const TABLE = "| Sort | Effet |\n|---|---|\n| Boule de feu | dégâts |";
+	// Un bloc de chaque forme qui n'est pas un paragraphe, à la place du paragraphe.
+	const NOT_PARAGRAPHS = {
+		"un tableau": TABLE,
+		"une autre citation": FORMULA,
+		"un titre": "### Exemple",
+		"une liste à puces": "- un lanceur",
+		"une liste numérotée": "1. un lanceur",
+		"un bloc de code": "```\nvaleur\n```",
+	};
+	test.each([
+		{ form: "qui finit le § 2 sur sa formule", blocks: [TITLE, FORMULA] },
+		{ form: "sans sa formule", blocks: [TITLE, PARAGRAPH, TABLE] },
+		...Object.entries(NOT_PARAGRAPHS).map(([kind, block]) => ({
+			form: `dont la formule est suivie d'${kind}`,
+			blocks: [TITLE, FORMULA, block],
+		})),
+	])(
+		"un bloc « Puissance d'un sort lancé par l'armée » $form arrête la génération, qui le nomme",
+		({ blocks }) => {
+			const gameDesign = ["## 2. Les sorts", ...blocks, "## 4. Le combat"].join(
+				"\n\n",
+			);
+			expect(() => passagesOf({ ...DOCUMENTS, gameDesign })).toThrow(
+				"docs/game-design.md : bloc « Puissance d'un sort lancé par l'armée » incomplet au § 2 : sa formule ou le paragraphe qui la suit manque.",
+			);
+		},
+	);
 });

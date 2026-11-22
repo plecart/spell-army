@@ -24,14 +24,34 @@ const READ_REFUSALS: Readonly<Record<string, string>> = {
 	"42501": "Lecture refusée : le rôle n'a pas SELECT sur spells.",
 };
 
-/** Les sorts de `source` ; un refus de la base dont le code est connu, traduit en sa raison. */
+/**
+ * La raison d'un échec, lue sur la cause la plus profonde de `error`, sans rien de `DATABASE_URL` :
+ * une erreur qui porte un `code` — de Node (`connect ECONNREFUSED`, `code ERR_INVALID_URL`) ou de
+ * Postgres (`code 3D000`) — se nomme par lui, son message pouvant citer l'hôte, le port, le rôle ou
+ * la base ; une autre, par son message ; une valeur qui n'est pas une erreur, par sa chaîne.
+ */
+function failureReason(error: unknown): string {
+	let root = error;
+	while (root instanceof Error && root.cause !== undefined) root = root.cause;
+	if (!(root instanceof Error)) return String(root);
+	const { code, syscall } = root as { code?: unknown; syscall?: unknown };
+	if (typeof code !== "string") return root.message;
+	return `${typeof syscall === "string" ? syscall : "code"} ${code}`;
+}
+
+/**
+ * Les sorts de `source` ; un refus de la base dont le code est connu, traduit en sa raison, tout
+ * autre échec nommé par `failureReason`. L'erreur d'origine reste en cause.
+ */
 async function readSpells(source: SpellSource): Promise<readonly WikiSpell[]> {
 	try {
 		return await source();
 	} catch (error) {
 		const code = postgresErrorCode(error)?.code;
-		const refusal = code === undefined ? undefined : READ_REFUSALS[code];
-		throw refusal === undefined ? error : new Error(refusal, { cause: error });
+		const reason =
+			(code === undefined ? undefined : READ_REFUSALS[code]) ??
+			`La lecture des sorts a échoué : ${failureReason(error)}.`;
+		throw new Error(reason, { cause: error });
 	}
 }
 
@@ -59,10 +79,10 @@ function drawableSpells(spells: readonly WikiSpell[]): WikiSpell[] {
  * écrit. Les passages viennent des documents du dépôt, les sorts de `source`.
  *
  * Lève une erreur, à afficher telle quelle, avant toute écriture : un passage introuvable ou
- * incomplet dans son document ; un refus de la base, expliqué pour une table absente ou un droit
- * refusé, sinon tel quel ; aucun sort tirable ; un sort tirable invalide (`validateSpell`), ou dont
- * l'image est d'un type inconnu (`wikiPages`), qu'elle nomme ; un dossier qui n'est pas vide
- * (`writeFolder`).
+ * incomplet dans son document ; un échec de lecture des sorts, expliqué pour une table absente ou
+ * un droit refusé, sinon nommé par sa raison, sans rien de `DATABASE_URL` ; aucun sort tirable ; un
+ * sort tirable invalide (`validateSpell`), ou dont l'image est d'un type inconnu (`wikiPages`),
+ * qu'elle nomme ; un dossier qui n'est pas vide (`writeFolder`).
  */
 export async function generateWiki(
 	folder: string,

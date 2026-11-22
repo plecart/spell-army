@@ -74,6 +74,52 @@ describe("la commande wiki, lancée par Node", () => {
 		},
 	);
 
+	// Une base qui ne répond pas, une URL illisible, un refus de Postgres : la raison s'affiche, nommée
+	// par son code — le message de ces erreurs cite l'hôte, le port, le rôle ou la base —, et rien de
+	// `DATABASE_URL` n'en sort, ni son mot de passe, ni sa base.
+	const SECRET = "TEMOIN_SECRET";
+	const ABSENT_BASE = "temoin_base_absente";
+	test.each([
+		{
+			form: "une base injoignable",
+			url: () => `postgres://u:${SECRET}@127.0.0.1:9/x`,
+			reason: "connect ECONNREFUSED",
+		},
+		{
+			form: "une URL illisible",
+			url: () => `postgres://u:${SECRET}@127.0.0.1:99999/x`,
+			reason: "code ERR_INVALID_URL",
+		},
+		{
+			form: "une base absente du serveur",
+			url: () => {
+				const url = new URL(inject("testDatabaseUrl"));
+				url.pathname = `/${ABSENT_BASE}`;
+				return url.href;
+			},
+			reason: "code 3D000",
+		},
+	])(
+		"$form : sortie 1, la raison, rien de DATABASE_URL, et rien n'est écrit",
+		async ({ url, reason }) => {
+			const launch = await emptyFolder();
+			const run = await runWiki(
+				["wiki"],
+				{ DATABASE_URL: url(), INIT_CWD: launch },
+				launch,
+			);
+			expect(run).toEqual({
+				code: 1,
+				stdout: "",
+				stderr: `La lecture des sorts a échoué : ${reason}.\n`,
+			});
+			for (const part of [SECRET, ABSENT_BASE]) {
+				expect(run.stderr).not.toContain(part);
+			}
+			expect(await readdir(launch)).toEqual([]);
+		},
+	);
+
 	// pnpm pose `INIT_CWD` au dossier où la commande est lancée, et le dossier courant à celui du
 	// paquet : un dossier relatif se lit depuis le premier, à défaut depuis le second.
 	test.each([
