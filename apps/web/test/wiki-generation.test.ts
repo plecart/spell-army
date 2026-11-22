@@ -99,7 +99,7 @@ describe("la génération du wiki", () => {
 
 	test.each([
 		{
-			form: "par le message de sa cause la plus profonde",
+			form: "par le message de sa cause",
 			cause: new Error("Connection terminated unexpectedly"),
 			reason: "Connection terminated unexpectedly",
 		},

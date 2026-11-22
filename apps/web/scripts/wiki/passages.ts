@@ -34,7 +34,8 @@ const POWER_FORMULA = "> valeur = ";
 // Le début d'un bloc qui n'est pas un paragraphe, sans indentation : tableau (GFM), citation, titre
 // ATX, bloc HTML, liste à puces ou numérotée suivie d'une espace, code clôturé (``` ou ~~~) ou
 // indenté de quatre espaces, ligne de séparation seule. Ne voit ni titre setext, ni définition de
-// lien, ni liste indentée ou à tabulation.
+// lien, ni liste indentée ou à tabulation ; refuse à tort un paragraphe ouvert par un autolien
+// `<…>`.
 const NOT_PARAGRAPH = /^(?:[|>#<]|[-*+] |\d+[.)] |```|~~~| {4}|([-*_])\1{2,}$)/;
 
 // Les statuts internes des documents, que le wiki ne montre pas : entre parenthèses après un titre,

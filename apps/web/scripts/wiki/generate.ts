@@ -24,16 +24,18 @@ const READ_REFUSALS: Readonly<Record<string, string>> = {
 	"42501": "Lecture refusée : le rôle n'a pas SELECT sur spells.",
 };
 
-// Un segment entre guillemets droits d'un message d'erreur.
-const QUOTED = /"[^"]*"/g;
+// Ce qu'un message d'erreur cite entre guillemets droits, du premier au dernier : un guillemet dans
+// la valeur citée ne coupe pas le masque.
+const QUOTED = /"[\s\S]*"/;
 
 /**
  * La raison d'un échec, lue sur la cause la plus profonde de `error`, sans ce que les formes
  * relevées citeraient de `DATABASE_URL` : une erreur qui porte un `code` — de Node (`connect
  * ECONNREFUSED`, `code ERR_INVALID_URL`) ou de Postgres (`code 3D000`) — se nomme par lui, son
- * message pouvant citer l'hôte, le port, le rôle ou la base ; une autre, par son message, ses segments entre guillemets masqués — pg y cite la valeur
- * d'un paramètre de l'URL (`Invalid sslnegotiation value: "…"`, pg 8.23.1) —, à défaut par son nom ;
- * une valeur qui n'est pas une erreur, par sa chaîne. Sans point final.
+ * message pouvant citer l'hôte, le port, le rôle ou la base ; une autre, par son message, masqué
+ * du premier au dernier guillemet — pg y cite la valeur d'un paramètre de l'URL (`Invalid
+ * sslnegotiation value: "…"`, pg 8.23.1) —, à défaut par son nom ; une valeur qui n'est pas une
+ * erreur, par sa chaîne. Sans point final.
  */
 function failureReason(error: unknown): string {
 	let root = error;
