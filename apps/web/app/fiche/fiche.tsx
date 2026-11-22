@@ -4,10 +4,11 @@ import { CLASS_NAMES } from "../annuaire/address.ts";
 import { BACKDROP_IMAGES, classColor } from "../class-style.ts";
 import { Figure } from "../vignettes/figure.tsx";
 import { arrivalOf } from "./arrival.ts";
+import { Sheet, type SheetClose } from "./sheet.tsx";
 import { SpellCard } from "./spell-card.tsx";
 import { STAT_LABELS, verdictPhraseOf } from "./verdict-phrase.ts";
 
-// L'identifiant du titre de la fiche.
+// L'identifiant du titre de la fiche, qui nomme la feuille qui la porte (`aria-labelledby`).
 const FICHE_TITLE_ID = "fiche-title";
 
 // Le plafond d'une stat (game design § 1, « Statistiques ») : une barre pleine.
@@ -53,6 +54,24 @@ export function Fiche({ player }: { player: PlayerSheet }) {
 			<h3>Son sort</h3>
 			<SpellCard spell={spell} poolSize={poolSize} />
 		</article>
+	);
+}
+
+/**
+ * La fiche de `player` dans la feuille qui la porte par-dessus l'annuaire, nommée par son titre et
+ * refermée selon `onClose`.
+ */
+export function FicheSheet({
+	player,
+	onClose,
+}: {
+	player: PlayerSheet;
+	onClose: SheetClose;
+}) {
+	return (
+		<Sheet labelledBy={FICHE_TITLE_ID} onClose={onClose}>
+			<Fiche player={player} />
+		</Sheet>
 	);
 }
 

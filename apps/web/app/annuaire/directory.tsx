@@ -1,4 +1,5 @@
 import type { VisiblePlayer, VisiblePlayersPage } from "joueurs";
+import Link from "next/link";
 import { CLASS_KEYS, type ClassKey, PEDESTALS } from "personnages";
 import { BACKDROP_IMAGES, classColor } from "../class-style.ts";
 import { instagramUrl } from "../site.ts";
@@ -202,22 +203,28 @@ function Counter({
 }
 
 // Une carte : la vignette — le personnage sur son socle, posé sur le décor de sa classe quand il est
-// rendu —, le pseudo, la pastille et le nom de la classe. Pas de clic au MVP de l'annuaire : il
-// vient avec la fiche (#18).
-function Card({ player: { username, classKey } }: { player: VisiblePlayer }) {
+// rendu —, le pseudo, la pastille et le nom de la classe. Toute la carte est un lien vers la fiche,
+// qui s'ouvre par-dessus l'annuaire sans le faire défiler (`app/@fiche`).
+function Card({
+	player: { instagramId, username, classKey },
+}: {
+	player: VisiblePlayer;
+}) {
 	return (
 		<li className="card" style={classColor(classKey)}>
-			<div
-				className="vignette"
-				style={{ backgroundImage: BACKDROP_IMAGES[classKey] }}
-			>
-				<Figure classKey={classKey} pedestal={PEDESTALS[classKey]} />
-			</div>
-			<p className="handle">@{username}</p>
-			<p className="class-name">
-				<span className="dot" />
-				{CLASS_NAMES[classKey].label}
-			</p>
+			<Link href={`/recrues/${instagramId}`} scroll={false}>
+				<div
+					className="vignette"
+					style={{ backgroundImage: BACKDROP_IMAGES[classKey] }}
+				>
+					<Figure classKey={classKey} pedestal={PEDESTALS[classKey]} />
+				</div>
+				<p className="handle">@{username}</p>
+				<p className="class-name">
+					<span className="dot" />
+					{CLASS_NAMES[classKey].label}
+				</p>
+			</Link>
 		</li>
 	);
 }

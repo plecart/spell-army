@@ -1,6 +1,7 @@
 "use client";
 
-import { type MouseEvent, type ReactNode, useRef } from "react";
+import { type ReactNode, useRef } from "react";
+import { isBackdropClick } from "../backdrop.ts";
 
 /**
  * Le bouton du filtre par classe et la feuille qu'il ouvre depuis le bas de l'écran (direction
@@ -28,7 +29,11 @@ export function FilterSheet({ children }: { children: ReactNode }) {
 				className="sheet"
 				aria-labelledby="filter-title"
 				ref={sheet}
-				onClick={closeOnBackdrop}
+				onClick={(event) => {
+					if (isBackdropClick(event)) {
+						event.currentTarget.close();
+					}
+				}}
 			>
 				<div className="sheet-body">
 					<div className="sheet-header">
@@ -46,12 +51,4 @@ export function FilterSheet({ children }: { children: ReactNode }) {
 			</dialog>
 		</>
 	);
-}
-
-// Un appui hors de la feuille atteint le `<dialog>` lui-même, jamais son contenu : la feuille n'a
-// pas de marge intérieure, son contenu la remplit (`globals.css`, `.sheet`).
-function closeOnBackdrop(event: MouseEvent<HTMLDialogElement>) {
-	if (event.target === event.currentTarget) {
-		event.currentTarget.close();
-	}
 }

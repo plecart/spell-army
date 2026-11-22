@@ -171,8 +171,9 @@ describe("compteur", () => {
 });
 
 describe("cartes", () => {
-	test("une carte par recrue, dans l'ordre : la vignette au décor de sa classe, @pseudo, pastille et nom de la classe", () => {
-		const cards = elementsOf(
+	// Les cartes de deux recrues, une fée puis un golem.
+	const twoCards = () =>
+		elementsOf(
 			renderDirectory(NO_QUERY, {
 				players: [
 					recruit("1", "noahbois", "fairy"),
@@ -184,11 +185,25 @@ describe("cartes", () => {
 			"li",
 			"card",
 		);
+
+	test("une carte par recrue, dans l'ordre : la vignette au décor de sa classe, @pseudo, pastille et nom de la classe", () => {
+		const cards = twoCards();
 		expect(cards.map(textOf)).toEqual(["@noahbois Fée", "@nina_lit Golem"]);
 		expect(cards[0]).toContain("--class-color:#3f9c95");
 		expect(cards[0]).toContain(encodeURIComponent(BACKDROPS.fairy));
 		expect(cards[1]).toContain("--class-color:#857c6c");
 		expect(cards[1]).toContain(encodeURIComponent(BACKDROPS.golem));
+	});
+
+	test("toute la carte est un lien vers la fiche de la recrue, à son identifiant", () => {
+		const cards = twoCards();
+		expect(cards.map(linksOf)).toEqual([
+			[{ href: "/recrues/1", text: "@noahbois Fée" }],
+			[{ href: "/recrues/2", text: "@nina_lit Golem" }],
+		]);
+		expect(cards[0]).toMatch(
+			/^<li [^>]*><a [^>]*href="\/recrues\/1"[^>]*>[\s\S]*<\/a><\/li>$/,
+		);
 	});
 });
 

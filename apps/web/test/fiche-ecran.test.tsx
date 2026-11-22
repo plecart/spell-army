@@ -34,7 +34,7 @@ describe("fiche d'une recrue", () => {
 			"Vampire Recrue depuis le 9 novembre",
 		]);
 		expect(elementsOf(html, "p", "verdict").map(textOf)).toEqual([
-			"Un vampire dans la moyenne : Magie 7, Vitesse 9.",
+			"Un vampire dans la moyenne\u00a0: Magie 7, Vitesse 9.",
 		]);
 	});
 
