@@ -25,31 +25,24 @@ export type VerdictLevel = (typeof VERDICT_LEVELS)[number];
 /** Les coupures du centile entre deux niveaux, pour une cible de 10 / 20 / 40 / 20 / 10 %. */
 const CENTILE_CUTS = [0.1, 0.3, 0.7, 0.9];
 
-interface ClassVerdict {
-	strongStats: readonly StatKey[];
-	/** La loi exacte du score dans la classe : score → probabilité. */
-	scoreDistribution: ReadonlyMap<number, number>;
-}
-
-const classVerdicts = new Map<ClassKey, ClassVerdict>();
+// La loi exacte du score dans chaque classe, score → probabilité, calculée à son premier verdict.
+const scoreDistributions = new Map<ClassKey, ReadonlyMap<number, number>>();
 
 /**
- * Le niveau de verdict d'un personnage : son rang parmi les personnages de sa classe, selon le
- * score de ses stats fortes. Les stats fortes d'une classe sont celles au plus haut maximum de
- * l'annexe A, et le score est leur somme, ou la meilleure d'entre elles quand les quatre sont
- * fortes. Le rang est le centile milieu du score s dans la loi exacte du tirage de la classe,
- * P(score < s) + P(score = s) / 2, coupé à 0,1 / 0,3 / 0,7 / 0,9 : le niveau est le nombre de
- * coupures qu'il atteint. Aucun seuil n'est écrit à la main : une classe ajoutée ou réglée suit.
+ * Le niveau de verdict d'un personnage : son rang parmi les personnages de sa classe, selon son
+ * score, la somme des stats que rend `scoringStatsOf`. Le rang est le centile milieu du score s
+ * dans la loi exacte du tirage de la classe, P(score < s) + P(score = s) / 2, coupé à 0,1 / 0,3 /
+ * 0,7 / 0,9 : le niveau est le nombre de coupures qu'il atteint. Aucun seuil n'est écrit à la
+ * main : une classe ajoutée ou réglée suit.
  *
  * Les flottants suffisent. Chaque point se partage entre 1 à 4 stats : les probabilités n'ont que
  * des 2 et des 3 au dénominateur, les coupures ont un 5, et aucun centile n'en égale une. La marge
  * la plus fine est de 0,001 (Vampire), mesurée en fractions exactes le 2026-11-17.
  */
 export function verdictOf(character: Character): VerdictLevel {
-	const { strongStats, scoreDistribution } = classVerdictOf(character.class);
-	const score = scoreOf(character.stats, strongStats);
+	const score = scoreOf(character.stats, scoringStatsOf(character));
 	let centile = 0;
-	for (const [value, probability] of scoreDistribution) {
+	for (const [value, probability] of classScoreDistribution(character.class)) {
 		if (value < score) centile += probability;
 		else if (value === score) centile += probability / 2;
 	}
@@ -57,19 +50,27 @@ export function verdictOf(character: Character): VerdictLevel {
 	return VERDICT_LEVELS[reached] as VerdictLevel;
 }
 
-// Calculée une fois par classe, à son premier verdict.
-function classVerdictOf(classKey: ClassKey): ClassVerdict {
-	let classVerdict = classVerdicts.get(classKey);
-	if (classVerdict === undefined) {
-		const ranges = CLASS_RANGES[classKey];
-		const strongStats = strongStatsOf(ranges);
-		classVerdict = {
-			strongStats,
-			scoreDistribution: scoreDistributionOf(ranges, strongStats),
-		};
-		classVerdicts.set(classKey, classVerdict);
+/**
+ * Les stats qui font le score du verdict : les stats fortes de la classe, celles au plus haut
+ * maximum de l'annexe A, dans l'ordre de `STAT_KEYS` ; quand les quatre le sont, la meilleure
+ * seule, la première de `STAT_KEYS` à égalité.
+ */
+export function scoringStatsOf(character: Character): StatKey[] {
+	return scoringStats(
+		character.stats,
+		strongStatsOf(CLASS_RANGES[character.class]),
+	);
+}
+
+function classScoreDistribution(
+	classKey: ClassKey,
+): ReadonlyMap<number, number> {
+	let distribution = scoreDistributions.get(classKey);
+	if (distribution === undefined) {
+		distribution = scoreDistributionOf(CLASS_RANGES[classKey]);
+		scoreDistributions.set(classKey, distribution);
 	}
-	return classVerdict;
+	return distribution;
 }
 
 function strongStatsOf(ranges: ClassRanges): StatKey[] {
@@ -77,12 +78,17 @@ function strongStatsOf(ranges: ClassRanges): StatKey[] {
 	return STAT_KEYS.filter((key) => ranges[key][1] === highest);
 }
 
-function scoreOf(stats: Stats, strongStats: readonly StatKey[]): number {
-	const values = strongStats.map((key) => stats[key]);
-	// Quatre stats fortes font toujours 30 : la meilleure les départage.
-	return values.length === STAT_KEYS.length
-		? Math.max(...values)
-		: values.reduce((total, value) => total + value, 0);
+function scoringStats(stats: Stats, strongStats: StatKey[]): StatKey[] {
+	if (strongStats.length < STAT_KEYS.length) {
+		return strongStats;
+	}
+	// Quatre stats fortes font toujours 30 : la meilleure les départage, la première à égalité.
+	const best = strongStats.reduce((a, b) => (stats[b] > stats[a] ? b : a));
+	return [best];
+}
+
+function scoreOf(stats: Stats, keys: readonly StatKey[]): number {
+	return keys.reduce((total, key) => total + stats[key], 0);
 }
 
 /**
@@ -90,10 +96,8 @@ function scoreOf(stats: Stats, strongStats: readonly StatKey[]): number {
  * minimums, chaque répartition donne à chaque stat encore sous son maximum une part égale du point
  * suivant, jusqu'à 30.
  */
-function scoreDistributionOf(
-	ranges: ClassRanges,
-	strongStats: readonly StatKey[],
-): Map<number, number> {
+function scoreDistributionOf(ranges: ClassRanges): Map<number, number> {
+	const strongStats = strongStatsOf(ranges);
 	const start = startingStats(ranges);
 	let layer = new Map([[layerKey(start), { stats: start, probability: 1 }]]);
 	for (let points = statsTotal(start); points < STATS_TOTAL; points++) {
@@ -116,7 +120,7 @@ function scoreDistributionOf(
 	}
 	const distribution = new Map<number, number>();
 	for (const { stats, probability } of layer.values()) {
-		const score = scoreOf(stats, strongStats);
+		const score = scoreOf(stats, scoringStats(stats, strongStats));
 		distribution.set(score, (distribution.get(score) ?? 0) + probability);
 	}
 	return distribution;
