@@ -1,13 +1,7 @@
 // Le moteur de la scène vivante de la fiche (direction artistique § 3, « Scène de la fiche ») : la
 // seule de la page, à côté du moteur de capture des vignettes, qui n'anime rien.
 import { type ClassKey, PEDESTALS } from "personnages";
-import {
-	type BufferGeometry,
-	type Mesh,
-	type MeshBasicMaterial,
-	type Object3D,
-	WebGLRenderer,
-} from "three";
+import { WebGLRenderer } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { release, stageOf } from "../vignettes/scene.ts";
 import { poseAt } from "./motion.ts";
@@ -40,13 +34,7 @@ export async function startLiveScene(
 		`/api/modeles/${classKey}`,
 	);
 	const pedestal = PEDESTALS[classKey];
-	const { scene, camera } = stageOf(figure, pedestal);
-	// La pose et l'ombre, nommées par `stageOf`.
-	const pose = scene.getObjectByName("personnage") as Object3D;
-	const shadow = scene.getObjectByName("ombre") as Mesh<
-		BufferGeometry,
-		MeshBasicMaterial
-	>;
+	const { scene, camera, pose, shadow } = stageOf(figure, pedestal);
 	const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 	const listening = new AbortController();
 	const resize = new ResizeObserver(() =>

@@ -43,16 +43,22 @@ const SHADOW_GAP = 0.001; // au-dessus du disque, sans s'y mêler
 const PAINT = { roughness: 0.45, clearcoat: 0.55, clearcoatRoughness: 0.35 };
 const MATTE = { roughness: 0.8 };
 
+/** Une scène de `stageOf`, sa caméra, et ce qu'une scène animée en fait bouger. */
+export interface Stage {
+	scene: Scene;
+	camera: PerspectiveCamera;
+	/** Le groupe qui porte le personnage, nommé `"personnage"`. */
+	pose: Group;
+	/** L'ombre douce du personnage sur le socle, nommée `"ombre"`. */
+	shadow: Mesh<CircleGeometry, MeshBasicMaterial>;
+}
+
 /**
  * La scène d'une vignette et sa caméra, pour une image carrée : `figure`, le modèle d'une classe,
- * dans la pose `"personnage"`, tournée de `TURN` et posée à `pedestal.lift` au-dessus de son socle,
- * où son ombre douce s'appelle `"ombre"` ; sous un ciel et deux lampes, sans ombre portée.
- * `release` la libère.
+ * dans sa pose, tournée de `TURN` et posée à `pedestal.lift` au-dessus de son socle, où se pose son
+ * ombre douce ; sous un ciel et deux lampes, sans ombre portée. `release` la libère.
  */
-export function stageOf(
-	figure: Object3D,
-	pedestal: Pedestal,
-): { scene: Scene; camera: PerspectiveCamera } {
+export function stageOf(figure: Object3D, pedestal: Pedestal): Stage {
 	const pose = new Group().add(figure);
 	pose.name = "personnage";
 	pose.position.y = pedestal.lift;
@@ -62,16 +68,18 @@ export function stageOf(
 		sun.position.fromArray(position);
 		return sun;
 	});
+	const stand = pedestalOf(pedestal);
+	const shadow = shadowOn(pedestal.top);
 	const scene = new Scene().add(
 		pose,
-		pedestalOf(pedestal),
+		stand.add(shadow),
 		new HemisphereLight(SKY, GROUND, HEMISPHERE),
 		...suns,
 	);
 	const camera = new PerspectiveCamera(FIELD_OF_VIEW, 1, 0.1, 100); // image carrée
 	camera.position.set(...CAMERA);
 	camera.lookAt(...TARGET);
-	return { scene, camera };
+	return { scene, camera, pose, shadow };
 }
 
 /**
@@ -92,8 +100,7 @@ export function release(scene: Scene): void {
 
 /**
  * Le socle de figurine (direction artistique § 5, « Sol ») : la base, tronc de cône sombre dont le
- * dessus est en y = 0, le disque du dessus à la couleur de la classe, et l'ombre douce du
- * personnage.
+ * dessus est en y = 0, et le disque du dessus à la couleur de la classe.
  */
 function pedestalOf({ base, top }: Pedestal): Group {
 	const trunk = new Mesh(
@@ -113,14 +120,13 @@ function pedestalOf({ base, top }: Pedestal): Group {
 	);
 	disc.name = "dessus";
 	disc.position.y = top.centerY;
-	const shadow = shadowOf();
-	shadow.position.y = top.centerY + top.thickness / 2 + SHADOW_GAP;
-	return new Group().add(trunk, disc, shadow);
+	return new Group().add(trunk, disc);
 }
 
-// Un disque noir à plat, opaque de `SHADOW_ALPHA` en son centre, premier sommet de `CircleGeometry`,
-// transparent sur son bord : l'opacité décroît avec la distance au centre.
-function shadowOf(): Mesh {
+// L'ombre douce du personnage, juste sur le disque du dessus `top` : un disque noir à plat, opaque
+// de `SHADOW_ALPHA` en son centre, premier sommet de `CircleGeometry`, transparent sur son bord ;
+// l'opacité décroît avec la distance au centre.
+function shadowOn(top: Pedestal["top"]): Stage["shadow"] {
 	const geometry = new CircleGeometry(SHADOW, SEGMENTS).rotateX(-Math.PI / 2);
 	const colors = new Float32Array(geometry.getAttribute("position").count * 4);
 	colors[3] = SHADOW_ALPHA;
@@ -134,5 +140,6 @@ function shadowOf(): Mesh {
 		}),
 	);
 	shadow.name = "ombre";
+	shadow.position.y = top.centerY + top.thickness / 2 + SHADOW_GAP;
 	return shadow;
 }
