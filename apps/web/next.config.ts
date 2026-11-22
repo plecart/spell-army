@@ -11,11 +11,12 @@ if (existsSync(ROOT_ENV)) {
 }
 
 // Les pages du site, servies par le CDN de Vercel : une réponse y reste fraîche 30 min, puis y est
-// servie périmée 30 min de plus pendant qu'il la revalide. Aucune n'a donc plus d'une heure, et une
-// recrue importée au tic horaire (ADR 0002) apparaît dans l'heure. `Vercel-CDN-Cache-Control` ne
-// règle que ce CDN, sans toucher au `Cache-Control` que reçoit le navigateur (doc Vercel « CDN
-// cache », citée au briefing de la PR #39).
-const CDN_CACHED_PAGES = ["/", "/informations"];
+// servie périmée 30 min de plus pendant qu'il la revalide. Aucune n'a donc plus d'une heure : une
+// recrue importée au tic horaire (ADR 0002) apparaît dans l'heure, et une recrue retirée disparaît
+// dans l'heure de l'annuaire comme de sa fiche. `Vercel-CDN-Cache-Control` ne règle que ce CDN,
+// sans toucher au `Cache-Control` que reçoit le navigateur (doc Vercel « CDN cache », citée au
+// briefing de la PR #39).
+const CDN_CACHED_PAGES = ["/", "/informations", "/recrues/:identifiant"];
 const CDN_CACHE = {
 	key: "Vercel-CDN-Cache-Control",
 	value: "max-age=1800, stale-while-revalidate=1800",

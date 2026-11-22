@@ -7,13 +7,14 @@ const CDN_CACHE = {
 };
 
 describe("cache du CDN", () => {
-	test("l'annuaire et « Informations » sont servis par le CDN de Vercel, aucune réponse n'y passant plus d'une heure", async () => {
+	test("l'annuaire, « Informations » et la fiche d'une recrue sont servis par le CDN de Vercel, aucune réponse n'y passant plus d'une heure", async () => {
 		// La config charge le `.env` de la racine à son import : rien du poste n'entre dans le test.
 		vi.spyOn(process, "loadEnvFile").mockImplementation(() => {});
 		const { default: nextConfig } = await import("../next.config.ts");
 		expect(await nextConfig.headers?.()).toEqual([
 			{ source: "/", headers: [CDN_CACHE] },
 			{ source: "/informations", headers: [CDN_CACHE] },
+			{ source: "/recrues/:identifiant", headers: [CDN_CACHE] },
 		]);
 	});
 });
