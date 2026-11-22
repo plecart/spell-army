@@ -4,6 +4,7 @@ import { databaseTestConfig } from "./test/vitest-config.ts";
 export default databaseTestConfig([
 	"test/derive-du-schema.test.ts",
 	"test/docker-unreachable.test.ts",
+	"test/env-des-scripts.test.ts",
 	"test/exception-audit.test.ts",
 	"test/migrate-command.test.ts",
 	"test/refus-dependabot.test.ts",
