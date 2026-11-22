@@ -29,7 +29,8 @@ const MAX_STEP = 100;
  * doigt (`touch-action`, `globals.css`).
  *
  * @returns la fonction qui arrête la scène, retire le canvas et libère scène et moteur.
- * @throws sans modèle ou sans WebGL, avant d'avoir rien posé dans `frame`.
+ * @throws sans modèle, sans WebGL, ou quand ce qui précède le moteur lève (`ResizeObserver`
+ * absent, par exemple), sans rien laisser : ni canvas dans `frame` ni contexte WebGL.
  */
 export async function startLiveScene(
 	frame: HTMLElement,
@@ -38,8 +39,6 @@ export async function startLiveScene(
 	const { scene: figure } = await new GLTFLoader().loadAsync(
 		`/api/modeles/${classKey}`,
 	);
-	const renderer = new WebGLRenderer({ alpha: true, antialias: true });
-	renderer.setPixelRatio(Math.min(devicePixelRatio, MAX_PIXEL_RATIO));
 	const pedestal = PEDESTALS[classKey];
 	const { scene, camera } = stageOf(figure, pedestal);
 	// La pose et l'ombre, nommées par `stageOf`.
@@ -48,20 +47,25 @@ export async function startLiveScene(
 		BufferGeometry,
 		MeshBasicMaterial
 	>;
-	const canvas = renderer.domElement;
-	const listening = new AbortController();
-	const drag = dragOn(canvas, listening.signal);
 	const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+	const listening = new AbortController();
 	const resize = new ResizeObserver(() =>
 		renderer.setSize(frame.clientWidth, frame.clientWidth, false),
 	);
+	// Le moteur vient après ce qui peut lever sans lui (`stageOf`, `matchMedia`, `ResizeObserver`) :
+	// il prend un contexte WebGL, que seul l'arrêt rend.
+	const renderer = new WebGLRenderer({ alpha: true, antialias: true });
+	renderer.setPixelRatio(Math.min(devicePixelRatio, MAX_PIXEL_RATIO));
+	const canvas = renderer.domElement;
+	const drag = dragOn(canvas, listening.signal);
 
-	// Le temps du mouvement, en secondes.
+	// Le temps du mouvement, en secondes, et l'instant de l'image précédente : la première image
+	// pose le personnage au repos.
 	let seconds = 0;
-	let last = performance.now();
+	let last: number | undefined;
 	renderer.setAnimationLoop((now) => {
 		if (!drag.held) {
-			seconds += Math.min(now - last, MAX_STEP) / 1000;
+			seconds += Math.min(now - (last ?? now), MAX_STEP) / 1000;
 		}
 		last = now;
 		const { turn, lift, shadowScale, shadowOpacity } = poseAt(

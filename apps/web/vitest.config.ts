@@ -11,6 +11,7 @@ export default databaseTestConfig([
 	"test/fiche-ecran.test.tsx",
 	"test/fiche-fermeture.test.ts",
 	"test/fiche-mouvement.test.ts",
+	"test/fiche-scene-vivante.test.ts",
 	"test/fiche-verdict.test.ts",
 	"test/image.test.ts",
 	"test/informations.test.tsx",
