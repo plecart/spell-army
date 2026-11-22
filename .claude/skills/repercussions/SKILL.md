@@ -1,6 +1,6 @@
 ---
 name: repercussions
-description: À la clôture d'une issue (PR mergée), corrige la planification des autres issues ouvertes que cette clôture a rendues fausses — hypothèses caduques, contrats déplacés, périmètres déjà couverts, ordres de dépendance. Le livrable est une édition de la spec des issues impactées — corps et brief d'agent — jamais un commentaire. À utiliser juste après un merge qui ferme une issue, ou « vérifie l'impact de cette issue sur les autres ». Aussi au merge d'une PR d'amendement ouverte par `contradiction`. Aussi au merge d'une PR de lot léger intermédiaire, dont l'issue reste en vol et ne s'édite pas.
+description: À la clôture d'une issue (PR mergée), corrige la planification des autres issues ouvertes que cette clôture a rendues fausses — hypothèses caduques, contrats déplacés, périmètres déjà couverts, ordres de dépendance. Le livrable est une édition de la spec des issues impactées — corps et brief d'agent — jamais un commentaire. Signale aussi ce que le générateur d'une documentation dérivée (le wiki) ne couvre pas. À utiliser juste après un merge qui ferme une issue, ou « vérifie l'impact de cette issue sur les autres ». Aussi au merge d'une PR d'amendement ouverte par `contradiction`. Aussi au merge d'une PR de lot léger intermédiaire, dont l'issue reste en vol et ne s'édite pas.
 argument-hint: "[#issue fermée | #PR d'amendement | #PR de lot léger] [bloc d'arrêt et contradiction soldée : <sortie>]"
 ---
 
@@ -117,6 +117,25 @@ mentionner :
 Chaque ancre doit provenir du diff ou d'une décision écrite. **Une ancre qu'on ne peut pas
 rattacher à un fait du delta n'est pas une ancre.**
 
+#### Confronter le delta à la documentation dérivée
+
+Avant l'arrêt possible de la sous-section suivante, que le chemin de reprise saute (« les étapes
+2 à 7 suivent ») : jouée ici, elle l'est aussi sur un merge qui contredit un document. Démarrée
+avec une ligne `contradiction soldée`, la session l'a déjà jouée à la passe interrompue : elle
+passe.
+
+La section « Documentation dérivée » de `.claude/pipeline.config.md` liste ce que des commandes du
+dépôt génèrent depuis les sources — le wiki du jeu. Ce n'est **pas** une source de vérité : un
+écart entre elle et le delta n'est jamais une contradiction `decisions-vs-doc`, et ce skill ne
+l'écrit jamais. Pour chaque documentation dérivée dont le delta touche une source :
+
+- **le générateur couvre déjà ce que le delta change** — une valeur, une ligne de tableau, un sort
+  d'une forme et d'un effet connus → rien à faire : sa publication la régénère ;
+- **le delta ajoute ce que le générateur ignore** — nouvelle classe, nouvelle forme ou nouvel effet
+  de sort, nouveau type de contenu (un bestiaire) → c'est un **vide** à combler, rangé par
+  « Création d'issues en cours de cycle » (`.claude/rules/contraintes.md`) : critère d'une issue
+  ouverte qui possède le sujet, sinon brouillon montré au mainteneur.
+
 #### Confronter d'abord le delta aux sources de vérité
 
 Les issues sont le **dernier rang** de la table « Sources de vérité » de
@@ -153,20 +172,6 @@ deux citations — et de
 nomme (`contradiction`, étape 5) : la passe reprend, les étapes 2 à 7 suivent, QA comprise.
 Démarrée par une autre, cette session-ci prévient alors son parent (étape 6). Ce skill **n'amende
 jamais un document lui-même**.
-
-#### Confronter le delta à la documentation dérivée
-
-La section « Documentation dérivée » de `.claude/pipeline.config.md` liste ce que des commandes du
-dépôt génèrent depuis les sources — le wiki du jeu. Ce n'est **pas** une source de vérité : un
-écart entre elle et le delta n'est jamais une contradiction `decisions-vs-doc`, et ce skill ne
-l'écrit jamais. Pour chaque documentation dérivée dont le delta touche une source :
-
-- **le générateur couvre déjà ce que le delta change** — une valeur, une ligne de tableau, un sort
-  d'une forme et d'un effet connus → rien à faire : sa publication la régénère ;
-- **le delta ajoute ce que le générateur ignore** — nouvelle classe, nouvelle forme ou nouvel effet
-  de sort, nouveau type de contenu (un bestiaire) → c'est un **vide** à combler, rangé par
-  « Création d'issues en cours de cycle » (`.claude/rules/contraintes.md`) : critère d'une issue
-  ouverte qui possède le sujet, sinon brouillon montré au mainteneur.
 
 ### 2. Sélectionner les issues à examiner
 

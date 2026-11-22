@@ -182,7 +182,7 @@ automatiquement sur sa description.
 | `/interroge-moi` | Lever les ambiguïtés d'un plan |
 | `/cycle-pr` | Cycle complet d'une PR (TDD → merge) |
 | `/contradiction` | Une décision contredit la doc → amende le document, puis propage |
-| `/repercussions` | Impact d'un merge sur les sources de vérité (→ `contradiction`), puis sur les issues ouvertes |
+| `/repercussions` | Impact d'un merge sur les sources de vérité (→ `contradiction`) et la documentation dérivée, puis sur les issues ouvertes |
 | `/pr-paralleles` | Plusieurs PR en parallèle (worktrees), vague préparée si trop peu d'issues sont prêtes |
 | `/plan-qa` | Écrire un plan de QA |
 | `/execution-qa` | Dérouler le plan de QA |
