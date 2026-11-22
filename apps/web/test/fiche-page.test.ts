@@ -1,8 +1,16 @@
+import { readdirSync, readFileSync } from "node:fs";
 import { excludedPlayers } from "donnees";
 import { createMigratedDatabase } from "donnees/test/base-de-test";
 import { writePage } from "joueurs";
 import { idsOf } from "personnages/test/identifiants";
+import {
+	Children,
+	isValidElement,
+	type ReactElement,
+	type ReactNode,
+} from "react";
 import { describe, expect, inject, onTestFinished, test, vi } from "vitest";
+import type { SheetClose } from "../app/fiche/sheet.tsx";
 import { elementsOf, render, textOf } from "./balisage.ts";
 
 // Les pages s'appellent ici comme des fonctions, hors d'une requête et du routeur de Next.js, où
@@ -38,27 +46,70 @@ async function importPages() {
 
 type Pages = Awaited<ReturnType<typeof importPages>>["pages"];
 
+/** L'élément que rend la page `name` de la fiche de `identifiant`. */
+function pageOf(pages: Pages, name: keyof Pages, identifiant: string) {
+	return pages[name]({
+		params: Promise.resolve({ identifiant }),
+		searchParams: Promise.resolve({}),
+	});
+}
+
 /** La page `name` de la fiche de `identifiant`, rendue. */
 async function renderPage(
 	pages: Pages,
 	name: keyof Pages,
 	identifiant: string,
 ) {
-	return render(
-		await pages[name]({
-			params: Promise.resolve({ identifiant }),
-			searchParams: Promise.resolve({}),
-		}),
-	);
+	return render(await pageOf(pages, name, identifiant));
+}
+
+/**
+ * Les destinations de fermeture que porte l'élément `page`, lues sur la prop `onClose` de sa racine
+ * et de ses enfants directs : la feuille de la fiche, seule ou dans le fragment de la page.
+ */
+function closesOf(page: ReactElement<{ children?: ReactNode }>): SheetClose[] {
+	return [page, ...Children.toArray(page.props.children)]
+		.filter(isValidElement<{ onClose?: SheetClose }>)
+		.flatMap((element) => element.props.onClose ?? []);
+}
+
+/**
+ * Les fichiers d'`app/` dont le balisage rend la feuille de la fiche, `<FicheSheet`, en chemins à
+ * barres obliques.
+ */
+function fichePageFiles(): string[] {
+	const app = new URL("../app/", import.meta.url);
+	return readdirSync(app, { recursive: true, encoding: "utf8" })
+		.map((path) => path.replaceAll("\\", "/"))
+		.filter(
+			(path) =>
+				path.endsWith(".tsx") &&
+				readFileSync(new URL(path, app), "utf8").includes("<FicheSheet"),
+		)
+		.sort();
 }
 
 // La recrue des tests, et une autre de l'annuaire.
 const [RECRUIT = "", OTHER = ""] = idsOf("vampire", 2);
 
-describe.each<[keyof Pages, string]>([
-	["direct", "ouverte directement"],
-	["intercepted", "ouverte d'un clic"],
-])("fiche %s (%s)", (name) => {
+describe.each<[keyof Pages, string, SheetClose]>([
+	["direct", "ouverte directement", "home"],
+	["intercepted", "ouverte d'un clic", "back"],
+])("fiche %s (%s)", (name, _, close) => {
+	/**
+	 * Où se referme la feuille : en arrière, à l'annuaire laissé dans son état (fiche ouverte d'un
+	 * clic), ou vers `/` (fiche ouverte d'un lien partagé, sans annuaire derrière elle). Source : les
+	 * pages qui rendent la feuille de la fiche, relevées par `git grep -n "onClose" apps/web/app` le
+	 * 2026-11-22 : 2 recensées ; avant ce test, 2 restaient vertes, leur destination inversée
+	 * (mutation de la passe 2 de relecture de l'issue #18). Le test « seules les deux pages de la
+	 * table… » recompte la population à chaque exécution.
+	 */
+	test(`se referme vers « ${close} »`, async () => {
+		const { pages, db } = await importPages();
+		await writePage(db, [{ id: RECRUIT, username: "nathan_croque" }]);
+		expect(closesOf(await pageOf(pages, name, RECRUIT))).toEqual([close]);
+	});
+
 	test("une recrue visible : sa fiche, dans une feuille que nomme son titre", async () => {
 		const { pages, db } = await importPages();
 		await writePage(db, [{ id: RECRUIT, username: "nathan_croque" }]);
@@ -98,6 +149,13 @@ describe.each<[keyof Pages, string]>([
 			NOT_FOUND,
 		);
 	});
+});
+
+test("seules les deux pages de la table rendent la feuille de la fiche", () => {
+	expect(fichePageFiles()).toEqual([
+		"@fiche/(.)recrues/[identifiant]/page.tsx",
+		"recrues/[identifiant]/page.tsx",
+	]);
 });
 
 test("ouverte directement, la fiche se pose sur l'annuaire à sa page 1, sans filtre", async () => {
