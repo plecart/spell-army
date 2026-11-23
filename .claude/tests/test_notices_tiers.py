@@ -23,7 +23,7 @@ def skills_publics_versionnes() -> list[str]:
     verrou = json.loads((RACINE / "skills-lock.json").read_text(encoding="utf-8"))
     suivis = subprocess.run(
         ["git", "ls-files", ".claude/skills"],
-        cwd=RACINE, capture_output=True, text=True, check=True,
+        cwd=RACINE, capture_output=True, text=True,
     ).stdout.splitlines()
     return [nom for nom in verrou["skills"] if any(f.startswith(f".claude/skills/{nom}/") for f in suivis)]
 
