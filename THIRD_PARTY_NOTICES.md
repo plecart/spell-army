@@ -12,7 +12,9 @@ ils restent sous la licence de leur auteur, rappelée ici.
 | `.claude/skills/prototype/` | [emilkowalski/skills](https://github.com/emilkowalski/skills) | MIT, © 2026 Emil Kowalski | aucune depuis sa copie ; peut différer de la version actuelle d'origine |
 | `.claude/skills/find-skills/` | [vercel-labs/skills](https://github.com/vercel-labs/skills) | MIT, © 2026 Vercel, Inc. | aucune |
 | `.claude/skills/vercel-react-best-practices/` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | MIT, déclarée par son `SKILL.md` (auteur : Vercel) | aucune depuis sa copie |
+| `.claude/skills/information-architecture/` | [Owl-Listener/designer-skills](https://github.com/Owl-Listener/designer-skills) @ `9a6930cf` | MIT, © 2026 MC Dean | aucune |
 | `.claude/skills/mcp-builder/` | [anthropics/skills](https://github.com/anthropics/skills) | Apache 2.0, texte dans son `LICENSE.txt` | aucune |
+| `.claude/skills/writing-documentation-with-diataxis/` | [sammcj/agentic-coding](https://github.com/sammcj/agentic-coding) @ `db804955` | Apache 2.0, même texte que `.claude/skills/mcp-builder/LICENSE.txt` | aucune |
 | `.claude/skills/task-observer/` | [rebelytics/one-skill-to-rule-them-all](https://github.com/rebelytics/one-skill-to-rule-them-all/), par Eoghan Henn / rebelytics.com | CC BY 4.0, texte dans son `LICENSE.txt` | aucune depuis sa copie ; version antérieure à l'actuelle du dépôt d'origine |
 | `.claude/skills/schema-architecture/icones/lucide/` | [Lucide](https://lucide.dev) | ISC, texte dans son `LICENSE` | aucune |
 | `.claude/skills/schema-architecture/icones/simple-icons/` | [Simple Icons](https://simpleicons.org) | CC0 1.0, texte dans son `LICENSE` ; les logos restent des marques de leurs propriétaires | aucune |
@@ -24,7 +26,7 @@ n'est pas versionné : il se réinstalle depuis `skills-lock.json`.
 
 ## Texte de la licence MIT
 
-S'applique aux fichiers des six premières lignes du tableau, sous les mentions de droit d'auteur
+S'applique aux fichiers des sept premières lignes du tableau, sous les mentions de droit d'auteur
 suivantes :
 
 ```
@@ -33,6 +35,7 @@ Copyright (c) 2026 Donchitos
 Copyright (c) 2026 Peter Yang
 Copyright (c) 2026 Emil Kowalski
 Copyright (c) 2026 Vercel, Inc.
+Copyright (c) 2026 MC Dean
 ```
 
 ```
