@@ -1,6 +1,6 @@
 # Wizard Army — Cadrage
 
-État au 2026-11-21. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
+État au 2026-11-23. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
 le [game design](../game-design.md) et la [direction artistique](../direction-artistique.md) en détaillent des parties ; il sert de source au PRD.
 
 Trois statuts, à ne pas confondre :
@@ -16,6 +16,7 @@ Trois statuts, à ne pas confondre :
   une vidéo qui met en avant de vrais abonnés.
 - **La devise** : rapide et efficace. Projet de loisir, pas de perfection, peu de tokens.
 - **Les deux objectifs d'apprentissage** : les MCP et Vercel.
+- **Le nom** : Spellarmy. Compte Instagram de prod `@spellarmy`, domaine `spellarmy.com`.
 - **Deux phases** : (1) joueurs, personnages, moteur de combat, site ; (2) vidéo.
 - **Deux environnements** : pré-prod sur le compte Instagram personnel du mainteneur (public),
   prod sur un compte neuf dédié.
@@ -87,7 +88,7 @@ Trois statuts, à ne pas confondre :
 | Cloudflare | DNS seul avec DNSSEC. La sécurité est portée par Vercel, tous les leviers du plan gratuit activés. | Décidé |
 | Pré-prod et prod | Toutes deux visibles en public. La pré-prod montre les personnages issus des abonnés du compte personnel du mainteneur et renvoie vers ce compte ; la prod, ceux du compte dédié. | Décidé |
 | Bandeau bêta | La pré-prod affiche un bandeau « bêta » pour qu'on ne la confonde pas avec la prod. Il est piloté par une variable d'environnement, pas par du code propre à chaque environnement. | Décidé |
-| Nom de domaine | Un domaine entièrement au nom du projet : aucune adresse Vercel visible par le public. Acheté chez Cloudflare Registrar ; le nom reste à choisir ([ADR 0004](../adr/0004-environnements-domaine-et-securite.md)). | Décidé |
+| Nom de domaine | Un domaine entièrement au nom du projet : aucune adresse Vercel visible par le public. `spellarmy.com`, acheté chez Cloudflare Registrar le 2026-11-23 ([ADR 0004](../adr/0004-environnements-domaine-et-securite.md)). | Décidé |
 | Secrets | Tout ce qui est sensible (jetons, mots de passe des comptes, codes de récupération) est conservé dans KeePassXC, qui fait référence. Aucun secret dans le dépôt, dans une issue ou dans une conversation. En fin de projet, le mainteneur sauvegarde la base sur un disque externe. | Décidé |
 
 ### Modèles 3D
@@ -120,7 +121,6 @@ Règle générale : un outil cité par le mainteneur s'installe et s'essaie avan
 | Design final des personnages, des monstres et des visuels de sort | Avant leur fabrication | mainteneur, avec ses références |
 | Histoire des 30 monstres ; que faire après le 30e | Game design | mainteneur |
 | Type du compte de prod (professionnel ou personnel) | Après l'essai réel | — |
-| Nom de domaine : lequel | Avant la mise en ligne | mainteneur |
 
 Tranchés depuis :
 
@@ -135,6 +135,7 @@ Tranchés depuis :
   ses propres points ouverts (§ 9).
 - Où acheter le domaine (Cloudflare Registrar) et pré-prod sur deux projets Vercel :
   [ADR 0004](../adr/0004-environnements-domaine-et-securite.md).
+- Nom du jeu et domaine : Spellarmy, `spellarmy.com` ([ADR 0004](../adr/0004-environnements-domaine-et-securite.md)).
 
 ## 4. À vérifier par l'essai réel du fournisseur
 

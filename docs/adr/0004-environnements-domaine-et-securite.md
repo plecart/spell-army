@@ -1,6 +1,6 @@
 # ADR 0004 — Environnements, domaine et sécurité
 
-- **Statut** : accepté le 2026-11-15. Le nom de domaine reste à choisir. Précisé le 2026-11-22 : la ligne « Saisie » nomme `WIKI_DATABASE_URL`, secret de lecture du wiki (#43).
+- **Statut** : accepté le 2026-11-15. Précisé le 2026-11-22 : la ligne « Saisie » nomme `WIKI_DATABASE_URL`, secret de lecture du wiki (#43). Précisé le 2026-11-23 : domaine `spellarmy.com`.
 - **Source** : `docs/etudes/00-cadrage.md` § 1 et § 2 « Architecture » ; étude
   `08-securite-cloudflare-vercel.md`
 
@@ -23,7 +23,7 @@ deux pièges, au prix de deux réglages à tenir.
 | Sujet | Décision | Origine |
 |---|---|---|
 | Domaine | Un domaine entièrement au nom du projet : aucune adresse Vercel visible du public. Un sous-domaine de `pacome.dev` est donc exclu. | Décidé (cadrage) |
-| Registrar | Cloudflare Registrar, au prix coûtant. Le mainteneur achète lui-même. **Le nom reste à choisir.** | Accepté le 2026-11-15 |
+| Registrar | Cloudflare Registrar, au prix coûtant. Le mainteneur achète lui-même. Domaine : `spellarmy.com`, acheté le 2026-11-23, DNSSEC lancé par Cloudflare à l'achat. | Accepté le 2026-11-15 |
 | Adresses | Prod sur le domaine nu, `www` redirigé vers lui ; pré-prod sur `beta.<domaine>`. | Accepté le 2026-11-15 |
 | DNS | Cloudflare en DNS seul (nuage gris), avec DNSSEC. Aucun proxy devant Vercel. | Décidé (cadrage) |
 | Adresse `.vercel.app` | Elle ne peut pas être supprimée. Dans chaque projet, une redirection permanente (308), limitée à l'hôte `.vercel.app` de production, envoie vers le domaine en gardant le chemin. Les autres adresses générées restent derrière la protection. | Accepté le 2026-11-15 |
@@ -75,9 +75,9 @@ Tous les leviers du plan gratuit sont activés (cadrage, Décidé) :
   Source : réponse d'un employé sur le
   [forum Vercel](https://community.vercel.com/t/enabling-dnssec-for-domains-purchased-through-vercel/32427),
   le 2026-01-30, sans calendrier au 2026-04-07. C'est un forum, pas la documentation.
+- `.com` et `.army` vendus par Cloudflare Registrar, lus à l'écran par le mainteneur le 2026-11-23.
 
 ## Non vérifié
 
 - Le lien entre DNSSEC et le statut de proxy (la page Cloudflare n'en dit rien) : sans effet ici,
   puisque le proxy est coupé.
-- Les extensions de domaine vendues par Cloudflare Registrar : à voir au moment de choisir le nom.
