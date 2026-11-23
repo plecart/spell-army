@@ -110,6 +110,7 @@ Trois statuts, à ne pas confondre :
 | claude-code-game-studios | Installé au moment de finaliser le game design ; retiré s'il ne fait pas évoluer l'idée. | Décidé |
 | MCP Vercel, `mcp-builder`, skills Vercel/React | Installés au setup. MCP Neon reporté : pas de compte Neon au moment du setup. | Proposé |
 | Outils vidéo et son (Remotion et ses skills officiels, `Remocn/remocn`, `Jakeschincariol/instagram-agent-skill`, `mromidev/claude-animated-shorts`, Openverse, earshot, Real SFX, etc.) | Étudiés et essayés ensemble en phase 2, au moment de choisir ; rien n'est installé avant. Premier avis du 2026-11-16, à reprendre alors : remocn composant par composant, sans son plugin ni son serveur MCP ; d'`instagram-agent-skill`, seulement `ig-reel` et `ig-caption` ; `claude-animated-shorts` n'est pas encore évalué. | Décidé |
+| `information-architecture` (owl-listener), `writing-documentation-with-diataxis` (sammcj) | Installés le 2026-11-23 au niveau du projet, pour cadrer la refonte du wiki du jeu : architecture de l'information (plan, navigation, intitulés) et classement Diátaxis des pages. | Décidé |
 | UniRig, `achimala/dream-loop` | Non installés après lecture, le 2026-11-16. UniRig exige une carte Nvidia et le poste a une carte AMD : à reprendre seulement si un service hébergé convient. `dream-loop` est écrit pour Codex et demande un outil de génération d'images : à essayer à la direction artistique si le mainteneur le souhaite. | Proposé |
 
 Règle générale : un outil cité par le mainteneur s'installe et s'essaie avant d'être écarté.

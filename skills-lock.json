@@ -15,6 +15,14 @@
       "computedHash": "7bc223e2aafbdbf6e50ea243ba6ef67fe432bb069ab439fea0390795dac0bf7f",
       "installMode": "copy"
     },
+    "information-architecture": {
+      "source": "Owl-Listener/designer-skills",
+      "commit": "9a6930cf84a822eb458624bd11c61aac5bbdf224",
+      "sourceType": "github",
+      "skillPath": "ux-strategy/skills/information-architecture/SKILL.md",
+      "computedHash": "072cd213ecb30ad7aed7c3d2e4b7b3db904a9932b4460a6c60220122cab99725",
+      "installMode": "copy"
+    },
     "mcp-builder": {
       "source": "anthropics/skills",
       "sourceType": "github",
@@ -41,6 +49,14 @@
       "sourceType": "github",
       "skillPath": "skills/react-best-practices/SKILL.md",
       "computedHash": "7991ed4fbecdac23f47c1a40c243e00a212a9e7f3604db93959b3ae11dffe299",
+      "installMode": "copy"
+    },
+    "writing-documentation-with-diataxis": {
+      "source": "sammcj/agentic-coding",
+      "commit": "db804955cb774c75ad2b298d06fa6f1956861f57",
+      "sourceType": "github",
+      "skillPath": "Skills_disabled/diataxis-documentation/SKILL.md",
+      "computedHash": "2defc356c39383b119b33a36954baa8db679b01fcdc4a15b4ed18cbac75415a0",
       "installMode": "copy"
     }
   }
