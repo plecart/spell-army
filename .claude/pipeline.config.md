@@ -125,7 +125,7 @@ avant la sortie du draft si elles dévient. Toute PR qui n'est pas l'œuvre d'un
 - Serveurs MCP (hors dépôt ; vérifier avec `claude mcp list`) :
   - `context7` — portée utilisateur
   - `vercel` — `https://mcp.vercel.com`, portée locale ; authentification OAuth à faire par le mainteneur via `/mcp`
-  - `neon` — `https://mcp.neon.tech/mcp?readonly=true`, lecture seule ; seule entrée Neon qui sert (ADR 0004, « Accès de Claude à Neon »)
+  - `neon` — `https://mcp.neon.tech/mcp?readonly=true`, lecture seule ; seule entrée Neon qui sert — le connecteur `claude.ai Neon`, en écriture, ne sert pas (ADR 0004, « Accès de Claude à Neon »)
 - Reportés :
   - outils vidéo et son (Remotion, Openverse, earshot, Real SFX…) — phase 2
   - MCP Playwright — plus tard, vérification visuelle du site (étude 02)
