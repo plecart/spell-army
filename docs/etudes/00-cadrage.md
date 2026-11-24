@@ -16,9 +16,11 @@ Trois statuts, à ne pas confondre :
   une vidéo qui met en avant de vrais abonnés.
 - **La devise** : rapide et efficace. Projet de loisir, pas de perfection, peu de tokens.
 - **Les deux objectifs d'apprentissage** : les MCP et Vercel.
-- **Le nom** : Spell Army, en deux mots, pour tout texte lu par une personne. Les identifiants
-  l'écrivent `spellarmy`, accroché : compte Instagram de prod `@spellarmy`, domaine `spellarmy.com`,
-  dépôt, paquet, serveur MCP, projets Neon, dossiers.
+- **Le nom** : Spell Army, en deux mots et deux majuscules, pour tout texte lu par une personne,
+  noms des dossiers locaux compris (`Spell Army`). Les identifiants l'écrivent en minuscules, les
+  deux mots liés par un tiret : `spell-army` pour le dépôt, le paquet, le serveur MCP, les projets
+  Neon, la team Vercel et le conteneur Docker. Compte Instagram de prod `@spell_army`, nom de profil
+  « Spell Army ». Domaine `spellarmy.com`.
 - **Deux phases** : (1) joueurs, personnages, moteur de combat, site ; (2) vidéo.
 - **Deux environnements** : pré-prod sur le compte Instagram personnel du mainteneur (public),
   prod sur un compte neuf dédié.
