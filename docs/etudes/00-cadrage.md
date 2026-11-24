@@ -16,7 +16,9 @@ Trois statuts, à ne pas confondre :
   une vidéo qui met en avant de vrais abonnés.
 - **La devise** : rapide et efficace. Projet de loisir, pas de perfection, peu de tokens.
 - **Les deux objectifs d'apprentissage** : les MCP et Vercel.
-- **Le nom** : Spellarmy. Compte Instagram de prod `@spellarmy`, domaine `spellarmy.com`.
+- **Le nom** : Spell Army, en deux mots, pour tout texte lu par une personne. Les identifiants
+  l'écrivent `spellarmy`, accroché : compte Instagram de prod `@spellarmy`, domaine `spellarmy.com`,
+  dépôt, paquet, serveur MCP, projets Neon, dossiers.
 - **Deux phases** : (1) joueurs, personnages, moteur de combat, site ; (2) vidéo.
 - **Deux environnements** : pré-prod sur le compte Instagram personnel du mainteneur (public),
   prod sur un compte neuf dédié.
@@ -137,7 +139,7 @@ Tranchés depuis :
   ses propres points ouverts (§ 9).
 - Où acheter le domaine (Cloudflare Registrar) et pré-prod sur deux projets Vercel :
   [ADR 0004](../adr/0004-environnements-domaine-et-securite.md).
-- Nom du jeu et domaine : Spellarmy, `spellarmy.com` ([ADR 0004](../adr/0004-environnements-domaine-et-securite.md)).
+- Nom du jeu et domaine : Spell Army, `spellarmy.com` ([ADR 0004](../adr/0004-environnements-domaine-et-securite.md)).
 
 ## 4. À vérifier par l'essai réel du fournisseur
 

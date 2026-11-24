@@ -112,7 +112,8 @@ Ce qui marche si on s'y prend bien : Full (strict), cache désactivé, chemins `
 
 - Nom de domaine et registrar : tranché le 2026-11-23, `spellarmy.com` chez Cloudflare Registrar. Le
   jeu a été renommé Spellarmy le 2026-11-22 : `wizardarmy.com` était pris et `@wizardarmy` pris sur
-  Instagram, et « Wizard » ne nommait qu'une classe sur huit.
+  Instagram, et « Wizard » ne nommait qu'une classe sur huit. Le 2026-11-24, le nom affiché passe à
+  « Spell Army » en deux mots (interrogatoire de #57) ; les identifiants restent `spellarmy`.
 - Quota de règles gratuites Cloudflare ; `checkRateLimit` sur Hobby face à la limite d'une règle [S].
 - DNSSEC et mode TLS d'origine du Portfolio : non tracés, à lire dans la console.
 - Verified Proxy Lite pour Cloudflare : pages Vercel contradictoires.
