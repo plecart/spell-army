@@ -61,6 +61,10 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 ## Qualité
 - seuil de couverture : aucun
 - règles sensibles à la plateforme : poste Windows, CI Linux — casse des chemins et fins de ligne, vérifiées en CI
+- pièges du poste, lus par les rôles et les scripts de la pipeline :
+  - sortie Python en cp1252 : Python écrit un tube dans la page de code du poste, et un texte accentué arrive illisible. Les scripts de la pipeline écrivent donc stdout et stderr en UTF-8, et une commande Python lancée à la main prend `PYTHONIOENCODING=utf-8`. Mesuré le 2026-11-24 : `sys.stdout.encoding` vaut `cp1252` dans un tube, et « en-tête » arrive avec l'octet `0xEA`
+  - heredoc de l'outil Bash et antislashs : un fichier écrit par `cat <<'EOF'` depuis l'outil Bash arrive avec ses antislashs divisés par deux. Un fichier qui doit porter un échappement se construit par programme (`chr(92)`), puis se recompte après écriture. Mesuré le 2026-11-24 : deux antislashs écrits à la suite, un seul arrivé
+  - `<rev>:<chemin>` : relevé dans le projet d'origine de la pipeline, où `git show main:<chemin>` rendait zéro octet en sortant en 0. Non reproduit ici le 2026-11-24 : `git show origin/main:CLAUDE.md` rend 13 566 octets, autant que `git cat-file -s`. Une sortie vide se recoupe par `git cat-file -s` avant de valoir absence
 - gates bloquants en CI : audit, lint, format:check, typecheck, dérive du schéma, test
 - services requis en CI : Docker, fourni par `ubuntu-latest`, pour la base de test (Postgres 18 jetable que le harnais de `packages/donnees` démarre lui-même, pour sa suite et celles de `packages/joueurs` et d'`apps/web`)
 
@@ -122,6 +126,7 @@ avant la sortie du draft si elles dévient. Toute PR qui n'est pas l'œuvre d'un
   - `writing-documentation-with-diataxis` — `sammcj/agentic-coding` (rangé chez l'auteur sous `Skills_disabled/`) ; cadre la refonte du wiki du jeu : classe chaque page en tutoriel, guide pratique, référence ou explication. Sa consigne « British English » ne vaut pas ici : le wiki s'écrit en français, comme le reste du projet (« Langue »). Se déclenche aussi seul sur une relecture de doc : ne remplace pas `audit-spec-ui` pour un document normatif
   - `balance-check`, avec l'agent `systems-designer` — `donchitos/claude-code-game-studios` @ `abc0de79`, copiés à la main le 2026-11-16 (hors `skills-lock.json`) et adaptés au projet : préambule `yaml-helper.sh` et renvois au framework retirés ; le reste du dépôt, essayé pendant le game design, a été retiré
 - Hors dépôt (portée utilisateur, pas dans `.claude/skills/`) : `agent-reach` — programme `uv tool` (vérifier avec `agent-reach version`), son skill lié dans `~/.claude/skills/agent-reach` par `agent-reach setup` ; canaux sans connexion seulement, canal `instagram` non ajouté (attend l'accord du mainteneur, compte Instagram secondaire conseillé)
+- RTK (hors dépôt, réglé sur le poste ; instructions dans `~/.claude/RTK.md`) : un hook réécrit les commandes de l'outil Bash (`grep` devient `rtk grep`) et résume leur sortie. La sortie brute se lit par `rtk proxy <commande>`. Une commande que la prose fait taper à un rôle se rejoue sous le hook avant d'être épinglée (`cycle-pr/references/tests.md`, « Frontières tierces »). Mesures datées : réécriture de `grep` observée le 2026-11-24 ; sortie de `rtk grep` tronquée qui cachait une case, `plan-qa`, passe de conformité, 2026-11-03
 - Serveurs MCP (hors dépôt ; vérifier avec `claude mcp list`) :
   - `context7` — portée utilisateur
   - `vercel` — `https://mcp.vercel.com`, portée locale ; authentification OAuth à faire par le mainteneur via `/mcp`
