@@ -1,6 +1,6 @@
 # Wizard Army — Cadrage
 
-État au 2026-11-23. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
+État au 2026-11-24. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
 le [game design](../game-design.md) et la [direction artistique](../direction-artistique.md) en détaillent des parties ; il sert de source au PRD.
 
 Trois statuts, à ne pas confondre :
@@ -108,7 +108,7 @@ Trois statuts, à ne pas confondre :
 | `/prototype` (Emil Kowalski), `taste-skill`, `no-ai-slop` | Installés au setup. | Décidé |
 | `agent-reach` | Installé au setup, pour lire le compte `@Game_feel_prompts`. Réserve : compte Instagram secondaire conseillé ; lecture des vidéos à vérifier à l'essai. | Décidé |
 | claude-code-game-studios | Installé au moment de finaliser le game design ; retiré s'il ne fait pas évoluer l'idée. | Décidé |
-| MCP Vercel, `mcp-builder`, skills Vercel/React | Installés au setup. MCP Neon reporté : pas de compte Neon au moment du setup. | Proposé |
+| MCP Vercel, `mcp-builder`, skills Vercel/React, `find-skills` | Installés au setup. MCP Neon reporté : pas de compte Neon au moment du setup. | Proposé |
 | Outils vidéo et son (Remotion et ses skills officiels, `Remocn/remocn`, `Jakeschincariol/instagram-agent-skill`, `mromidev/claude-animated-shorts`, Openverse, earshot, Real SFX, etc.) | Étudiés et essayés ensemble en phase 2, au moment de choisir ; rien n'est installé avant. Premier avis du 2026-11-16, à reprendre alors : remocn composant par composant, sans son plugin ni son serveur MCP ; d'`instagram-agent-skill`, seulement `ig-reel` et `ig-caption` ; `claude-animated-shorts` n'est pas encore évalué. | Décidé |
 | `information-architecture` (owl-listener), `writing-documentation-with-diataxis` (sammcj) | Installés le 2026-11-23 au niveau du projet, pour cadrer la refonte du wiki du jeu : architecture de l'information (plan, navigation, intitulés) et classement Diátaxis des pages. | Décidé |
 | UniRig, `achimala/dream-loop` | Non installés après lecture, le 2026-11-16. UniRig exige une carte Nvidia et le poste a une carte AMD : à reprendre seulement si un service hébergé convient. `dream-loop` est écrit pour Codex et demande un outil de génération d'images : à essayer à la direction artistique si le mainteneur le souhaite. | Proposé |
