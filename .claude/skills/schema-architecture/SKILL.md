@@ -134,7 +134,7 @@ n'ont Playwright : `uv` le tire dans son cache, hors de tout projet.
 ## Versions épinglées à la main
 
 Dependabot ne lit ni le `--with` de `uv run` ni les fichiers copiés : chaque version se monte à la
-main, comme celle de `.mcp.json` (`.claude/pipeline.config.md`, « Serveurs MCP »). Mesuré le
+main. Mesuré le
 2026-11-05 : `rendu/rough.js` et la police Shantell Sans sont identiques aux fichiers des adresses
 ci-dessous à leur version, la police Manrope à
 `https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggexSg.woff2`.
