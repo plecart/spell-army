@@ -113,12 +113,13 @@ Relevées dans `.claude/pipeline.config.md` : section « Qualité » pour cp1252
   `en-tête` est revenu `en-t�te`, octet `0xEA` dans le fichier de sortie.
 - **Heredoc et antislashs** — piège « heredoc de l'outil Bash et antislashs » de
   `.claude/pipeline.config.md`, « Qualité » : un fichier écrit par `cat <<'EOF'` depuis l'outil
-  Bash arrive avec ses antislashs divisés par deux, et l'outil Edit peut décoder un échappement en
-  route. Tu modifies les fichiers par l'outil Edit, jamais par un heredoc, puis tu recomptes chaque
+  Bash arrive avec ses antislashs divisés par deux, comme tout couple d'antislashs du texte d'une
+  commande. Tu modifies les fichiers par l'outil Edit, jamais par un heredoc, puis tu recomptes chaque
   fichier écrit — caractères `Cc`/`Cf` par `unicodedata.category`, nombre d'antislashs — et tu
   rends le recompte avec le `git diff`.
-- **`<rev>:<chemin>`** — l'outil Bash réécrit cet argument : `git show main:<chemin>` rend zéro
-  octet en sortant en 0. Une sortie vide n'est pas une preuve d'absence.
+- **`<rev>:<chemin>`** — relevé dans le projet d'origine (`git show main:<chemin>` y rendait zéro
+  octet en sortant en 0), non reproduit ici : une sortie vide se recoupe par `git cat-file -s`
+  avant de valoir absence.
 - **Commande de fond bornée** — toute commande susceptible de dépasser ~2 min part en arrière-plan
   avec un `timeout` ; une recherche se borne au dépôt (`git grep`, le worktree), jamais un `find`
   sur le disque. Les ~2 min sont le délai par défaut de l'outil Bash (120 000 ms, description de
