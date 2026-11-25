@@ -54,8 +54,8 @@ chaque réveil, jamais au lancement : la tête bouge entre deux passes.
 À chaque réveil, dans cet ordre :
 
 1. Les deux vérifications de `relecteur.md` — où suis-je, puis détachement sur le SHA reçu.
-2. `/code-review medium <n> --comment` — `medium`, le seul niveau mesuré (`pipeline.config.md`,
-   ligne « relecture ») ; le niveau qu'elle applique se lit dans l'en-tête de son prompt rendu et
+2. `/code-review medium <n> --comment` (`pipeline.config.md`, ligne « relecture » : passé `medium`,
+   l'en-tête rendu disait `high`, mesuré le 2026-11-25 sur la PR #70) ; le niveau qu'elle applique se lit dans l'en-tête de son prompt rendu et
    se rapporte dans le message de constats, la commande ne garantissant pas celui qu'on lui
    passe ; aux réveils suivants, le skill n'est pas rendu à nouveau (« already loaded above »,
    mesuré le 2026-10-20), donc le niveau ne se lit plus : se rapporte celui du premier
