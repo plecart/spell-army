@@ -19,7 +19,8 @@ deux tables est encore citée : une citation nouvelle rougit, une entrée périm
 formes, et donc hors de la garde : la citation nue d'un nom (« test-pipeline » si le delta la
 concerne) et le défaut d'un script (`label` de `mutation.py`).
 
-Lancement : `python -m pytest .claude/tests/test_commandes_declarees.py` (ligne `test-pipeline`).
+Lancement : `python -m pytest .claude/tests/test_commandes_declarees.py` (ligne `test-pipeline`, job
+`pipeline` de la CI).
 """
 
 import re

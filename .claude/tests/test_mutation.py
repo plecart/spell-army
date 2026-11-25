@@ -1,6 +1,6 @@
 """Contrat de `project_command` (`cycle-pr/scripts/mutation.py`) sur les deux formes de config.
 
-Lancement : `python -m pytest .claude/tests/test_mutation.py` (pytest, hors CI du projet).
+Lancement : `python -m pytest .claude/tests/test_mutation.py` (ligne `test-pipeline`, job `pipeline` de la CI).
 """
 
 import sys

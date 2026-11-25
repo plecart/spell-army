@@ -1,6 +1,7 @@
 # CI du dépôt : les portes bloquantes de `.claude/pipeline.config.md` (« Qualité ») — audit, lint,
-# format:check, typecheck, dérive du schéma, test — plus le build, chacune lancée par sa commande
-# de « Commandes du projet ». Généré depuis le modèle du boilerplate selon `init-projet` (étape 7).
+# format:check, typecheck, dérive du schéma, test, test-pipeline (job `pipeline`) — plus le build,
+# chacune lancée par sa commande de « Commandes du projet ». Généré depuis le modèle du boilerplate
+# selon `init-projet` (étape 7).
 #
 # Le garde `if:`, `concurrency` et le pas « Fusion explicite du trunk » se conservent : `cycle-pr`
 # en dépend (Étapes 5 et 7). Tout job ajouté qui tourne sur une PR extrait la tête comme le job
@@ -179,3 +180,33 @@ jobs:
         run: |
           commits=$(git log --no-mailmap -i -F --author='<noreply@anthropic.com>' --format='%h %s' HEAD^1..HEAD^2)
           if [ -n "$commits" ]; then echo "$commits"; exit 1; fi
+
+  pipeline:
+    name: Tests de la pipeline
+    runs-on: ubuntu-latest
+
+    # La ligne `test-pipeline` de `.claude/pipeline.config.md`, sans pnpm ni filtre de chemins : un
+    # delta sur la pipeline ne passe pas la CI sans ses tests. Hors draft comme le job `ci`, et hors
+    # de l'horloge de l'audit comme ses portes de code.
+    if: >-
+      (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+      && github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - *fusion
+
+      # Python 3.12, celui du poste (« Stack ») ; pytest à la version du poste.
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Installer pytest
+        run: pip install pytest==8.3.4
+
+      - name: Tests de la pipeline
+        run: python -m pytest .claude -q

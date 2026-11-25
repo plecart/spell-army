@@ -1,11 +1,11 @@
 """Chaque skill public versionné a sa ligne dans `THIRD_PARTY_NOTICES.md`.
 
 Le dépôt est public : un skill copié de tiers sans sa notice de licence enfreint cette licence, et
-aucune porte de CI ne le voit. Population : les entrées de `skills-lock.json` dont le dossier
+seul ce test le voit. Population : les entrées de `skills-lock.json` dont le dossier
 `.claude/skills/<nom>/` est suivi par git (`design-taste-frontend`, exclu par `.gitignore`, n'en
 est pas). Les skills copiés à la main, hors du lockfile, se relisent à leur copie.
 
-Lancement : `python -m pytest .claude/tests/test_notices_tiers.py` (pytest, hors CI du projet).
+Lancement : `python -m pytest .claude/tests/test_notices_tiers.py` (ligne `test-pipeline`, job `pipeline` de la CI).
 """
 
 import json
