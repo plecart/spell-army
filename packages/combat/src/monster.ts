@@ -1,4 +1,4 @@
-import { STATS, type Shares, type Stat, type Stats } from "./spell.ts";
+import { type Shares, type Stat, type Stats, statsOf } from "./spell.ts";
 
 /**
  * Une attaque nommée du monstre (game design § 3, « Attaques ») : sa recette, des parts entières en
@@ -84,7 +84,5 @@ export function sizeMonster(
 	profile: Profile,
 	scale: number,
 ): Stats {
-	return Object.fromEntries(
-		STATS.map((stat) => [stat, budget[stat] * profile[stat] * scale]),
-	) as Stats;
+	return statsOf((stat) => budget[stat] * profile[stat] * scale);
 }
