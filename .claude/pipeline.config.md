@@ -60,7 +60,7 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - rendus 3D    : `pnpm --filter personnages rendus`   # Blender 5.3 sur le poste, hors CI
 - wiki         : `pnpm --filter web wiki <dossier>`   # écrit les pages du wiki dans un dossier vide ; lit les sorts de la base de `DATABASE_URL`
 - validation   : `claude plugin validate .claude --strict`   # sur le poste seulement, par un `releveur`, avant chaque push d'un delta sur `.claude/` ou `CLAUDE.md` ; pas en CI
-- relecture    : `/code-review medium <n> --comment`   # `<n>` : numéro de la PR ; `medium`, le seul niveau mesuré (`cycle-pr/references/session-relecture.md`, « Réveil »)
+- relecture    : `/code-review medium <n> --comment`   # `<n>` : numéro de la PR ; `medium`, le seul niveau mesuré, dans le projet d'origine de la pipeline — non reproduit ici
 - restrictions : `python .claude/skills/cycle-pr/scripts/restrictions-du-delta.py <début>`   # passe « restrictions du delta » ; `<début>` : début de la plage relue (`cycle-pr/references/session-relecture.md`, « Réveil »)
 - sécurité     : `/security-review`   # seulement si le diff touche une zone sensible ou une surface exposée (« Périmètre »)
 - e2e ciblé    : n/a   # aucun outil de navigateur installé, MCP Playwright reporté (« Skills du projet », « Reportés »)
