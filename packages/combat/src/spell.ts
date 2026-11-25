@@ -15,6 +15,17 @@ export type Stat = (typeof STATS)[number];
 export type Stats = Record<Stat, number>;
 
 /**
+ * Les quatre stats, chacune valant `valueAt(stat)`.
+ *
+ * @example `statsOf((stat) => 2 * budget[stat])` double chaque stat d'un budget.
+ */
+export function statsOf(valueAt: (stat: Stat) => number): Stats {
+	return Object.fromEntries(
+		STATS.map((stat) => [stat, valueAt(stat)]),
+	) as Stats;
+}
+
+/**
  * Les huit classes du game design § 1. Doublon assumé du `ClassKey` de `personnages`, mêmes
  * identifiants : `combat` ne dépend d'aucun paquet (ADR 0001, « Paquets »).
  */

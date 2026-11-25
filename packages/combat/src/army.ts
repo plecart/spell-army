@@ -1,4 +1,9 @@
-import { type CharacterClass, STATS, type Spell, type Stats } from "./spell.ts";
+import {
+	type CharacterClass,
+	type Spell,
+	type Stats,
+	statsOf,
+} from "./spell.ts";
 
 /**
  * Un personnage de l'armée, déjà calculé par l'appelant (classe et stats par `personnages`, sort
@@ -34,12 +39,9 @@ export function summarize(army: readonly Fighter[]): ArmySummary {
 	}
 	return {
 		size: army.length,
-		stats: Object.fromEntries(
-			STATS.map((stat) => [
-				stat,
-				army.reduce((sum, fighter) => sum + fighter.stats[stat], 0),
-			]),
-		) as Stats,
+		stats: statsOf((stat) =>
+			army.reduce((sum, fighter) => sum + fighter.stats[stat], 0),
+		),
 		classShares: Object.fromEntries(
 			[...counts].map(([characterClass, count]) => [
 				characterClass,

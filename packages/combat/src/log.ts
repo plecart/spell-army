@@ -93,11 +93,42 @@ export interface CombatLog {
 }
 
 /**
+ * Ce que la saison ajoute à l'en-tête du journal stocké (game design § 9, « En-tête ») : saison,
+ * chapitre, jour — le numéro du combat dans la saison (issue #21, Décisions, 3) —, tentative, p et
+ * recrues de référence. Le combat ne les lit pas : `fight` ne les porte pas, et `RULES_VERSION` ne
+ * dépend pas d'eux.
+ */
+export interface SeasonHeader {
+	season: number;
+	chapter: number;
+	day: number;
+	attempt: number;
+	recruitShare: number;
+	referenceRecruits: number;
+}
+
+/** Le journal stocké d'un combat de la saison : celui de `fight`, son en-tête complété. */
+export interface SeasonLog extends CombatLog {
+	header: CombatLog["header"] & SeasonHeader;
+}
+
+/**
+ * Le journal stocké : le journal du combat, dont l'en-tête reçoit les champs de la saison. Actions et
+ * bilan restent ceux du combat.
+ *
+ * @example `seasonLogOf(fight(input), { season: 1, chapter: 12, day: 14, attempt: 2,
+ * recruitShare: 0.6, referenceRecruits: 20 }).header.chapter` vaut 12.
+ */
+export function seasonLogOf(log: CombatLog, context: SeasonHeader): SeasonLog {
+	return { ...log, header: { ...log.header, ...context } };
+}
+
+/**
  * Le journal en JSON, stable : à toute profondeur, les clés de chaque objet s'écrivent triées par
  * unités de code (`<`), jamais dans l'ordre de leur insertion — seule une clé entière, comme
  * `"2"`, passerait avant les autres, par ordre croissant, comme le veut `JSON.stringify`. Graine et
  * entrées égales donnent la même chaîne, octet pour octet (ADR 0001, « Conséquences » : le combat
- * est rejouable).
+ * est rejouable). Le journal stocké (`SeasonLog`) s'écrit de même, ses champs de saison compris.
  */
 export function serializeLog(log: CombatLog): string {
 	return JSON.stringify(log, sortedKeys);

@@ -5,6 +5,8 @@ import {
 	type FightInput,
 	fight,
 	RULES_VERSION,
+	type SeasonLog,
+	seasonLogOf,
 	serializeLog,
 } from "../src/index.ts";
 import { armyActions, fighterOf, monsterOf } from "./combattants.ts";
@@ -147,6 +149,45 @@ describe("le journal du combat", () => {
 
 		expect(serializeLog(reversedKeys(log) as CombatLog)).toBe(
 			serializeLog(log),
+		);
+	});
+});
+
+describe("le journal stocké, dans la saison", () => {
+	// Chapitre 12, au 14e combat de la saison, à la 2e tentative.
+	const SEASON = {
+		season: 1,
+		chapter: 12,
+		day: 14,
+		attempt: 2,
+		recruitShare: 0.6,
+		referenceRecruits: 20,
+	};
+
+	test("l'en-tête porte aussi saison, chapitre, jour, tentative, p et recrues de référence", () => {
+		const log = fight(input("42"));
+		const { header, actions, summary } = seasonLogOf(log, SEASON);
+
+		expect(header).toEqual({
+			...log.header,
+			season: 1,
+			chapter: 12,
+			day: 14,
+			attempt: 2,
+			recruitShare: 0.6,
+			referenceRecruits: 20,
+		});
+		expect({ actions, summary }).toEqual({
+			actions: log.actions,
+			summary: log.summary,
+		});
+	});
+
+	test("l'ordre des clés est fixé par le code, en-tête de saison compris", () => {
+		const stored = seasonLogOf(fight(input("42")), SEASON);
+
+		expect(serializeLog(reversedKeys(stored) as SeasonLog)).toBe(
+			serializeLog(stored),
 		);
 	});
 });

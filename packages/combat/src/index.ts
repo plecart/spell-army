@@ -1,4 +1,9 @@
 export type { Fighter } from "./army.ts";
+export {
+	type BudgetComponents,
+	budgetOf,
+	referenceRecruitsOf,
+} from "./calibration.ts";
 export { type FightInput, fight } from "./fight.ts";
 export {
 	type Action,
@@ -6,7 +11,11 @@ export {
 	type CombatLog,
 	type Forced,
 	type MonsterAction,
+	type Outcome,
 	RULES_VERSION,
+	type SeasonHeader,
+	type SeasonLog,
+	seasonLogOf,
 	serializeLog,
 	type UnreachedForced,
 } from "./log.ts";
@@ -36,6 +45,18 @@ export {
 	validateSpell,
 } from "./rules.ts";
 export { type Sample, scaleFactor } from "./scale.ts";
+export {
+	afterCombat,
+	budgetForLaunch,
+	type CombatResult,
+	dayOf,
+	SEASON_CHAPTERS,
+	SEASON_START,
+	type SeasonSettings,
+	type SeasonState,
+	type SeasonTransition,
+	seedOf,
+} from "./season.ts";
 export { type Trial, victoryShare } from "./simulation.ts";
 export { STARTING_POOL } from "./starting-pool.ts";
 export type {
