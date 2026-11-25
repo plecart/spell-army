@@ -55,19 +55,19 @@ describe("page « Informations »", () => {
 	});
 
 	test("avec le compte : « @compte », lié au compte, pour le joindre et pour le retrait", () => {
-		vi.stubEnv("INSTAGRAM_ACCOUNT_HANDLE", "wizardarmy");
+		vi.stubEnv("INSTAGRAM_ACCOUNT_HANDLE", "spell_army");
 		const account = {
-			href: "https://www.instagram.com/wizardarmy/",
-			text: "@wizardarmy",
+			href: "https://www.instagram.com/spell_army/",
+			text: "@spell_army",
 		};
 		expect(linksOf(render(<Informations />))).toEqual([account, account]);
 		expect(sections()).toContainEqual([
 			"Qui traite ces données",
-			"Bernier Pacôme, éditeur du jeu, joignable par message privé sur @wizardarmy.",
+			"Bernier Pacôme, éditeur du jeu, joignable par message privé sur @spell_army.",
 		]);
 		expect(sections()).toContainEqual([
 			"Demander ton retrait",
-			"Demande-le par message privé sur @wizardarmy. Ton pseudo est alors effacé, et ton identifiant mis sur une liste d'exclusion, que l'import respecte.",
+			"Demande-le par message privé sur @spell_army. Ton pseudo est alors effacé, et ton identifiant mis sur une liste d'exclusion, que l'import respecte.",
 		]);
 	});
 });

@@ -4,7 +4,7 @@ import { requireBearer } from "../token.ts";
 import { confirmationKey } from "./confirmation.ts";
 import { callTool, listTools, type McpTool } from "./tool.ts";
 
-const SERVER_INFO = { name: "wizard-army", version: "1.0.0" };
+const SERVER_INFO = { name: "spell-army", version: "1.0.0" };
 
 export interface McpEndpointOptions {
 	/**

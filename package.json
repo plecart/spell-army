@@ -1,5 +1,5 @@
 {
-	"name": "wizard-army",
+	"name": "spell-army",
 	"private": true,
 	"type": "module",
 	"packageManager": "pnpm@11.28.12",

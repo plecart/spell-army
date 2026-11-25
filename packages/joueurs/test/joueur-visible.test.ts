@@ -18,7 +18,7 @@ import { T0 } from "./horloge.ts";
 // La recrue des tests, qui porte le sort n° 3 de la réserve de départ.
 const RECRUIT = {
 	instagramId: "1234567890",
-	username: "wizard_army",
+	username: "spell_army",
 	spellNumber: 3,
 	arrivedAt: T0,
 };

@@ -6,7 +6,7 @@ const REPO_ROOT = new URL("../../../", import.meta.url);
 const CONFIG = ".claude/pipeline.config.md";
 const WORKFLOW = ".github/workflows/wiki.yml";
 // Un chemin du dépôt, parmi les mots entre backticks de la colonne « Sources » : il contient un `/`
-// ou se termine par une extension. Les autres (`spells`, `wa-prod`) nomment ce qui n'est pas dans
+// ou se termine par une extension. Les autres (`spells`, `spell-army-prod`) nomment ce qui n'est pas dans
 // le dépôt.
 const REPO_PATH = /\/|\.\w+$/;
 
