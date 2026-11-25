@@ -64,7 +64,6 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - restrictions : `python .claude/skills/cycle-pr/scripts/restrictions-du-delta.py <début>`   # passe « restrictions du delta » ; `<début>` : début de la plage relue (`cycle-pr/references/session-relecture.md`, « Réveil »)
 - sécurité     : `/security-review`   # seulement si le diff touche une zone sensible ou une surface exposée (« Périmètre »)
 - e2e ciblé    : n/a   # aucun outil de navigateur installé, MCP Playwright reporté (« Skills du projet », « Reportés »)
-- hooks        : n/a   # aucun hook git dans ce dépôt (relevé le 2026-11-25 : `.git/hooks` du clone ne porte que les exemples de git)
 
 ## Qualité
 - seuil de couverture : aucun
