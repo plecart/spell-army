@@ -44,30 +44,30 @@ const usernames = (page: { players: { username: string }[] }) =>
 
 describe("recherche", () => {
 	// Arrivés dans cet ordre : le plus récent, « Charmant », vient en premier.
-	const POPULATION = ["wizard_army", "noahbois", "nina.lit", "Charmant"];
+	const POPULATION = ["spell_army", "noahbois", "nina.lit", "Charmant"];
 
 	test.each([
 		[
 			"« ARM » trouve les pseudos qui contiennent « arm », sans tenir compte de la casse",
 			"ARM",
-			["Charmant", "wizard_army"],
+			["Charmant", "spell_army"],
 		],
 		[
 			"« _ » ne trouve que les pseudos qui portent « _ », jamais un joker",
 			"_",
-			["wizard_army"],
+			["spell_army"],
 		],
 		["« % » ne trouve rien : aucun pseudo ne le porte", "%", []],
 		["« . » ne trouve que les pseudos qui portent « . »", ".", ["nina.lit"]],
 		[
 			"une recherche vide rend tout le monde",
 			"",
-			["Charmant", "nina.lit", "noahbois", "wizard_army"],
+			["Charmant", "nina.lit", "noahbois", "spell_army"],
 		],
 		[
 			"une recherche blanche rend tout le monde",
 			"   ",
-			["Charmant", "nina.lit", "noahbois", "wizard_army"],
+			["Charmant", "nina.lit", "noahbois", "spell_army"],
 		],
 	])("%s", async (_, search, expected) => {
 		const db = await freshDatabase();

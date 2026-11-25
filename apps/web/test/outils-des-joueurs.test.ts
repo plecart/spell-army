@@ -175,17 +175,17 @@ describe("outils des joueurs : tools/list", () => {
 });
 
 describe("chercher_joueur", () => {
-	test("ARM rend armure.x puis wizard_army sous les noms des outils, sans aucun autre champ ; une ligne d'audit", async () => {
+	test("ARM rend armure.x puis spell_army sous les noms des outils, sans aucun autre champ ; une ligne d'audit", async () => {
 		const { db, client } = await connectToRegistry();
 		await writePage(db, [
-			entry("10", "wizard_army"),
+			entry("10", "spell_army"),
 			entry("11", "armure.x"),
 			entry("12", "zzz"),
 		]);
 		expect(outputOf(await search(client, { pseudo: "ARM" }))).toEqual({
 			joueurs: [
 				await expectedPlayer(db, "11", "armure.x"),
-				await expectedPlayer(db, "10", "wizard_army"),
+				await expectedPlayer(db, "10", "spell_army"),
 			],
 			tronque: false,
 		});

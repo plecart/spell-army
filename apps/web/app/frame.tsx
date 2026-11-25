@@ -19,7 +19,7 @@ export function SiteFrame({
 			{betaBanner && <p className="beta">BÊTA — version de test</p>}
 			<header className="site-header">
 				<a className="logo" href="/">
-					WIZARD ARMY
+					SPELL ARMY
 				</a>
 				<ThemeToggle />
 			</header>

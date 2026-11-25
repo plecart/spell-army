@@ -6,8 +6,8 @@ import { containsIgnoringCase } from "../src/search.ts";
 describe("un texte contient un fragment, sans tenir compte des majuscules", () => {
 	// Chaque métacaractère de `LIKE` avec son témoin : un texte qu'il rendrait s'il agissait.
 	test.each<[string, string, boolean]>([
-		["wizard_army", "ARM", true],
-		["WIZARD_ARMY", "arm", true],
+		["spell_army", "ARM", true],
+		["SPELL_ARMY", "arm", true],
 		["wizard", "arm", false],
 		["a_b", "_", true],
 		["axb", "_", false],

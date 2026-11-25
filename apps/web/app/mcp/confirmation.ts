@@ -10,7 +10,7 @@ const LIFETIME_MINUTES = 5;
 const CONFIRMATION_LIFETIME_MS = LIFETIME_MINUTES * 60_000;
 
 // Le libellé de la dérivation de la clé : la clé des codes n'est jamais le jeton lui-même.
-const KEY_LABEL = "wizard-army/mcp/confirmation";
+const KEY_LABEL = "spell-army/mcp/confirmation";
 
 // Un code : `<expiration en ms depuis l'époque>.<HMAC-SHA256 en base64url>`. L'expiration s'écrit
 // sans zéro de tête, en au plus 15 chiffres : un entier que `Number` lit exactement, et que

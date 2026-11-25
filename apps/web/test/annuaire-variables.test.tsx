@@ -20,13 +20,13 @@ describe("variables du site", () => {
 	test.each<[string | undefined, string | undefined]>([
 		[undefined, undefined],
 		["", undefined],
-		["wizardarmy", "wizardarmy"],
-		["wizard_army.fr", "wizard_army.fr"],
+		["spell_army", "spell_army"],
+		["spell_army.fr", "spell_army.fr"],
 		["a".repeat(30), "a".repeat(30)],
 		["a".repeat(31), undefined],
-		["@wizardarmy", undefined],
-		["wizard army", undefined],
-		["https://www.instagram.com/wizardarmy/", undefined],
+		["@spell_army", undefined],
+		["spell army", undefined],
+		["https://www.instagram.com/spell_army/", undefined],
 	])("INSTAGRAM_ACCOUNT_HANDLE=%j : compte %j", (value, handle) => {
 		vi.stubEnv("INSTAGRAM_ACCOUNT_HANDLE", value);
 		expect(siteSettings().instagramHandle).toBe(handle);
@@ -69,13 +69,13 @@ describe("ce que les variables affichent", () => {
 
 	test("avec les deux : le bandeau en tête, le titre « L'armée de @compte » et le lien « Instagram » du pied mènent au compte", () => {
 		vi.stubEnv("BETA_BANNER", "1");
-		vi.stubEnv("INSTAGRAM_ACCOUNT_HANDLE", "wizardarmy");
+		vi.stubEnv("INSTAGRAM_ACCOUNT_HANDLE", "spell_army");
 		const html = renderSite();
-		expect(textOf(html)).toMatch(/^BÊTA — version de test WIZARD ARMY /);
-		expect(titleOf(html)).toBe("L'armée de @wizardarmy");
+		expect(textOf(html)).toMatch(/^BÊTA — version de test SPELL ARMY /);
+		expect(titleOf(html)).toBe("L'armée de @spell_army");
 		expect(outboundLinks(html)).toEqual([
-			{ href: "https://www.instagram.com/wizardarmy/", text: "@wizardarmy" },
-			{ href: "https://www.instagram.com/wizardarmy/", text: "Instagram" },
+			{ href: "https://www.instagram.com/spell_army/", text: "@spell_army" },
+			{ href: "https://www.instagram.com/spell_army/", text: "Instagram" },
 		]);
 	});
 });

@@ -23,7 +23,7 @@ export const registry = createRegistry(() => new FakeFollowerProvider([]));
 // Jeton factice de 32 octets, le minimum admis.
 export const TOKEN = "t".repeat(32);
 export const AUTHORIZATION = `Bearer ${TOKEN}`;
-export const ENDPOINT_URL = "http://wizard-army.test/api/mcp";
+export const ENDPOINT_URL = "http://spell-army.test/api/mcp";
 
 // Secret factice du tic, de 32 octets comme le jeton.
 export const TICK_SECRET = "s".repeat(32);
@@ -32,7 +32,7 @@ export const TICK_SECRET = "s".repeat(32);
 export function tickRequest(
 	headers: Record<string, string> = { authorization: `Bearer ${TICK_SECRET}` },
 ): Request {
-	return new Request("http://wizard-army.test/api/tic", {
+	return new Request("http://spell-army.test/api/tic", {
 		method: "POST",
 		headers,
 	});

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { instagramUrl, siteSettings } from "../site.ts";
 
-export const metadata: Metadata = { title: "Informations · Wizard Army" };
+export const metadata: Metadata = { title: "Informations · Spell Army" };
 
 /**
  * La page « Informations » (ADR 0003, « RGPD ») : qui traite les données des abonnés, lesquelles,

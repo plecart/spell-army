@@ -32,10 +32,10 @@ const usernames = (page: readonly FollowerEntry[]) =>
 	page.map(({ username }) => username);
 
 describe("recherche d'un joueur par une partie de son pseudo", () => {
-	test("ARM rend armure.x puis wizard_army, sans tenir compte des majuscules : identifiant, pseudo, classe et sort de chacun", async () => {
-		const wizard = entry("10", "wizard_army");
+	test("ARM rend armure.x puis spell_army, sans tenir compte des majuscules : identifiant, pseudo, classe et sort de chacun", async () => {
+		const spellArmy = entry("10", "spell_army");
 		const armure = entry("11", "armure.x");
-		const db = await databaseWith([wizard, armure, entry("12", "zzz")]);
+		const db = await databaseWith([spellArmy, armure, entry("12", "zzz")]);
 		const pool = await readDrawablePool(db);
 		const names = new Map(
 			(await listSpells(db)).map(({ number, name }) => [number, name]),
@@ -50,7 +50,7 @@ describe("recherche d'un joueur par une partie de son pseudo", () => {
 			};
 		};
 		expect(await searchPlayers(db, "ARM")).toEqual({
-			players: [found(armure), found(wizard)],
+			players: [found(armure), found(spellArmy)],
 			truncated: false,
 		});
 	});

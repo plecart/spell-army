@@ -17,8 +17,8 @@ describe("lecture de l'adresse", () => {
 		["un paramètre inconnu, ignoré", { tri: "nom" }, NO_QUERY],
 		[
 			"une recherche",
-			{ q: "wizard_army" },
-			{ ...NO_QUERY, search: "wizard_army" },
+			{ q: "spell_army" },
+			{ ...NO_QUERY, search: "spell_army" },
 		],
 		["une recherche vide", { q: "" }, NO_QUERY],
 		[

@@ -374,7 +374,7 @@ describe("confirmation : clé", () => {
 	test("la clé des codes est l'HMAC-SHA256 du jeton sous le libellé de la confirmation, jamais le jeton lui-même", () => {
 		expect(confirmationKey(TOKEN)).toEqual(
 			createHmac("sha256", TOKEN)
-				.update("wizard-army/mcp/confirmation")
+				.update("spell-army/mcp/confirmation")
 				.digest(),
 		);
 	});

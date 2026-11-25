@@ -9,7 +9,7 @@ import "./globals.css";
 // variable porte toutes.
 const font = Bricolage_Grotesque({ subsets: ["latin"] });
 
-export const metadata: Metadata = { title: "Wizard Army" };
+export const metadata: Metadata = { title: "Spell Army" };
 
 export default function RootLayout({ children, fiche }: LayoutProps<"/">) {
 	return (
