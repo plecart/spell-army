@@ -1,6 +1,6 @@
-# Wizard Army — Cadrage
+# Spell Army — Cadrage
 
-État au 2026-11-24. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
+État au 2026-11-25. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
 le [game design](../game-design.md) et la [direction artistique](../direction-artistique.md) en détaillent des parties ; il sert de source au PRD.
 
 Trois statuts, à ne pas confondre :

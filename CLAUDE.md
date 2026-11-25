@@ -89,7 +89,7 @@ OPEN rattachées à ce skill et en appliquer les enseignements au travail en cou
 fichier du skill n'a pas encore été mis à jour. Un sous-agent ne lit pas le journal : la session qui
 le lance met dans son brief les entrées OPEN qui touchent son bloc.
 
-**Emplacement du journal, à ne pas laisser deviner :** `~/.claude/projects/E--Projets-Wizard-Army-v2/skill-observations/log.md`. C'est un
+**Emplacement du journal, à ne pas laisser deviner :** `~/.claude/projects/E--Projets-Spell-Army/skill-observations/log.md`. C'est un
 chemin **stable**, hors du dépôt. Ne jamais l'ancrer sur le répertoire courant : `pr-paralleles`
 travaille dans des **git worktrees** éphémères, et un journal écrit là disparaît avec le worktree.
 

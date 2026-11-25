@@ -1,7 +1,8 @@
 # ADR 0001 — Architecture applicative : Next.js sur Vercel, MCP intégré, Neon, paquets par domaine
 
 - **Statut** : accepté le 2026-11-15. Précisé le 2026-11-21 : `packages/joueurs` dépend aussi de
-  `personnages` (§ « Paquets », issue #13).
+  `personnages` (§ « Paquets », issue #13). Précisé le 2026-11-25 : projets Neon `spell-army-preprod`
+  et `spell-army-prod`, renommés avec le jeu (#57).
 - **Source** : `docs/etudes/00-cadrage.md` § 2 « Architecture » ; étude `04-architecture.md`
 
 ## Contexte
@@ -18,7 +19,7 @@ possible, « pour y voir clair ».
 | Hébergement | Next.js (App Router) sur Vercel. Une même application porte le site, le serveur MCP et la route des tâches planifiées. Il y a un projet Vercel par environnement (ADR 0004). | Décidé (cadrage) |
 | Plan Vercel | Hobby tant qu'on n'est pas bloqué, puis Pro. Pro au plus tard au premier partenariat rémunéré, car Hobby est réservé à l'usage personnel et non commercial. | Décidé (cadrage) |
 | Back-office | Aucun. Un serveur MCP le remplace : il est servi par l'application à `/api/mcp` et piloté depuis Claude. | Décidé (cadrage) |
-| Base | Neon (Postgres), un projet par environnement (`wa-preprod`, `wa-prod`), accès par Drizzle. | Décidé (cadrage) |
+| Base | Neon (Postgres), un projet par environnement (`spell-army-preprod`, `spell-army-prod`), accès par Drizzle. | Décidé (cadrage) |
 | Région | Neon à Francfort (`aws-eu-central-1`). Les fonctions Vercel sont fixées en `fra1` par `"regions": ["fra1"]` dans `vercel.json`, au lieu de `iad1` par défaut. | Accepté le 2026-11-15 |
 | Découpage | Un monorepo pnpm avec un paquet par domaine, aux chemins de `.claude/pipeline.config.md` § « Périmètre » (détail ci-dessous). | Accepté le 2026-11-15 |
 | Services partagés | Chaque paquet de domaine expose ses services. Les outils MCP, la route des tâches et les pages les appellent ; il n'y a pas d'autre chemin d'écriture, ni de REST d'administration. Un outil MCP reste un adaptateur mince : validation Zod, journal d'audit, appel d'un service. | Accepté le 2026-11-15 |
@@ -45,8 +46,8 @@ cycle n'est permis. Le paquet d'affichage 3D, commun au site et à la vidéo, n'
   résultat est le même.
 - Pour quitter Vercel, on réécrit `apps/web` et la planification ; les paquets ne bougent pas.
 - Chez Neon, la région ne se change pas après création. Le projet vide `my-first-project`, créé
-  d'office à Francfort en Postgres 18, est renommé `wa-preprod`, et `wa-prod` est créé dans la même
-  région. Le mainteneur le fait dans la console Neon.
+  d'office à Francfort en Postgres 18, est renommé `spell-army-preprod`, et `spell-army-prod` est
+  créé dans la même région. Le mainteneur le fait dans la console Neon.
 - Sur Hobby, une seule région de fonctions est permise : ce sera `fra1`.
 
 ## Vérifié
