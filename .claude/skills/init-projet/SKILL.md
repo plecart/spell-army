@@ -328,6 +328,12 @@ encore, le `ci.yml` et le `dependabot.yml` attendent sa première PR de code (é
   branche par défaut, et GitHub le désactive dans un dépôt public resté 60 jours sans activité
   (doc GitHub Actions : « Troubleshooting workflows », « Disabling and enabling a workflow »).
   Sans porte d'avis dans la config, rien à ajouter.
+- **Ajouter un job des tests de la pipeline** si la ligne `test-pipeline` n'est pas `n/a` : à
+  part du job principal, sans le runtime ni les dépendances du projet, il installe Python
+  (`actions/setup-python`, épinglée comme les autres `uses:`) et pytest à version épinglée, puis
+  lance cette ligne, sans filtre de chemins. Même garde draft que le job principal, écarté de
+  `schedule` et `workflow_dispatch` ; il extrait la tête et reprend le pas « Fusion explicite du
+  trunk ». Sans lui, un delta sur la pipeline passe la CI sans ses tests.
 
 Puis l'`executant` génère `.github/dependabot.yml` depuis `template/.github/dependabot.yml` : les
 empreintes du `ci.yml` n'avancent que si Dependabot les tient, et le modèle porte déjà
@@ -485,9 +491,9 @@ utile que la stack s'appuie sur des libs qui évoluent vite.
 
 ### 11. Vérifier que les commandes déclarées fonctionnent
 
-Avant de committer, le `releveur` (« Délégation ») lance réellement `test` et chaque commande des
-« gates bloquants en CI » de la config, et rend le verdict de chacune — code de sortie et sortie
-brute — dans un fichier.
+Avant de committer, le `releveur` (« Délégation ») lance réellement `test`, `test-pipeline` et
+chaque commande des « gates bloquants en CI » de la config, et rend le verdict de chacune — code
+de sortie et sortie brute — dans un fichier.
 Une commande déclarée mais fausse est pire qu'absente : elle casse `cycle-pr` et la CI au premier
 usage. Corriger la config si l'une échoue pour cause d'erreur de saisie.
 
@@ -545,6 +551,7 @@ jusqu'à la première PR de code, qui les coche (étape 11).
 - [ ] `ci.yml` généré depuis les commandes réelles, sans champ `{{PLACEHOLDER}}` ni étape `n/a` (les expressions GitHub `${{ … }}` restent)
 - [ ] chaque `uses:` du `ci.yml` épinglé par empreinte + `# <étiquette la plus précise>` ; `permissions: contents: read` en tête
 - [ ] portes à base d'avis (audit, scan) : `schedule` quotidien et `workflow_dispatch`, réservés à elles et à ce dont elles dépendent
+- [ ] job des tests de la pipeline, sauf `test-pipeline : n/a`
 - [ ] `.github/dependabot.yml` généré (`github-actions` + écosystèmes de la stack)
 - [ ] `ci.yml` et `dependabot.yml` validés contre leur schéma (`valide`)
 - [ ] skills maison et skills publics embarqués (`ponytail*`, `task-observer`) déployés dans `.claude/skills/` (`copie`)
@@ -552,7 +559,7 @@ jusqu'à la première PR de code, qui les coche (étape 11).
       skill maison retiré (il s'exécuterait)
 - [ ] skills publics cochés installés (choisis d'après la stack, pas d'un set en dur)
 - [ ] serveur MCP context7 disponible (`mcp`)
-- [ ] `test` et commandes des gates bloquants en CI vérifiées en local
+- [ ] `test`, `test-pipeline` et commandes des gates bloquants en CI vérifiées en local
 - [ ] commit d'amorçage fait (`commit`)
 
 ## Note pour les autres skills

@@ -46,7 +46,7 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - test         : `pnpm -r test` (Vitest)                  # suite complète ; Docker allumé pour `packages/donnees`, `packages/joueurs` et `apps/web`
 - test ciblé   : `pnpm vitest run <chemin>`   # une seule cible, pour la boucle TDD
 - test brut    : `rtk proxy pnpm -r test`   # sortie du lanceur sans le résumé du hook RTK (« Skills du projet », ligne RTK ; cycle-pr 3.2)
-- test-pipeline : `python -m pytest .claude -q`   # tests des scripts de la pipeline (`.claude/tests/`)
+- test-pipeline : `python -m pytest .claude -q`   # tests des scripts de la pipeline (`.claude/tests/`) ; job `pipeline` de la CI
 - lint         : `pnpm biome lint .`
 - format       : `pnpm biome format --write .`                  # écrit
 - format:check : `pnpm biome format .`                  # vérifie sans écrire
@@ -73,7 +73,7 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
   - sortie Python en cp1252 : Python écrit un tube dans la page de code du poste, et un texte accentué arrive illisible. Les scripts de la pipeline écrivent donc leur sortie standard en UTF-8, et une commande Python lancée à la main prend `PYTHONIOENCODING=utf-8`. Mesuré le 2026-11-24 : `python -c "import sys;print(sys.stdout.encoding)" | cat` rend `cp1252`, et « en-tête » arrive avec l'octet `0xEA`
   - heredoc de l'outil Bash et antislashs : un fichier écrit par `cat <<'EOF'` depuis l'outil Bash arrive avec ses antislashs divisés par deux. Ce n'est pas propre au heredoc : deux antislashs à la suite dans le texte d'une commande arrivent en un seul, y compris dans un argument entre apostrophes (mesuré le 2026-11-24 par `printf '%s'` et `python -c` ; cause, outil Bash ou hook RTK, non isolée). Un fichier qui doit porter un échappement se construit par programme (`chr(92)`), puis se recompte après écriture. Mesuré le 2026-11-24 : deux antislashs écrits à la suite, un seul arrivé
   - `<rev>:<chemin>` : relevé dans le projet d'origine de la pipeline, où `git show main:<chemin>` rendait zéro octet en sortant en 0. Non reproduit ici le 2026-11-24 : `git show origin/main:CLAUDE.md` rend 13 566 octets, autant que `git cat-file -s`. Une sortie vide se recoupe par `git cat-file -s` avant de valoir absence
-- gates bloquants en CI : audit, lint, format:check, typecheck, dérive du schéma, test
+- gates bloquants en CI : audit, lint, format:check, typecheck, dérive du schéma, test, test-pipeline
 - services requis en CI : Docker, fourni par `ubuntu-latest`, pour la base de test (Postgres 18 jetable que le harnais de `packages/donnees` démarre lui-même, pour sa suite et celles de `packages/joueurs` et d'`apps/web`)
 
 ## Périmètre
