@@ -106,7 +106,8 @@ Ce que tu vérifies :
    de `cycle-pr` 4.2 (« Une lentille navigateur… »), jouée par la commande `e2e ciblé` de
    `.claude/pipeline.config.md`, cache HTTP désactivé, données jetables — jamais une
    démonstration regardée. C'est toi qui la lances : la session PR l'a fait vérifier sur le
-   chemin qu'elle a choisi.
+   chemin qu'elle a choisi. Si la ligne `e2e ciblé` vaut `n/a`, ton rapport dit la lentille non
+   jouée, avec le motif de la ligne.
 6. **Les tests de la pipeline** que le diff ajoute ou change, sous `.claude/tests/` : chacun
    tient la barre de `cycle-pr/references/tests.md`, « Ce qu'un test de la pipeline peut
    être » ; un test qui fige une phrase de comportement est un constat.

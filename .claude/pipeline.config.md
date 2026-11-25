@@ -38,13 +38,15 @@ un écart entre elle et une source n'est jamais une contradiction `decisions-vs-
 - frameworks : Next.js (App Router) sur Vercel, Drizzle ORM, Postgres Neon
 - gestionnaire de paquets : pnpm (monorepo pnpm workspaces, un paquet par domaine — ADR 0001)
 - runtime + version : node 24
+- scripts de la pipeline (`.claude/`) : Python 3.12, tests sous pytest
 
 ## Commandes du projet
 Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape absente du projet.
 - install      : `pnpm install --frozen-lockfile`
 - test         : `pnpm -r test` (Vitest)                  # suite complète ; Docker allumé pour `packages/donnees`, `packages/joueurs` et `apps/web`
 - test ciblé   : `pnpm vitest run <chemin>`   # une seule cible, pour la boucle TDD
-- test brut    : n/a                    # sortie du lanceur sans résumeur, si le poste en a un (cycle-pr 3.2)
+- test brut    : `rtk proxy pnpm -r test`   # sortie du lanceur sans le résumé du hook RTK (« Skills du projet », ligne RTK ; cycle-pr 3.2)
+- test-pipeline : `python -m pytest .claude -q`   # tests des scripts de la pipeline (`.claude/tests/`)
 - lint         : `pnpm biome lint .`
 - format       : `pnpm biome format --write .`                  # écrit
 - format:check : `pnpm biome format .`                  # vérifie sans écrire
@@ -57,6 +59,12 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - modèles 3D   : `pnpm --filter personnages modeles`   # Blender 5.3 sur le poste, hors CI
 - rendus 3D    : `pnpm --filter personnages rendus`   # Blender 5.3 sur le poste, hors CI
 - wiki         : `pnpm --filter web wiki <dossier>`   # écrit les pages du wiki dans un dossier vide ; lit les sorts de la base de `DATABASE_URL`
+- validation   : `claude plugin validate .claude --strict`   # sur le poste seulement, par un `releveur`, avant chaque push d'un delta sur `.claude/` ou `CLAUDE.md` ; pas en CI
+- relecture    : `/code-review medium <n> --comment`   # `<n>` : numéro de la PR ; `medium`, le seul niveau mesuré (`cycle-pr/references/session-relecture.md`, « Réveil »)
+- restrictions : `python .claude/skills/cycle-pr/scripts/restrictions-du-delta.py <début>`   # passe « restrictions du delta » ; `<début>` : début de la plage relue (`cycle-pr/references/session-relecture.md`, « Réveil »)
+- sécurité     : `/security-review`   # seulement si le diff touche une zone sensible ou une surface exposée (« Périmètre »)
+- e2e ciblé    : n/a   # aucun outil de navigateur installé, MCP Playwright reporté (« Skills du projet », « Reportés »)
+- hooks        : n/a   # aucun hook git dans ce dépôt (relevé le 2026-11-25 : `.git/hooks` du clone ne porte que les exemples de git)
 
 ## Qualité
 - seuil de couverture : aucun
