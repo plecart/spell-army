@@ -5,7 +5,8 @@ seul ce test le voit. Population : les entrées de `skills-lock.json` dont le do
 `.claude/skills/<nom>/` est suivi par git (`design-taste-frontend`, exclu par `.gitignore`, n'en
 est pas). Les skills copiés à la main, hors du lockfile, se relisent à leur copie.
 
-Lancement : `python -m pytest .claude/tests/test_notices_tiers.py` (ligne `test-pipeline`, job `pipeline` de la CI).
+Lancement : `python -m pytest .claude/tests/test_notices_tiers.py` (ligne `test-pipeline`, job
+`pipeline` de la CI).
 """
 
 import json

@@ -14,8 +14,8 @@ séparés d'une espace — entre guillemets, en gras ou entre backticks. Deux fo
 2. à la suite d'une forme 1, en énumération par `,`, ` / `, `et` ou `ou` : les commandes `test`,
    `test-pipeline` et `build`.
 
-Chaque citation trouvée est un nom de `NOMS_CITES` ou une entrée d'`EXCLUSIONS`, et chaque entrée des
-deux tables est encore citée : une citation nouvelle rougit, une entrée périmée aussi. Hors des
+Chaque citation trouvée est un nom de `NOMS_CITES` ou une entrée d'`EXCLUSIONS`, et chaque entrée
+des deux tables est encore citée : une citation nouvelle rougit, une entrée périmée aussi. Hors des
 formes, et donc hors de la garde : la citation nue d'un nom (« test-pipeline » si le delta la
 concerne) et le défaut d'un script (`label` de `mutation.py`).
 
@@ -74,11 +74,13 @@ EXCLUSIONS = {
 def libelles(config: str) -> set[str]:
     """Les libellés des lignes de la section « Commandes du projet » d'une config."""
     section = config.split(f"{COMMANDS_SECTION}\n", 1)[1].split("\n## ", 1)[0]
-    return {ligne.group("label") for ligne in map(COMMAND_LINE.match, section.splitlines()) if ligne}
+    lignes = map(COMMAND_LINE.match, section.splitlines())
+    return {ligne.group("label") for ligne in lignes if ligne}
 
 
 def gabarit(skill: str) -> str:
-    """Le gabarit de config qu'`init-projet` écrit (étape « Écrire `.claude/pipeline.config.md` »)."""
+    """Le gabarit de config qu'`init-projet` écrit, balisé `<gabarit-config>` dans son étape
+    « Écrire `.claude/pipeline.config.md` »."""
     return skill.split("<gabarit-config>", 1)[1].split("</gabarit-config>", 1)[0]
 
 
@@ -91,11 +93,11 @@ def noms_cites(texte: str) -> set[str]:
     }
 
 
-def prose() -> list[str]:
+def population() -> list[str]:
     """Les fichiers de la population, suivis par git (`-z` : chemins sans guillemets)."""
     suivis = subprocess.run(
         ["git", "ls-files", "-z", "--", *PROSE],
-        cwd=RACINE, capture_output=True, text=True, encoding="utf-8", check=True,
+        cwd=RACINE, capture_output=True, encoding="utf-8", check=True,
     ).stdout.split("\0")
     return [f for f in suivis if f.endswith((".md", ".py")) and not f.startswith(INIT_PROJET)]
 
@@ -119,8 +121,9 @@ def test_un_nom_cite_a_sa_ligne(nom, source):
 
 
 def test_les_citations_sont_les_noms_et_les_exclusions():
-    cites = set().union(*(noms_cites(lire(chemin)) for chemin in prose()))
+    cites = set().union(*(noms_cites(lire(chemin)) for chemin in population()))
     assert cites == set(NOMS_CITES) | EXCLUSIONS.keys(), (
-        "une citation hors des tables reçoit sa ligne (config et gabarit) et entre dans NOMS_CITES, "
-        "ou entre dans EXCLUSIONS avec son motif ; une entrée qui n'est plus citée se retire"
+        "une citation hors des tables reçoit sa ligne (config et gabarit) et entre dans "
+        "NOMS_CITES, ou entre dans EXCLUSIONS avec son motif ; une entrée qui n'est plus citée "
+        "se retire"
     )
