@@ -189,6 +189,7 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - test         : <cmd>                  # suite complète
 - test ciblé   : <cmd> <chemin|motif>   # une seule cible, pour la boucle TDD
 - test brut    : n/a                    # sortie du lanceur sans résumeur, si le poste en a un (cycle-pr 3.2)
+- test-pipeline : `python -m pytest .claude -q`   # tests des scripts de la pipeline (`.claude/tests/`) ; `n/a` sans test sous `.claude/`, où pytest sort en 5
 - lint         : <cmd>
 - format       : <cmd>                  # écrit
 - format:check : <cmd>                  # vérifie sans écrire
@@ -196,6 +197,12 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - audit        : <cmd | n/a>            # audit des dépendances, porte de CI (`pip-audit`, `npm audit`…)
 - build        : <cmd | n/a>
 - run local    : <cmd | n/a>
+- validation   : `claude plugin validate .claude --strict`   # sur le poste, par un `releveur`, avant chaque push d'un delta sur `.claude/` ou `CLAUDE.md`
+- relecture    : `/code-review medium <n> --comment`   # `<n>` : numéro de la PR ; `medium`, le seul niveau mesuré (`cycle-pr/references/session-relecture.md`, « Réveil »)
+- restrictions : `python .claude/skills/cycle-pr/scripts/restrictions-du-delta.py <début>`   # passe « restrictions du delta » ; `<début>` : début de la plage relue (`cycle-pr/references/session-relecture.md`, « Réveil »)
+- sécurité     : `/security-review`   # seulement si le diff touche une zone sensible ou une surface exposée (« Périmètre »)
+- e2e ciblé    : <cmd | n/a>            # script de navigateur rejouable de la lentille navigateur ; `n/a` avec son motif
+- hooks        : <cmd | n/a>            # installe les hooks git, depuis le clone principal seulement (`pr-paralleles`) ; `n/a` avec son motif
 
 ## Qualité
 - seuil de couverture : <ex. 80 % | aucun>

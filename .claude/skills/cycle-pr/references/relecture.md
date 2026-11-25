@@ -92,7 +92,8 @@ lentille est un **script de navigateur rejouable** — la commande `e2e ciblé` 
 `.claude/pipeline.config.md`, cache HTTP désactivé, données jetables —, jamais une démonstration
 regardée : un parcours joué à la main ne se rejoue pas au commit suivant, et c'est la session de
 relecture qui le lance, dans son worktree, parce que la session PR l'a déjà fait vérifier sur le
-chemin qu'elle a choisi. Matrice minimale, quatre points :
+chemin qu'elle a choisi. Si la ligne `e2e ciblé` vaut `n/a`, la lentille se rapporte comme non
+jouée, avec le motif de la ligne. Matrice minimale, quatre points :
 
 1. chaque geste sur l'écran **renvoyé en erreur par le serveur** ;
 2. chaque geste **combiné aux gestionnaires que le framework pose sur les mêmes éléments** ;

@@ -38,7 +38,7 @@ coordinatrice : le worktree de la session de lot naît à son démarrage>.
 `checkout -b` part de la branche morte et emporte ses commits réécrits (mesuré). Supprime ensuite
 cette branche, locale **et** distante ; le pourquoi et le repli sont à `pr-paralleles` Étape 8,
 « Issue en plusieurs lots ». Rejoue la commande `install` des piles que ton lot touche si un verrou
-a bougé, puis la commande de fumée (`.claude/pipeline.config.md`, « Commandes du projet »).>
+a bougé, puis la commande `lint`, fumée de `pr-paralleles` Étape 3, « Provisionner son worktree ».>
 
 \<Si session de lot d'une coordinatrice : ton premier geste, ta base et ton Étape 8 sont à
 [coordinatrice.md](coordinatrice.md), « La session de lot ».>
