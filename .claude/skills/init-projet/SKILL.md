@@ -198,7 +198,7 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - build        : <cmd | n/a>
 - run local    : <cmd | n/a>
 - validation   : `claude plugin validate .claude --strict`   # sur le poste, par un `releveur`, avant chaque push d'un delta sur `.claude/` ou `CLAUDE.md`
-- relecture    : `/code-review medium <n> --comment`   # `<n>` : numéro de la PR ; `medium`, le seul niveau mesuré (`cycle-pr/references/session-relecture.md`, « Réveil »)
+- relecture    : `/code-review medium <n> --comment`   # `<n>` : numéro de la PR ; `medium`, le seul niveau mesuré, dans le projet d'origine de la pipeline — non reproduit ici
 - restrictions : `python .claude/skills/cycle-pr/scripts/restrictions-du-delta.py <début>`   # passe « restrictions du delta » ; `<début>` : début de la plage relue (`cycle-pr/references/session-relecture.md`, « Réveil »)
 - sécurité     : `/security-review`   # seulement si le diff touche une zone sensible ou une surface exposée (« Périmètre »)
 - e2e ciblé    : <cmd | n/a>            # script de navigateur rejouable de la lentille navigateur ; `n/a` avec son motif

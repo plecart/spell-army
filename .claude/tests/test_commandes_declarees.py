@@ -17,7 +17,8 @@ séparés d'une espace — entre guillemets, en gras ou entre backticks. Deux fo
 Chaque citation trouvée est un nom de `NOMS_CITES` ou une entrée d'`EXCLUSIONS`, et chaque entrée
 des deux tables est encore citée : une citation nouvelle rougit, une entrée périmée aussi. Hors des
 formes, et donc hors de la garde : la citation nue d'un nom (« test-pipeline » si le delta la
-concerne) et le défaut d'un script (`label` de `mutation.py`).
+concerne), une citation non balisée (la commande de fumée, que #66 a renvoyée à `lint`) et le
+défaut d'un script (`label` de `mutation.py`).
 
 Lancement : `python -m pytest .claude/tests/test_commandes_declarees.py` (ligne `test-pipeline`, job
 `pipeline` de la CI).

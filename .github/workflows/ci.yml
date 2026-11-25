@@ -200,7 +200,8 @@ jobs:
 
       - *fusion
 
-      # Python 3.12, celui du poste (« Stack ») ; pytest à la version du poste.
+      # Python 3.12, celui du poste (« Stack ») ; pytest à la version du poste, épinglé à la main :
+      # Dependabot ne suit pas cette ligne `run:`, et ses dépendances (pluggy, iniconfig) flottent.
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
