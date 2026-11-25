@@ -1,6 +1,6 @@
-# Wizard Army — Game design
+# Spell Army — Game design
 
-État au 2026-11-22. Ce document détaille la section « Combat et calibrage » du
+État au 2026-11-25. Ce document détaille la section « Combat et calibrage » du
 [cadrage](etudes/00-cadrage.md), qui fait foi en cas de désaccord (rang 1 des sources de vérité). Il
 remplace l'[étude 05](etudes/05-game-design.md), non retenue.
 

@@ -1,6 +1,6 @@
-# Wizard Army
+# Spell Army
 
-Le code source de Wizard Army, un jeu qui se joue en suivant un compte Instagram : chaque abonné
+Le code source de Spell Army, un jeu qui se joue en suivant un compte Instagram : chaque abonné
 devient un personnage, et tous ensemble forment une armée qui affronte un monstre par jour.
 
 Le jeu est en cours de développement et pas encore en ligne. C'est un projet de loisir, qui me
@@ -40,8 +40,8 @@ Les règles complètes sont dans le [game design](docs/game-design.md), l'appare
 - **En cours** : le bestiaire, la saison, puis la mise en ligne d'une bêta.
 - **Plus tard** : la vidéo de chaque combat.
 
-Le découpage vit dans les [issues](https://github.com/plecart/wizard-army-v2/issues) et les
-[milestones](https://github.com/plecart/wizard-army-v2/milestones).
+Le découpage vit dans les [issues](https://github.com/plecart/spell-army/issues) et les
+[milestones](https://github.com/plecart/spell-army/milestones).
 
 ## Architecture
 

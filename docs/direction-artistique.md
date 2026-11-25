@@ -1,6 +1,6 @@
-# Wizard Army — Direction artistique
+# Spell Army — Direction artistique
 
-État au 2026-11-22. Ce document détaille la section « Modèles 3D » du [cadrage](etudes/00-cadrage.md)
+État au 2026-11-25. Ce document détaille la section « Modèles 3D » du [cadrage](etudes/00-cadrage.md)
 et l'organisation du site. Le cadrage fait foi en cas de désaccord (rang 1 des sources de vérité).
 Il a été arrêté avec le mainteneur sur des prototypes jetables, hors dépôt ; les captures du § 10 en
 gardent la trace.
@@ -184,7 +184,9 @@ au site et à la vidéo.
 ## 10. Captures des prototypes
 
 Captures du 2026-11-16, au format téléphone. Le magicien des vignettes est un ancien brouillon ; le
-dernier est celui de la page des modèles.
+dernier est celui de la page des modèles. Les cinq qui montraient l'ancien nom du jeu ont été
+refaites le 2026-11-25 sur les mêmes prototypes, au nom de Spell Army (#57) ; « Parties et ancres »
+ne le montrait pas.
 
 | Annuaire, clair | Annuaire, sombre |
 |---|---|

@@ -1,6 +1,6 @@
 # ADR 0004 — Environnements, domaine et sécurité
 
-- **Statut** : accepté le 2026-11-15. Précisé le 2026-11-22 : la ligne « Saisie » nomme `WIKI_DATABASE_URL`, secret de lecture du wiki (#43). Précisé le 2026-11-23 : domaine `spellarmy.com`.
+- **Statut** : accepté le 2026-11-15. Précisé le 2026-11-22 : la ligne « Saisie » nomme `WIKI_DATABASE_URL`, secret de lecture du wiki (#43). Précisé le 2026-11-23 : domaine `spellarmy.com`. Précisé le 2026-11-25 : team Vercel « Spell Army », slug `spell-army`, et projet Neon `spell-army-prod` (#57).
 - **Source** : `docs/etudes/00-cadrage.md` § 1 et § 2 « Architecture » ; étude
   `08-securite-cloudflare-vercel.md`
 
@@ -11,7 +11,7 @@
 | Sujet | Décision | Origine |
 |---|---|---|
 | Deux environnements publics | La pré-prod montre les personnages issus des abonnés du compte personnel du mainteneur et renvoie vers ce compte. La prod montre ceux du compte dédié. | Décidé (cadrage) |
-| Deux projets Vercel | Un même dépôt alimente deux projets de la team « Wizard Army » (Hobby). Chacun a son domaine de production public, ses variables, sa base Neon et ses tâches planifiées. Le projet de pré-prod suit `main`. Le projet de prod suit une branche `prod`, que le mainteneur avance pour livrer. | Accepté le 2026-11-15 |
+| Deux projets Vercel | Un même dépôt alimente deux projets de la team « Spell Army » (slug `spell-army`, Hobby). Chacun a son domaine de production public, ses variables, sa base Neon et ses tâches planifiées. Le projet de pré-prod suit `main`. Le projet de prod suit une branche `prod`, que le mainteneur avance pour livrer. | Accepté le 2026-11-15 |
 | Bandeau bêta | La pré-prod affiche un bandeau « bêta ». Il est piloté par une variable d'environnement, pas par du code propre à chaque environnement. | Décidé (cadrage) |
 
 Avec un seul projet et un domaine de branche, ce domaine aurait été protégé par défaut (il aurait fallu
@@ -49,7 +49,7 @@ Tous les leviers du plan gratuit sont activés (cadrage, Décidé) :
 | Authentification MCP | Jeton fixe en v1, pour le seul poste du mainteneur ; OAuth plus tard. Jeton aléatoire d'au moins 32 octets, comparé en temps constant, stocké en variable *Sensitive*, un par environnement. | Décidé (cadrage) |
 | Durcissement MCP | Validation Zod stricte, journal d'audit, pas de SQL libre, confirmation sur les outils destructeurs. | Accepté le 2026-11-15 |
 | Secrets | Tout ce qui est sensible (jetons, mots de passe, codes de récupération) vit dans KeePassXC, qui fait référence. Aucun secret dans le dépôt, une issue ou une conversation. En fin de projet, la base est sauvegardée sur un disque externe. | Décidé (cadrage) |
-| Saisie | Le mainteneur crée et saisit lui-même les secrets : `CRON_SECRET`, jeton MCP, clé HikerAPI et chaînes Neon dans les réglages Vercel ; `CRON_SECRET` aussi dans les secrets GitHub Actions (filet de l'ADR 0002) ; `WIKI_DATABASE_URL` dans les secrets GitHub Actions, chaîne du rôle `wiki_lecture`, en lecture sur la seule table `spells` de `wa-prod` (publication du wiki). | Accepté le 2026-11-15 |
+| Saisie | Le mainteneur crée et saisit lui-même les secrets : `CRON_SECRET`, jeton MCP, clé HikerAPI et chaînes Neon dans les réglages Vercel ; `CRON_SECRET` aussi dans les secrets GitHub Actions (filet de l'ADR 0002) ; `WIKI_DATABASE_URL` dans les secrets GitHub Actions, chaîne du rôle `wiki_lecture`, en lecture sur la seule table `spells` de `spell-army-prod` (publication du wiki). | Accepté le 2026-11-15 |
 | Récupération Neon | Neon ne fournit pas de codes de récupération : l'accès repose sur la sauvegarde de l'application d'authentification, qui est notée dans KeePassXC. | Accepté le 2026-11-15 |
 | Accès de Claude à Neon | Seule l'entrée MCP locale en lecture seule sert. Le connecteur Neon de Claude est en écriture et renvoie les chaînes de connexion : ses outils qui exposent ou créent un secret (chaîne de connexion, mot de passe, identifiant) ne sont jamais appelés. | Accepté le 2026-11-15 |
 

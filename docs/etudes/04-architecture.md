@@ -1,4 +1,4 @@
-# 04 — Architecture cible de Wizard Army (matière d'ADR)
+# 04 — Architecture cible de Spell Army (matière d'ADR)
 
 Date : 2026-11-11. **[V]** = vérifié dans la doc en ligne ce jour ; **[S]** = supposé, à vérifier.
 
@@ -14,7 +14,7 @@ Date : 2026-11-11. **[V]** = vérifié dans la doc en ligne ce jour ; **[S]** = 
 
 Lus : `CLAUDE.md`, `.mcp.json`, ADR 0002, 0003, 0004, 0005, 0007, 0008, 0014, 0022, 0027 (et la liste des 29), `infra/`, workflows.
 
-| Existant [V] | Pour Wizard Army |
+| Existant [V] | Pour Spell Army |
 |---|---|
 | Cloudflare : registrar de `pacome.dev`, DNS, R2 (bucket `backups`), Tunnel/Access/WAF | **Repris** : DNS seul et R2. **Laissé** : Tunnel, Access, proxy. |
 | Sentry SaaS Developer, organisation UE, erreurs seules, sans données personnelles (ADR 0027) | **Repris** (nouveau projet ; création effective de l'organisation à confirmer). |
@@ -35,7 +35,7 @@ Le Portfolio ne contient **aucune trace de Vercel, Neon ni Supabase** ; son MCP 
 |---|---|---|---|
 | Framework | **Next.js 16.x** (Context7 liste 16.4.x [V]) ; modale R3F en composant client chargé à la demande | Vite + API ; Astro | Un déploiement pour tout ; découvre Fluid compute, cache/ISR, previews. |
 | Structure | **pnpm workspaces** : `engine` (TS pur, seedé), `db` (schéma Drizzle + services), `apps/web`. Phase 2 : `apps/video` (Remotion) importe les types du journal depuis `engine`. | Dépôt simple ; + Turborepo | Le minimum anti-refonte : moteur et format du journal sont des paquets. Vercel gère pnpm et saute les builds inchangés [V]. Turborepo à l'arrivée de la 2ᵉ app. |
-| Base | **Neon, 2 projets : `wa-preprod`, `wa-prod`** | Supabase ; Postgres du VPS | §3 bis. Env vars par environnement, `DATABASE_URL` poolée + `_UNPOOLED` [V]. |
+| Base | **Neon, 2 projets : `spell-army-preprod`, `spell-army-prod`** | Supabase ; Postgres du VPS | §3 bis. Env vars par environnement, `DATABASE_URL` poolée + `_UNPOOLED` [V]. |
 | ORM | **Drizzle** | Prisma ; driver Neon nu | Léger, proche du SQL, sans moteur binaire [S]. |
 | MCP | **`mcp-handler` 2.x** dans `app/api/mcp/route.ts` [V], Streamable HTTP sans état | Projet séparé ; xmcp | Une route suffit à cette échelle. |
 | Auth MCP | **v1 : bearer** ; **v2 : OAuth** (WorkOS AuthKit ou Clerk, un seul utilisateur) | OAuth d'emblée | §3 ter. |
@@ -111,7 +111,7 @@ Vercel **déconseille** un reverse proxy devant ses déploiements [V] et fournit
           +-----------+-----------------------------------------+--------------------+
                       | DATABASE_URL (par environnement)        | API externe (étudiée ailleurs)
                       v
-       Neon : wa-prod | wa-preprod
+       Neon : spell-army-prod | spell-army-preprod
  Sentry (erreurs) · healthchecks.io (fin de job) · GitHub Actions (CI, dump hebdo -> R2 chiffré)
  Phase 2 : apps/video (Remotion) lit le journal ; rendu Sandbox ou dédié ; sortie -> Blob
 ```

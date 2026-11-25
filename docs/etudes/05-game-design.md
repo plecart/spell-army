@@ -1,4 +1,4 @@
-# Étude 05 — Système de jeu de Wizard Army
+# Étude 05 — Système de jeu de Spell Army
 
 > Étude préliminaire du 2026-11-11. Chiffres issus d'un calcul et d'une simulation Monte Carlo jetable
 > (8 000 à 30 000 combats par point) : des ordres de grandeur pour calibrer, pas des valeurs figées.
@@ -74,7 +74,7 @@ meilleurs.
 
 ### 2.3 Dérivation depuis le seed
 
-h = SHA-256(`wizard-army:v1:` + identifiant en minuscules, sans `@`), préfixe immuable. Chaque dé
+h = SHA-256(`spell-army:v1:` + identifiant en minuscules, sans `@`), préfixe immuable. Chaque dé
 est un hachage dérivé, `de(h, rôle, i)`, jamais le générateur aléatoire du langage, dont la suite
 n'est pas garantie d'une version à l'autre.
 
