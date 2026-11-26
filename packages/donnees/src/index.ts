@@ -1,4 +1,8 @@
 export {
+	anonymizeCombatLogs,
+	REMOVED_PLAYER_LABEL,
+} from "./anonymization.ts";
+export {
 	type CalibrationSettings,
 	readCalibrationSettings,
 	updateCalibrationSettings,
