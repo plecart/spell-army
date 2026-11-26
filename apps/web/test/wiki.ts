@@ -1,5 +1,5 @@
-// Les montages des tests du wiki : la réserve de départ en entrée, et le wiki généré dans un dossier
-// temporaire, effacé à la fin du test.
+// Les montages des tests du wiki : la réserve de départ en entrée, le wiki généré dans un dossier
+// temporaire, effacé à la fin du test, et le relevé des statuts internes qu'il ne montre jamais.
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
@@ -28,6 +28,13 @@ export const ADDED: WikiSpell = {
 
 /** Les octets d'une image, le début d'une signature PNG : le wiki les recopie sans les décoder. */
 export const IMAGE_BYTES = [137, 80, 78, 71];
+
+/**
+ * Un statut interne des documents, en mot entier et quelle que soit la casse : « Décidé »,
+ * « (décidé) », « Proposé », « Ouvert », « ouverts ».
+ */
+export const INTERNAL_STATUS =
+	/(?<!\p{L})(?:décidé|proposé|ouvert)e?s?(?!\p{L})/giu;
 
 /** La réserve de départ, le sort n° `number` avec `image`. */
 export const withImage = (number: number, image: WikiSpell["image"]) =>
