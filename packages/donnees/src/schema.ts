@@ -412,8 +412,10 @@ export const auditLog = pgTable(
 );
 
 /**
- * Les issues d'un combat, celles d'`Outcome` (`packages/combat/src/log.ts`) : `exhaustion`, la
- * défaite par épuisement du garde-fou (game design § 4).
+ * Les issues d'un combat (game design § 4) : `exhaustion`, la défaite par épuisement du garde-fou.
+ * Doublon assumé d'`Outcome` (`packages/combat/src/log.ts`), `donnees` ne dépendant d'aucun paquet
+ * (ADR 0001, « Paquets ») : `apps/web/app/mcp/season.ts` fait passer l'une dans l'autre, dans les
+ * deux sens, et une liste qui diverge ne compile plus.
  */
 const OUTCOMES = ["victory", "defeat", "exhaustion"] as const;
 
@@ -500,7 +502,11 @@ export const combats = pgTable(
 	],
 );
 
-/** Les positions d'un forcé, celles de `Forced` (`packages/combat/src/log.ts`, game design § 5). */
+/**
+ * Les positions d'un forcé (game design § 5). Doublon assumé de celles de `Forced`
+ * (`packages/combat/src/log.ts`), comme `OUTCOMES` d'`Outcome`, et tenu égal de même par
+ * `apps/web/app/mcp/season.ts` et `season-tools.ts`.
+ */
 const FORCED_POSITIONS = ["first", "last", "middle"] as const;
 
 /**

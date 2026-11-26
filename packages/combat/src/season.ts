@@ -22,7 +22,7 @@ const DEFEATS_PER_DROP = 2;
  * résidu (0,4 − 0,1 = 0,30000000000000004, et sept baisses de 0,1 depuis 0,7 laissent 2,8 × 10⁻¹⁷
  * au lieu de 0), que l'arrondi efface. Un p réglé avec plus de neuf décimales y perd les suivantes.
  */
-const SHARE_DECIMALS = 9;
+const RECRUIT_SHARE_DECIMALS = 9;
 
 /**
  * L'état d'une saison, en JSON tel quel :
@@ -204,7 +204,7 @@ function afterDefeat(
 			recruitShare: settings.recruitShare,
 		};
 	}
-	const recruitShare = loweredShare(settings);
+	const recruitShare = loweredRecruitShare(settings);
 	return {
 		state: { ...lost, budget: capRecruitShare(budget, recruitShare) },
 		recruitShare,
@@ -229,13 +229,13 @@ function nextChapterBudget(
 	return { kind: "larger", ...recruits, ...formula };
 }
 
-/** p baissé du réglage, plancher 0, sans résidu de virgule flottante (`SHARE_DECIMALS`). */
-function loweredShare({
+/** p baissé du réglage, plancher 0, sans résidu de virgule flottante (`RECRUIT_SHARE_DECIMALS`). */
+function loweredRecruitShare({
 	recruitShare,
 	recruitShareDrop,
 }: SeasonSettings): number {
 	const lowered = recruitShare - recruitShareDrop;
-	return Math.max(0, Number(lowered.toFixed(SHARE_DECIMALS)));
+	return Math.max(0, Number(lowered.toFixed(RECRUIT_SHARE_DECIMALS)));
 }
 
 /**

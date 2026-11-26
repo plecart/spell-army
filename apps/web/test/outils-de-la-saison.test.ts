@@ -2,6 +2,8 @@ import type { CallToolResult, Client } from "@modelcontextprotocol/client";
 import {
 	poolVersionOf,
 	RULES_VERSION,
+	// L'état de départ de `combat` est celui que la migration pose : ce test les tient égaux.
+	SEASON_START,
 	STARTING_POOL,
 	type Stats,
 	seedOf,
@@ -109,18 +111,6 @@ const LAST = {
 	identifiant: DAY_BEFORE,
 	position: "dernier",
 	motif: "partenaire",
-};
-
-// L'état de la saison 1 à son début, tel que la migration le pose.
-const SEASON_START = {
-	season: 1,
-	chapter: 1,
-	attempt: 1,
-	combatsPlayed: 0,
-	defeatStreak: 0,
-	budget: null,
-	lastOutcome: null,
-	endDay: null,
 };
 
 const DATE_TAKEN =
