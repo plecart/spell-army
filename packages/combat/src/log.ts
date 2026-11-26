@@ -1,5 +1,6 @@
 import type { ArmySummary, Fighter } from "./army.ts";
 import type { Monster } from "./monster.ts";
+import { sha256Hex } from "./sha256.ts";
 import type { Shares, Spell } from "./spell.ts";
 
 /**
@@ -122,7 +123,14 @@ export interface SeasonLog extends CombatLog {
  */
 export function seasonLogOf(
 	log: CombatLog,
-	{ season, chapter, day, attempt, recruitShare, referenceRecruits }: SeasonHeader,
+	{
+		season,
+		chapter,
+		day,
+		attempt,
+		recruitShare,
+		referenceRecruits,
+	}: SeasonHeader,
 ): SeasonLog {
 	return {
 		...log,
@@ -147,6 +155,19 @@ export function seasonLogOf(
  */
 export function serializeLog(log: CombatLog): string {
 	return JSON.stringify(log, sortedKeys);
+}
+
+/**
+ * La version de la réserve `pool`, portée à l'en-tête du journal (game design § 9) : le SHA-256, en
+ * hexadécimal, de la réserve en JSON aux clés triées comme `serializeLog` les écrit. Chaque sort
+ * compte tel que le combat le lit, poids compris, dans l'ordre de la réserve : les mêmes sorts dans
+ * le même ordre donnent la même version, quel que soit l'ordre de leurs clés ; un sort changé,
+ * ajouté ou retiré en donne une autre.
+ *
+ * @example `poolVersionOf([])` est le SHA-256 de « [] ».
+ */
+export function poolVersionOf(pool: readonly Spell[]): string {
+	return sha256Hex(JSON.stringify(pool, sortedKeys));
 }
 
 /** Le remplaçant de `JSON.stringify` : un objet (hors tableau) renaît, ses clés triées. */

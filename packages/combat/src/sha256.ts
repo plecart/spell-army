@@ -54,6 +54,13 @@ export function sha256(text: string): Uint8Array {
 	return new Uint8Array(hash.buffer);
 }
 
+/** Le condensé SHA-256 d'un texte lu en UTF-8, en hexadécimal minuscule : 64 caractères. */
+export function sha256Hex(text: string): string {
+	return Array.from(sha256(text), (byte) =>
+		byte.toString(16).padStart(2, "0"),
+	).join("");
+}
+
 /**
  * Le message suivi d'un bit à 1, de zéros, puis de sa longueur en bits sur 64 bits gros-boutistes :
  * un multiple de 64 octets (FIPS 180-4 § 5.1.1).

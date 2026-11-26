@@ -1,4 +1,4 @@
-export type { Fighter } from "./army.ts";
+export { type ArmySummary, type Fighter, summarize } from "./army.ts";
 export {
 	type BudgetComponents,
 	budgetOf,
@@ -12,6 +12,7 @@ export {
 	type Forced,
 	type MonsterAction,
 	type Outcome,
+	poolVersionOf,
 	RULES_VERSION,
 	type SeasonHeader,
 	type SeasonLog,
@@ -55,6 +56,7 @@ export {
 	type SeasonSettings,
 	type SeasonState,
 	type SeasonTransition,
+	seasonEndNotice,
 	seedOf,
 } from "./season.ts";
 export { type Trial, victoryShare } from "./simulation.ts";

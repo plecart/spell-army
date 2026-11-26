@@ -5,7 +5,7 @@
  */
 import { type BudgetComponents, capRecruitShare } from "./calibration.ts";
 import type { Outcome } from "./log.ts";
-import { sha256 } from "./sha256.ts";
+import { sha256Hex } from "./sha256.ts";
 import type { Stats } from "./spell.ts";
 
 /**
@@ -98,9 +98,7 @@ export function seedOf({
 	chapter,
 	attempt,
 }: Pick<SeasonState, "season" | "chapter" | "attempt">): string {
-	return Array.from(sha256(`${season}:${chapter}:${attempt}`), (byte) =>
-		byte.toString(16).padStart(2, "0"),
-	).join("");
+	return sha256Hex(`${season}:${chapter}:${attempt}`);
 }
 
 /** Le jour du prochain combat : son numéro dans la saison (issue #21, Décisions, 3). */
@@ -240,9 +238,21 @@ function loweredShare({
 	return Math.max(0, Number(lowered.toFixed(SHARE_DECIMALS)));
 }
 
-/** @throws {RangeError} si la saison est terminée, le message disant quand. */
-function assertOngoing({ season, endDay }: SeasonState): void {
-	if (endDay !== null) {
-		throw new RangeError(`saison ${season} terminée au jour ${endDay}`);
+/**
+ * Le constat de fin de la saison (issue #21, Décisions, 5) : « saison 1 terminée au jour 34 » après
+ * la victoire du dernier chapitre ; `null` tant qu'elle continue.
+ */
+export function seasonEndNotice({
+	season,
+	endDay,
+}: SeasonState): string | null {
+	return endDay === null ? null : `saison ${season} terminée au jour ${endDay}`;
+}
+
+/** @throws {RangeError} si la saison est terminée, de message son constat de fin. */
+function assertOngoing(state: SeasonState): void {
+	const notice = seasonEndNotice(state);
+	if (notice !== null) {
+		throw new RangeError(notice);
 	}
 }
