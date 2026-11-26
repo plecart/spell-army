@@ -66,6 +66,14 @@ describe("calendrier Europe/Paris", () => {
 			},
 		],
 		[
+			"minuit pile en été",
+			"2026-07-16T00:00:00+02:00",
+			{
+				date: "2026-07-16",
+				lastMidnight: new Date("2026-07-16T00:00:00+02:00"),
+			},
+		],
+		[
 			"00 h 01 une nuit d'été",
 			"2026-07-16T00:01:00+02:00",
 			{
@@ -97,23 +105,26 @@ describe("calendrier Europe/Paris", () => {
 });
 
 describe("armée du jour", () => {
-	// Le lancement à 9 h, l'arrivée de la veille à 23 h 59 et celle de la nuit à 00 h 01.
+	// Le lancement à 9 h, l'arrivée de la veille à 23 h 59, celle de minuit pile, la borne, et celle
+	// de 00 h 01.
 	test.each([
 		[
 			"d'hiver",
 			"2026-01-16T09:00:00+01:00",
 			"2026-01-15T23:59:00+01:00",
+			"2026-01-16T00:00:00+01:00",
 			"2026-01-16T00:01:00+01:00",
 		],
 		[
 			"d'été",
 			"2026-07-16T09:00:00+02:00",
 			"2026-07-15T23:59:00+02:00",
+			"2026-07-16T00:00:00+02:00",
 			"2026-07-16T00:01:00+02:00",
 		],
 	])(
-		"un jour %s, un joueur arrivé la veille à 23 h 59 (Paris) en fait partie, un joueur arrivé à 00 h 01 non",
-		async (_, launch, eve, night) => {
+		"un jour %s, un joueur arrivé la veille à 23 h 59 (Paris) en fait partie, un joueur arrivé à minuit pile ou à 00 h 01 non",
+		async (_, launch, eve, midnight, night) => {
 			const db = await freshDatabase();
 			await db.insert(players).values([
 				{
@@ -124,6 +135,12 @@ describe("armée du jour", () => {
 				},
 				{
 					instagramId: "2",
+					username: "minuit",
+					spellNumber: 1,
+					arrivedAt: new Date(midnight),
+				},
+				{
+					instagramId: "3",
 					username: "nuit",
 					spellNumber: 1,
 					arrivedAt: new Date(night),
@@ -184,15 +201,42 @@ describe("arrivées par date", () => {
 		]);
 	});
 
-	test("chaque arrivée compte à sa date de Paris, de minuit pile à 23 h 59", async () => {
-		const db = await freshDatabase();
-		await arrive(db, [
-			["2026-01-14T00:00:00+01:00", 1],
-			["2026-01-15T00:30:00+01:00", 1],
-			["2026-01-15T23:59:00+01:00", 1],
-		]);
-		expect(await dailyArrivals(db, MIDNIGHT, 3)).toEqual([0, 1, 2]);
-	});
+	// Le dernier minuit, puis les arrivées : à minuit pile d'une date de la fenêtre, à 00 h 30 et à
+	// 23 h 59 de la veille, et à minuit pile du jour du lancement, la borne, hors de la fenêtre.
+	test.each([
+		[
+			"en hiver",
+			"2026-01-16T00:00:00+01:00",
+			[
+				"2026-01-14T00:00:00+01:00",
+				"2026-01-15T00:30:00+01:00",
+				"2026-01-15T23:59:00+01:00",
+				"2026-01-16T00:00:00+01:00",
+			],
+		],
+		[
+			"en été",
+			"2026-07-16T00:00:00+02:00",
+			[
+				"2026-07-14T00:00:00+02:00",
+				"2026-07-15T00:30:00+02:00",
+				"2026-07-15T23:59:00+02:00",
+				"2026-07-16T00:00:00+02:00",
+			],
+		],
+	])(
+		"%s, chaque arrivée compte à sa date de Paris, de minuit pile à 23 h 59",
+		async (_, lastMidnight, arrivals) => {
+			const db = await freshDatabase();
+			await arrive(
+				db,
+				arrivals.map((at): [string, number] => [at, 1]),
+			);
+			expect(await dailyArrivals(db, new Date(lastMidnight), 3)).toEqual([
+				0, 1, 2,
+			]);
+		},
+	);
 
 	test("une fenêtre qui franchit le passage à l'heure d'été compte chaque date de Paris", async () => {
 		const db = await freshDatabase();
