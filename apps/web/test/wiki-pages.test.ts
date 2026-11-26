@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, test } from "vitest";
 import { readImageInfo } from "../app/mcp/image.ts";
-import { anchorOf, wikiPages } from "../scripts/wiki/pages.ts";
+import { anchorOf } from "../scripts/wiki/markdown.ts";
+import { wikiPages } from "../scripts/wiki/pages.ts";
 import { readDocuments } from "../scripts/wiki/passages.ts";
 import { readTextsFile, textsOf } from "../scripts/wiki/textes.ts";
 import { ADDED, generated, IMAGE_BYTES, POOL, withImage } from "./wiki.ts";

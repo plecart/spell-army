@@ -18,6 +18,15 @@ import { CLASS_NAMES } from "../../app/annuaire/address.ts";
 import type { ImageType } from "../../app/mcp/image.ts";
 import { STAT_NAMES } from "../../app/stat-names.ts";
 import type { WikiFiles } from "./folder.ts";
+import {
+	anchorOf,
+	blocks,
+	heading,
+	image,
+	link,
+	literal,
+	table,
+} from "./markdown.ts";
 import { STAT_MAXIMUM, type WikiText } from "./textes.ts";
 
 /** Un sort à publier : le modèle de `combat`, et son image ou `null`. */
@@ -98,26 +107,10 @@ const THUMBNAIL_WIDTH = 96;
 const FULL_CELL = "█";
 const EMPTY_CELL = "░";
 
-// Les blancs d'un nom ou d'une description de sort : un seul saut de ligne couperait sa ligne de
-// tableau.
-const BLANKS = /\s+/g;
-
-// Ce qu'un texte de sort ferait lire comme du Markdown : antislash, code, emphase, lien, HTML, entité,
-// cellule de tableau, barré. Un antislash devant le rend littéral (GFM, « Backslash escapes »).
-const MARKDOWN_SPECIALS = /[\\`*_[\]<>&|~]/g;
-
-// Ce qu'une valeur d'attribut HTML entre guillemets ne garde pas telle quelle — guillemet,
-// esperluette — et la barre verticale, qui couperait sa cellule de tableau (GFM, « Tables »).
-const ATTRIBUTE_SPECIALS = /[&"|]/g;
-
-// Ce que GitHub retire d'un titre pour en faire l'ancre : tout sauf les lettres, les marques, les
-// chiffres décimaux, le tiret bas, le tiret et l'espace ; et ses seules capitales ASCII passent en
-// minuscules. Lu le 2026-11-26 : `[^\p{Word}\- ]` et `downcase(:ascii)` du `TableOfContentsFilter`
-// de html-pipeline v2.14.3, et l'ancre `…-greek-letter-Θ` de docs.github.com (« Basic writing and
-// formatting syntax », « Section links »). Constaté le 2026-11-26 sur le wiki publié : `dégâts`,
-// `qui-joue-` (#64).
-const NOT_IN_ANCHOR = /[^\p{L}\p{M}\p{Nd}\p{Pc} -]/gu;
-const ASCII_CAPITAL = /[A-Z]/g;
+// La largeur du plus long libellé de stat, à laquelle les barres s'alignent.
+const STAT_NAME_WIDTH = Math.max(
+	...STAT_KEYS.map((stat) => STAT_NAMES[stat].length),
+);
 
 // L'extension d'une image, par type : les trois qu'admet la table `spells` (`spells_image_type_check`).
 const IMAGE_EXTENSIONS: Readonly<Record<string, string>> = {
@@ -125,48 +118,6 @@ const IMAGE_EXTENSIONS: Readonly<Record<string, string>> = {
 	"image/jpeg": "jpg",
 	"image/webp": "webp",
 } satisfies Record<ImageType, string>;
-
-/**
- * L'ancre que GitHub donne au titre `title` : ses capitales ASCII en minuscules — « É » reste —,
- * sans ponctuation hors `-` et `_`, chaque espace en tiret. « Qui joue ? » donne `qui-joue-`.
- */
-export const anchorOf = (title: string) =>
-	title
-		.replace(ASCII_CAPITAL, (capital) => capital.toLowerCase())
-		.replace(NOT_IN_ANCHOR, "")
-		.replaceAll(" ", "-");
-
-/** `text` tel quel une fois rendu en Markdown, sur une ligne : ses blancs réduits à une espace. */
-const literal = (text: string) =>
-	text.replace(BLANKS, " ").replace(MARKDOWN_SPECIALS, "\\$&");
-
-/** `text` tel quel en valeur d'attribut HTML, dans une cellule de tableau, sur une ligne. */
-const attribute = (text: string) =>
-	text
-		.replace(BLANKS, " ")
-		.replace(ATTRIBUTE_SPECIALS, (char) => `&#${char.codePointAt(0)};`);
-
-const link = (text: string, target: string) => `[${text}](${target})`;
-
-const heading = (level: number, title: string) =>
-	`${"#".repeat(level)} ${title}`;
-
-/** Une balise d'image ; sans largeur, l'image garde la sienne. */
-function image(source: string, alt: string, width?: number): string {
-	const size = width === undefined ? "" : ` width="${width}"`;
-	return `<img src="${source}"${size} alt="${attribute(alt)}">`;
-}
-
-/** Des blocs Markdown, séparés d'une ligne vide ; un bloc absent est omis. */
-const blocks = (...parts: (string | undefined)[]) =>
-	parts.filter((part) => part !== undefined).join("\n\n");
-
-/** Un tableau Markdown : son en-tête, puis une ligne par élément de `rows`. */
-function table(header: readonly string[], rows: readonly string[][]): string {
-	return [header, header.map(() => "---"), ...rows]
-		.map((cells) => `| ${cells.join(" | ")} |`)
-		.join("\n");
-}
 
 /** Le champ `field` de l'entrée `key` des textes ; une erreur qui les nomme s'il manque. */
 function textOf(texts: Texts, key: string, field: "title" | "text"): string {
@@ -235,13 +186,12 @@ function imagePath(number: number, { type }: SpellImage): string {
  * case par point de 0 à `STAT_MAXIMUM`, pleine dans la plage de la classe, puis « min–max ».
  */
 function bars(key: ClassKey): string {
-	const width = Math.max(...STAT_KEYS.map((stat) => STAT_NAMES[stat].length));
 	const lines = STAT_KEYS.map((stat) => {
 		const [min, max] = CLASS_RANGES[key][stat];
 		const cells = Array.from({ length: STAT_MAXIMUM + 1 }, (_, point) =>
 			point < min || point > max ? EMPTY_CELL : FULL_CELL,
 		).join("");
-		return `${STAT_NAMES[stat].padEnd(width)} ${cells} ${min}–${max}`;
+		return `${STAT_NAMES[stat].padEnd(STAT_NAME_WIDTH)} ${cells} ${min}–${max}`;
 	});
 	return ["```", ...lines, "```"].join("\n");
 }
@@ -362,7 +312,7 @@ function sidebar(texts: Texts, groups: readonly EffectGroup[]): string {
 		...THEMES.flatMap(({ key, page }) => [
 			`- ${pageLink(texts, key, page)}`,
 			...(sections[page] ?? []).map(
-				(section) => `  - ${sectionLink(texts, page, section)}`,
+				(child) => `  - ${sectionLink(texts, page, child)}`,
 			),
 		]),
 	].join("\n");
