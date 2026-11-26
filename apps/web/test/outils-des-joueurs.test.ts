@@ -137,6 +137,13 @@ describe("outils des joueurs : tools/list", () => {
 		]);
 	});
 
+	test("retirer_joueur dit que l'identifiant devient « retiré » dans les journaux de combat stockés", () => {
+		const [remove] = publishedTools(["retirer_joueur"]);
+		expect(remove?.description).toContain(
+			"son identifiant devient « retiré » dans les journaux de combat stockés",
+		);
+	});
+
 	// Chaque motif publié, à toute profondeur : celui d'un champ qui le perdrait manquerait. L'enveloppe
 	// de confirmation de retirer_joueur en ajoute un, celui de l'ISO 8601 de `z.iso.datetime()`.
 	test("les schémas de sortie gardent la forme Instagram de chaque identifiant et de chaque pseudo", () => {
@@ -405,7 +412,7 @@ describe("retirer_joueur", () => {
 			"d'un joueur : la suppression de sa ligne et l'exclusion de son identifiant",
 			nothing,
 			TARGET,
-			"Supprimera le joueur @pseudo_a_effacer (identifiant 10) : sa ligne entière, avec sa date d'arrivée, son sort et son modèle ; et exclura définitivement son identifiant de l'import, qui ne le recréera jamais. Sans annulation.",
+			"Supprimera le joueur @pseudo_a_effacer (identifiant 10) : sa ligne entière, avec sa date d'arrivée, son sort et son modèle ; remplacera son identifiant par « retiré » dans les journaux de combat stockés, qui ne se rejoueront plus à l'identique ; et exclura définitivement son identifiant de l'import, qui ne le recréera jamais. Sans annulation.",
 		],
 		[
 			"d'un identifiant sans joueur : son exclusion seule",

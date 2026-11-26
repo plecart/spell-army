@@ -205,7 +205,7 @@ const toolSeason = z.strictObject({
 		.describe("Le prochain combat ; null une fois la saison terminée."),
 });
 
-/** La saison `view` dans le vocabulaire des outils, champ par champ. */
+/** L'état de la saison (`SeasonView`) dans le vocabulaire des outils, champ par champ. */
 function toToolSeason({
 	season,
 	lastOutcome,

@@ -118,7 +118,7 @@ export const giveSpellTool: McpTool<typeof gift> = {
 function describeRemoval(identifiant: string, preview: RemovalPreview): string {
 	switch (preview.effect) {
 		case "removed":
-			return `Supprimera le joueur @${preview.username} (identifiant ${identifiant}) : sa ligne entière, avec sa date d'arrivée, son sort et son modèle ; et exclura définitivement son identifiant de l'import, qui ne le recréera jamais. Sans annulation.`;
+			return `Supprimera le joueur @${preview.username} (identifiant ${identifiant}) : sa ligne entière, avec sa date d'arrivée, son sort et son modèle ; remplacera son identifiant par « retiré » dans les journaux de combat stockés, qui ne se rejoueront plus à l'identique ; et exclura définitivement son identifiant de l'import, qui ne le recréera jamais. Sans annulation.`;
 		case "excluded":
 			return `Aucun joueur d'identifiant ${identifiant} : exclura seulement cet identifiant, définitivement, de l'import, qui n'en créera jamais le joueur. Sans annulation.`;
 		case "already_excluded":
@@ -129,16 +129,18 @@ function describeRemoval(identifiant: string, preview: RemovalPreview): string {
 /**
  * `retirer_joueur` (ADR 0003, « RGPD »), outil destructeur : l'enrobage exige un code de
  * confirmation (ADR 0005, « Décisions », ligne « Confirmation »), et `confirmation` décrit le
- * retrait d'après `previewRemoval`. `destructiveHint` : il supprime une ligne ; `idempotentHint` :
- * N retraits identiques laissent le même état, d'où un code rejoué sans effet de plus. Aucun pseudo
- * dans sa sortie ni dans son audit, qui garde l'entrée et l'après ; la description de la
- * confirmation, rendue à Claude, le nomme.
+ * retrait d'après `previewRemoval`. Dans la même transaction, `removePlayer` remplace l'identifiant
+ * par « retiré » dans les journaux de combat stockés (issue #21, Décisions, 1), ce que sa
+ * description et celle de sa confirmation disent. `destructiveHint` : il supprime une ligne ;
+ * `idempotentHint` : N retraits identiques laissent le même état, d'où un code rejoué sans effet de
+ * plus. Aucun pseudo dans sa sortie ni dans son audit, qui garde l'entrée et l'après ; la
+ * description de la confirmation, rendue à Claude, le nomme.
  */
 export const removePlayerTool: McpTool<typeof removal> = {
 	name: "retirer_joueur",
 	title: "Retirer un joueur",
 	description:
-		"Retire un joueur, désigné par son identifiant, jamais par son pseudo : supprime sa ligne, pseudo, date d'arrivée, sort et modèle compris, et exclut son identifiant de l'import, qui ne le recrée jamais. Un identifiant sans joueur est seulement exclu ; un identifiant déjà exclu ne change rien. Sans annulation. Rend l'identifiant et l'effet : joueur_retire, identifiant_exclu ou deja_exclu.",
+		"Retire un joueur, désigné par son identifiant, jamais par son pseudo : supprime sa ligne, pseudo, date d'arrivée, sort et modèle compris, et exclut son identifiant de l'import, qui ne le recrée jamais. Dans la même transaction, son identifiant devient « retiré » dans les journaux de combat stockés, tirés, actions et forcés, motif compris : ces combats ne se rejouent plus à l'identique depuis leur journal. Un identifiant sans joueur est seulement exclu ; un identifiant déjà exclu ne change rien. Sans annulation. Rend l'identifiant et l'effet : joueur_retire, identifiant_exclu ou deja_exclu.",
 	annotations: {
 		readOnlyHint: false,
 		destructiveHint: true,

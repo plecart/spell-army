@@ -12,9 +12,11 @@ import {
 	type Executor,
 	findMonsterByName,
 	insertMonster,
+	listCombatsOfMonster,
 	listMonsters,
 	listSpells,
 	MAX_MONSTER_NAME_LENGTH,
+	type MonsterCombat,
 	type MonsterRecord,
 	postgresErrorCode,
 } from "donnees";
@@ -184,6 +186,10 @@ const UNIQUENESS = new Map<string, Uniqueness>([
 // Le code Postgres d'une violation d'unicité.
 const UNIQUE_VIOLATION = "23505";
 
+// Le code Postgres d'une suppression qu'une clé étrangère `on delete restrict` empêche : celle de
+// `combats.monster_id`, un combat ayant affronté le monstre (mesuré sous Postgres 18, PR #72).
+const RESTRICT_VIOLATION = "23001";
+
 /** Les refus du nom et du chapitre de `input`, chacun s'il est déjà pris dans `bestiary`. */
 function takenErrors(
 	bestiary: readonly MonsterRecord[],
@@ -219,13 +225,46 @@ async function sampleOf(
 	return { seeds, armyOf: (seed) => armies(seed, pool) };
 }
 
-/** Ce que fera le retrait de `nom`, d'après `monster`, le monstre de ce nom s'il y en a un. */
+/** Le monstre de nom `nom`, s'il y en a un, et les combats qui l'ont affronté. */
+async function monsterOf(executor: Executor, nom: string) {
+	const monster = await findMonsterByName(executor, nom);
+	const combats =
+		monster === undefined
+			? []
+			: await listCombatsOfMonster(executor, monster.id);
+	return { monster, combats };
+}
+
+/**
+ * Le refus du retrait de `nom`, que `combats` ont affronté (issue #20, Décisions, 2) : chaque combat
+ * nommé par son jour, sa saison et sa date, que son journal désigne.
+ */
+function foughtRefusal(nom: string, combats: readonly MonsterCombat[]): string {
+	const named = combats
+		.map(
+			({ season, day, foughtOn }) =>
+				`combat du jour ${day} de la saison ${season}, le ${foughtOn}`,
+		)
+		.join(" ; ");
+	return `le monstre « ${nom} » a déjà été affronté, il ne se retire pas : ${named}`;
+}
+
+/**
+ * Ce que fera le retrait de `nom`, d'après `monster`, le monstre de ce nom s'il y en a un, et les
+ * combats qui l'ont affronté.
+ */
 function describeRemoval(
 	nom: string,
-	monster: MonsterRecord | undefined,
+	{
+		monster,
+		combats,
+	}: { monster: MonsterRecord | undefined; combats: MonsterCombat[] },
 ): string {
 	if (monster === undefined) {
 		return `Aucun monstre ne porte le nom « ${nom} » : rien à retirer.`;
+	}
+	if (combats.length > 0) {
+		return `Ne retirera rien : ${foughtRefusal(nom, combats)}.`;
 	}
 	return `Retirera le monstre « ${nom} », chapitre ${monster.chapter} de la saison ${monster.season} : sa ligne entière, profil, attaques, facteur d'échelle et particularité, et libérera ce chapitre pour creer_monstre. Ses fichiers 3D restent rangés sous son nom, qu'un monstre recréé sous ce nom retrouve. Sans annulation.`;
 }
@@ -301,12 +340,17 @@ export function createMonsterTool(
  * confirmation (ADR 0005, « Décisions », ligne « Confirmation »), et `confirmation` décrit le retrait
  * d'après le monstre en place. `idempotentHint` : un retrait rejoué ne retire rien, et le dit. Les
  * fichiers 3D du monstre restent : aucune clé ne les lie à la table.
+ *
+ * Un monstre déjà affronté ne se retire pas (issue #20, Décisions, 2, porté par #21) : la clé
+ * étrangère `on delete restrict` des combats refuse la suppression, essayée sous un point de
+ * sauvegarde qui laisse la transaction de l'outil utilisable, et le refus nomme alors chaque combat.
+ * La base décide, la lecture nomme : une seule voie, que n'esquive aucun combat écrit entre les deux.
  */
 export const removeMonsterTool: McpTool<typeof removal> = {
 	name: "retirer_monstre",
 	title: "Retirer un monstre",
 	description:
-		"Retire le monstre de ce nom : sa ligne entière, profil, attaques, facteur d'échelle et particularité, ce qui libère son chapitre pour creer_monstre ; un monstre se corrige ainsi, puis se recrée. Ses fichiers 3D restent rangés sous son nom, et un monstre recréé sous ce nom les retrouve. Un nom qu'aucun monstre ne porte ne retire rien. Sans annulation. Rend le nom et le monstre retiré, null quand il n'y en avait aucun ; le journal d'audit garde le monstre retiré.",
+		"Retire le monstre de ce nom : sa ligne entière, profil, attaques, facteur d'échelle et particularité, ce qui libère son chapitre pour creer_monstre ; un monstre se corrige ainsi, puis se recrée. Ses fichiers 3D restent rangés sous son nom, et un monstre recréé sous ce nom les retrouve. Un nom qu'aucun monstre ne porte ne retire rien. Refuse un monstre déjà affronté par un combat, que son journal désigne, et nomme chaque combat. Sans annulation. Rend le nom et le monstre retiré, null quand il n'y en avait aucun ; le journal d'audit garde le monstre retiré.",
 	annotations: {
 		readOnlyHint: false,
 		destructiveHint: true,
@@ -323,9 +367,17 @@ export const removeMonsterTool: McpTool<typeof removal> = {
 			),
 	}),
 	confirmation: async (executor, { nom }) =>
-		describeRemoval(nom, await findMonsterByName(executor, nom)),
+		describeRemoval(nom, await monsterOf(executor, nom)),
 	run: async (executor, { nom }) => {
-		const removed = await deleteMonsterByName(executor, nom);
+		const removed = await executor
+			.transaction((savepoint) => deleteMonsterByName(savepoint, nom))
+			.catch(async (error: unknown) => {
+				if (postgresErrorCode(error)?.code !== RESTRICT_VIOLATION) {
+					throw error;
+				}
+				const { combats } = await monsterOf(executor, nom);
+				throw new Error(foughtRefusal(nom, combats));
+			});
 		const retire = removed === undefined ? null : toToolMonster(removed);
 		return { output: { nom, retire }, before: retire };
 	},

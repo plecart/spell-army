@@ -7,6 +7,7 @@ import {
 } from "combat";
 import {
 	type Executor,
+	insertCombat,
 	listMonsters,
 	modelFiles,
 	type NewMonster,
@@ -724,6 +725,49 @@ describe("retirer_monstre", () => {
 			{ succeeded: true, before: SLUG },
 			{ succeeded: true, before: null },
 		]);
+	});
+
+	test("un monstre déjà affronté : sans code, la description dit qu'il ne se retire pas et nomme chaque combat ; avec le code, refusé par le même message ; le monstre reste", async () => {
+		const { db, client } = await connectToRegistry();
+		const slug = await storeMonster(db);
+		for (const [day, foughtOn] of [
+			[1, "2026-01-16"],
+			[2, "2026-01-18"],
+		] as const) {
+			await insertCombat(db, {
+				foughtOn,
+				season: 1,
+				chapter: 1,
+				day,
+				attempt: day,
+				monsterId: slug.id,
+				outcome: "defeat",
+				log: {},
+			});
+		}
+		const refusal =
+			"le monstre « limace » a déjà été affronté, il ne se retire pas : combat du jour 1 de la saison 1, le 2026-01-16 ; combat du jour 2 de la saison 1, le 2026-01-18";
+
+		expect(
+			confirmationOf(await call(client, "retirer_monstre", { nom: "limace" }))
+				.description,
+		).toBe(`Ne retirera rien : ${refusal}.`);
+		expect(await confirmedRemoval(client, "limace")).toMatchObject({
+			content: [{ type: "text", text: refusal }],
+			isError: true,
+		});
+		expect((await auditOf(db, "retirer_monstre")).at(-1)).toMatchObject({
+			succeeded: false,
+			error: refusal,
+		});
+		expect(await listMonsters(db)).toEqual([slug]);
+	});
+
+	test("retirer_monstre et sa description disent qu'un monstre affronté ne se retire pas", () => {
+		const [remove] = publishedTools(["retirer_monstre"]);
+		expect(remove?.description).toContain(
+			"Refuse un monstre déjà affronté par un combat",
+		);
 	});
 
 	test("le chapitre libéré accepte un nouveau creer_monstre", async () => {
