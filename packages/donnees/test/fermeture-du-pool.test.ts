@@ -38,7 +38,8 @@ test("fermer un pool rend la main sans laisser de minuteur en attente", async ()
 // Les fermetures du pool hors tests, `chemin:ligne`, recomptées à chaque exécution par `git grep` sur
 // la population du critère de #64, en chaîne fixe : population vivante, dont seul l'invariant
 // s'épingle — chacune est celle de `closeClient` —, jamais un nombre ni une liste. `git grep` sort en
-// 1 quand il ne trouve rien.
+// 1 quand il ne trouve rien, au-delà sur une erreur : 128 pour un chemin ou une expression fautifs,
+// 129 pour une option inconnue (git 2.47.1, mesuré le 2026-11-26).
 function poolCloses(): string[] {
 	const { status, stdout, stderr } = spawnSync(
 		"git",
@@ -54,7 +55,7 @@ function poolCloses(): string[] {
 		],
 		{ cwd: fileURLToPath(REPO_ROOT), encoding: "utf8" },
 	);
-	expect(status, stderr).not.toBe(2);
+	expect([0, 1], stderr).toContain(status);
 	return stdout
 		.split("\n")
 		.filter(Boolean)
