@@ -1,5 +1,16 @@
-import { type Executor, excludedPlayers, players } from "donnees";
-import { freshDatabase, waitForOneLockWaiter } from "donnees/test/base-neuve";
+import {
+	type Executor,
+	excludedPlayers,
+	findCombat,
+	insertCombat,
+	insertMonster,
+	players,
+} from "donnees";
+import {
+	freshDatabase,
+	injectFailure,
+	waitForOneLockWaiter,
+} from "donnees/test/base-neuve";
 import { describe, expect, test } from "vitest";
 import {
 	previewRemoval,
@@ -11,9 +22,58 @@ import {
 import { entry, FakeFollowerProvider } from "./faux-fournisseur.ts";
 import { after, HOUR_MS, T0 } from "./horloge.ts";
 
-// L'identifiant retiré, et un témoin, joueur inscrit qui reste.
+// L'identifiant retiré, un témoin, joueur inscrit qui reste, et « 100 », que l'identifiant retiré
+// ne fait que préfixer.
 const TARGET = "10";
 const WITNESS = "11";
+const PREFIXED = "100";
+
+/**
+ * Un journal de combat où `id` est tiré, joue, est forcé et n'est pas atteint, avec le témoin et
+ * « 100 ».
+ */
+function logOf(id: string) {
+	return {
+		header: { forced: [{ id, position: "first", reason: "Concours" }] },
+		actions: [
+			{ number: 1, fighter: { id } },
+			{ number: 2, fighter: { id: WITNESS } },
+			{ number: 3, fighter: { id: PREFIXED } },
+		],
+		summary: {
+			drawn: [id, WITNESS, PREFIXED],
+			unreachedForced: [{ id, position: "last" }],
+		},
+	};
+}
+
+/** Range au premier jour de la saison 1 un combat dont le journal porte `TARGET`. */
+async function storeCombatOfTarget(db: Executor): Promise<void> {
+	const { id: monsterId } = await insertMonster(db, {
+		season: 1,
+		chapter: 1,
+		name: "Golem de lave",
+		profile: {},
+		attacks: [],
+		scaleFactor: 1,
+		trait: "Brûlant.",
+	});
+	await insertCombat(db, {
+		foughtOn: "2026-01-16",
+		season: 1,
+		chapter: 1,
+		day: 1,
+		attempt: 1,
+		monsterId,
+		outcome: "victory",
+		log: logOf(TARGET),
+	});
+}
+
+/** Le journal du combat que range `storeCombatOfTarget`. */
+async function storedLog(db: Executor): Promise<unknown> {
+	return (await findCombat(db, 1, 1))?.log;
+}
 
 /** Les identifiants de `players` et ceux de `excluded_players`, par ordre croissant. */
 async function stateOf(db: Executor) {
@@ -87,6 +147,28 @@ describe("retrait d'un joueur", () => {
 			expect(await removePlayer(db, TARGET)).toBe(preview.effect);
 		},
 	);
+
+	test.each(CASES)(
+		"retirer %s remplace son identifiant par « retiré » dans les journaux de combat, sans toucher au témoin ni à « 100 »",
+		async (_, setup) => {
+			const db = await databaseWith(setup);
+			await storeCombatOfTarget(db);
+			await removePlayer(db, TARGET);
+			expect(await storedLog(db)).toEqual(logOf("retiré"));
+		},
+	);
+
+	test("un retrait qui échoue n'anonymise rien, et ne change rien", async () => {
+		const db = await databaseWith((db) => writePage(db, [entry(TARGET)]));
+		await storeCombatOfTarget(db);
+		const before = await stateOf(db);
+		await injectFailure(db, { event: "delete", table: "players" });
+		await expect(removePlayer(db, TARGET)).rejects.toMatchObject({
+			cause: { code: "P0001" },
+		});
+		expect(await storedLog(db)).toEqual(logOf(TARGET));
+		expect(await stateOf(db)).toEqual(before);
+	});
 
 	test("retiré puis toujours abonné : une passe rapide d'une liste qui le porte encore ne le recrée pas", async () => {
 		const db = await freshDatabase();

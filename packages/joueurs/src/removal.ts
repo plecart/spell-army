@@ -1,4 +1,9 @@
-import { type Executor, excludedPlayers, players } from "donnees";
+import {
+	anonymizeCombatLogs,
+	type Executor,
+	excludedPlayers,
+	players,
+} from "donnees";
 import { eq } from "drizzle-orm";
 
 /**
@@ -41,15 +46,19 @@ export async function previewRemoval(
 }
 
 /**
- * Retire `instagramId` (ADR 0003, « RGPD ») : l'inscrit dans `excluded_players`, puis supprime la
- * ligne de son joueur, pseudo compris, s'il en a une. Définitif : rien ne l'annule, et l'import ne
- * crée jamais le joueur d'un identifiant exclu (`writePage`). Retirer un identifiant déjà exclu et
- * sans joueur ne change rien et ne lève rien.
+ * Retire `instagramId` (ADR 0003, « RGPD ») : remplace l'identifiant par « retiré » dans les
+ * journaux de combat stockés (`anonymizeCombatLogs` ; issue #21, Décisions, 1), l'inscrit dans
+ * `excluded_players`, puis supprime la ligne de son joueur, pseudo compris, s'il en a une.
+ * Définitif : rien ne l'annule, et l'import ne crée jamais le joueur d'un identifiant exclu
+ * (`writePage`). Les journaux sont anonymisés quel que soit l'effet : retirer de nouveau un
+ * identifiant déjà exclu et sans joueur ne change rien d'autre et ne lève rien.
  *
- * Une transaction, un point de sauvegarde quand `executor` en est déjà une. L'exclusion s'inscrit
- * avant la suppression : une page en cours d'écriture tient `excluded_players` en mode partagé
- * (`writePage`), l'inscription attend son commit, et la suppression, qui lit après lui, supprime le
- * joueur que la page vient d'inscrire.
+ * Une transaction, un point de sauvegarde quand `executor` en est déjà une : un retrait qui échoue
+ * n'anonymise rien. L'anonymisation vient d'abord, sous le verrou de l'état de la saison : un retrait
+ * attend la fin d'un lancement en cours et anonymise le journal qu'il vient d'écrire, et un
+ * lancement suivant attend la fin du retrait. L'exclusion s'inscrit avant la suppression : une page
+ * en cours d'écriture tient `excluded_players` en mode partagé (`writePage`), l'inscription attend
+ * son commit, et la suppression, qui lit après lui, supprime le joueur que la page vient d'inscrire.
  *
  * @param executor le client, ou la transaction de l'appelant.
  * @param instagramId l'identifiant, dont l'appelant vérifie la forme.
@@ -62,6 +71,7 @@ export async function removePlayer(
 	instagramId: string,
 ): Promise<RemovalEffect> {
 	return executor.transaction(async (tx) => {
+		await anonymizeCombatLogs(tx, instagramId);
 		const excluded = await tx
 			.insert(excludedPlayers)
 			.values({ instagramId })
