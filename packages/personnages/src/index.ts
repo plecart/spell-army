@@ -7,6 +7,7 @@ export {
 	characterOf,
 	perClass,
 	STAT_KEYS,
+	STATS_TOTAL,
 	type StatKey,
 	type Stats,
 } from "./character.ts";

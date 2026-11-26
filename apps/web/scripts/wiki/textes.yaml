@@ -1,0 +1,329 @@
+# Les textes du wiki du jeu, en mots de joueur, que le générateur recopie (`textes.ts`) : jamais de
+# prose dans le code. Une entrée par clé stable, en kebab-case, avec un titre (`title`), un texte en
+# Markdown (`text`), ou les deux.
+#
+# Une explication déclare les passages des documents qu'elle explique (`passages`) et leur empreinte
+# (`fingerprint`, entre guillemets). Un passage se lit dans `document`, sous le titre `section`, de
+# tout niveau : les lignes d'un tableau nommées par leur première cellule (`rows`), une puce ouverte
+# par son libellé en gras (`bullet`), ou un bloc ouvert par son titre en gras (`block`). Quand un
+# passage change, un test nomme l'explication à relire et donne sa nouvelle empreinte, à recopier
+# une fois l'explication relue.
+#
+# Aucun chiffre dans un titre ou un texte : un nombre s'insère par son nom de valeur entre
+# accolades, `{total des points}`, que la lecture du fichier remplace par la valeur du code. Les
+# accolades sont réservées aux noms de valeur, schéma compris.
+
+# Accueil
+
+accueil:
+  title: Spell Army
+  text: |
+    Spell Army, c'est l'armée de tous les abonnés de {compte Instagram}. Chaque abonné devient un
+    personnage, et chaque jour, l'armée entière affronte un monstre, tour par tour. Chaque combat
+    devient une vidéo où de vrais abonnés sont les héros.
+  passages:
+    - document: docs/etudes/00-cadrage.md
+      section: 1. Ce qui est ferme
+      bullet: Le concept
+  fingerprint: "85e95bfffab0"
+
+rejoindre:
+  title: Rejoins l'armée
+  text: |
+    - Abonne-toi à {compte Instagram} : c'est tout, tu es enrôlé.
+    - Ton personnage rejoint l'armée de lui-même, sans commentaire ni formulaire.
+    - Va le découvrir sur {site}, et prépare-toi pour le prochain combat.
+  passages:
+    - document: docs/etudes/00-cadrage.md
+      section: Joueurs
+      rows: [Enrôlement]
+  fingerprint: "2f14011b0db9"
+
+themes:
+  title: Découvre le jeu
+
+theme-personnages:
+  title: Personnages
+  text: |
+    Ta classe, tes stats, ton verdict et ton sort : tout ce qui fait ton personnage.
+
+theme-sorts:
+  title: Sorts
+  text: |
+    Comment un sort puise sa force dans toute l'armée, et tous les sorts que tu peux recevoir.
+
+theme-combat:
+  title: Combat
+  text: |
+    Qui joue, à quel rythme, et comment un combat se termine.
+
+# Personnages
+
+ton-personnage:
+  title: Ton personnage
+  text: |
+    Chaque abonné de {compte Instagram} est un personnage de l'armée. Voici ce qui fait le tien.
+
+ta-classe:
+  title: Ta classe
+  text: |
+    Tu appartiens à l'une des {nombre de classes} classes, tirée au sort : chacune a autant de
+    chances que les autres. Ta classe décide de ce que tes stats peuvent valoir : une Fée ne sera
+    jamais costaude, un Golem jamais rapide.
+  passages:
+    - document: docs/game-design.md
+      section: 1. Le personnage
+      rows: [Classe]
+  fingerprint: "03cc11c59b4d"
+
+tes-stats:
+  title: Tes stats
+  text: |
+    Tu as {nombre de stats} stats : Vie, Force, Magie et Vitesse, chacune jusqu'à
+    {maximum d'une stat}. Elles font toujours {total des points} points en tout. Le tirage les
+    répartit dans les plages de ta classe : deux Magiciens n'ont pas forcément les mêmes, et le tien
+    peut être un génie… ou un raté. Va vite voir sur {site} si tu as eu de la chance !
+  passages:
+    - document: docs/game-design.md
+      section: 1. Le personnage
+      rows: [Statistiques, Total, Loterie]
+  fingerprint: "8d81face092c"
+
+ton-verdict:
+  title: Ton verdict
+  text: |
+    Ton verdict te dit si tu es bien tombé, comparé aux autres de ta classe : mal né, faible, moyen,
+    doué ou excellent. Il regarde surtout les stats où ta classe brille le plus : un Paysan doué et
+    un Magicien doué n'ont donc pas du tout les mêmes stats. Les excellents sont aussi rares que les
+    mal nés.
+  passages:
+    - document: docs/game-design.md
+      section: 1. Le personnage
+      rows: [Verdict]
+  fingerprint: "7e043b1a54a7"
+
+ton-sort:
+  title: Ton sort
+  text: |
+    Tu as un seul sort, tiré au hasard, sans rapport avec ta classe : un Golem peut très bien lancer
+    une boule de feu. Découvre ce que fait le tien dans [Sorts](Sorts).
+  passages:
+    - document: docs/game-design.md
+      section: 1. Le personnage
+      rows: [Sort]
+  fingerprint: "08b818765402"
+
+les-classes:
+  title: Les classes
+  text: |
+    Voici les {nombre de classes} classes. Les cases remplies montrent ce que chaque stat peut
+    valoir dans la classe : plus une barre est longue, plus la classe peut y briller.
+
+# Une phrase de caractère par classe, déduite de ses plages ; la clé suit le nom de la classe dans
+# l'adresse de l'annuaire.
+
+classe-magicien:
+  text: |
+    Tu as la magie dans le sang : ta Magie peut monter jusqu'au sommet. Ton corps, lui, reste
+    fragile et lent.
+  passages:
+    - document: docs/game-design.md
+      section: Annexe A — Plages des classes
+      rows: [Magicien]
+  fingerprint: "b71a1fba316b"
+
+classe-golem:
+  text: |
+    Tu es un roc : solide et puissant, mais lent, et la magie glisse sur toi.
+  passages:
+    - document: docs/game-design.md
+      section: Annexe A — Plages des classes
+      rows: [Golem]
+  fingerprint: "47e3136e738e"
+
+classe-guerrier:
+  text: |
+    Tu es fait pour la bagarre : beaucoup de Force, de la Vie et de la Vitesse, presque pas de
+    Magie.
+  passages:
+    - document: docs/game-design.md
+      section: Annexe A — Plages des classes
+      rows: [Guerrier]
+  fingerprint: "2f85e2f09644"
+
+classe-nain:
+  text: |
+    Robuste et têtu : tu encaisses et tu frappes, sans jamais te presser.
+  passages:
+    - document: docs/game-design.md
+      section: Annexe A — Plages des classes
+      rows: [Nain]
+  fingerprint: "2909801ae751"
+
+classe-vampire:
+  text: |
+    Tu as un peu de tout, avec un faible pour la Magie et la Vitesse.
+  passages:
+    - document: docs/game-design.md
+      section: Annexe A — Plages des classes
+      rows: [Vampire]
+  fingerprint: "755130c09609"
+
+classe-druide:
+  text: |
+    Tu préfères la Magie et la Vitesse à la Force : la nature se bat à tes côtés.
+  passages:
+    - document: docs/game-design.md
+      section: Annexe A — Plages des classes
+      rows: [Druide]
+  fingerprint: "1c5304406bd2"
+
+classe-paysan:
+  text: |
+    Tout est possible : chaque stat peut aller de rien au maximum. Tu peux être un héros… ou pas du
+    tout.
+  passages:
+    - document: docs/game-design.md
+      section: Annexe A — Plages des classes
+      rows: [Paysan]
+  fingerprint: "8eaf6b704c06"
+
+classe-fee:
+  text: |
+    Vive et magique : ta Magie et ta Vitesse filent au sommet, mais un souffle te renverse.
+  passages:
+    - document: docs/game-design.md
+      section: Annexe A — Plages des classes
+      rows: [Fée]
+  fingerprint: "195998b6a782"
+
+# Sorts
+
+comment-marche-un-sort:
+  title: Comment marche un sort
+  text: |
+    Quand tu lances ton sort, tu ne frappes pas seul : toute l'armée y met sa force. L'armée donne
+    la puissance, toi le talent.
+
+    Chaque sort a sa recette : les stats dont il se sert. Plus tu es fort dans ces stats, mieux tu
+    le lances. Même nul dans la bonne stat, tu en tires encore la moitié de ce que ferait un
+    champion.
+
+    Un sort fait des dégâts au monstre, soigne l'armée, ou les deux à la fois : c'est le vol de vie,
+    un peu moins fort qu'un sort de dégâts.
+
+    Certains sorts sont sûrs. D'autres frappent plus fort mais coûtent un peu de Vie à l'armée,
+    dépendent de la situation, ou marchent mieux quand ta stat est basse.
+  passages:
+    - document: docs/game-design.md
+      section: 2. Les sorts
+      block: Puissance d'un sort lancé par l'armée
+    - document: docs/game-design.md
+      section: 2. Les sorts
+      rows: [Recette, Formes, Effets, Vol de vie]
+  fingerprint: "395f60bbb9e4"
+
+degats:
+  title: Dégâts
+  text: |
+    Ces sorts frappent le monstre.
+
+soin:
+  title: Soin
+  text: |
+    Ces sorts rendent de la Vie à ton armée.
+
+vol-de-vie:
+  title: Vol de vie
+  text: |
+    Ces sorts frappent le monstre et soignent ton armée du même coup.
+
+# Combat
+
+tour-de-combat:
+  title: Un tour de combat
+  text: |
+    À chaque action de l'armée, un personnage est tiré au sort et lance son sort, avec la puissance
+    de toute l'armée : c'est peut-être ton moment de gloire. Le monstre, lui, riposte. Le schéma
+    montre un tour en entier.
+  passages:
+    - document: docs/game-design.md
+      section: 4. Le combat
+      rows: [Action de l'armée]
+  fingerprint: "bcbcc1f02c54"
+
+# Le schéma du tour de combat, en Mermaid, sans ses clôtures.
+schema-tour-de-combat:
+  text: |
+    flowchart TD
+        tirage["Un personnage de l'armée est tiré au sort"] --> sort["Il lance son sort avec la puissance de toute l'armée"]
+        sort --> encore(["L'armée a-t-elle encore une action ce tour-ci ?"])
+        encore -- oui --> tirage
+        encore -- non --> monstre["Le monstre attaque l'armée"]
+        monstre --> fin(["Le monstre ou l'armée n'a plus de Vie ?"])
+        fin -- non --> tirage
+        fin -- oui --> issue["Victoire ou défaite"]
+  passages:
+    - document: docs/game-design.md
+      section: 4. Le combat
+      rows: [Action de l'armée, Initiative, Fin]
+  fingerprint: "fecddad339a2"
+
+qui-joue:
+  title: Qui joue ?
+  text: |
+    Chacun son tour : personne ne rejoue tant que tous les personnages de l'armée n'ont pas joué.
+  passages:
+    - document: docs/game-design.md
+      section: 4. Le combat
+      rows: [Tirage]
+  fingerprint: "2d3172f921b1"
+
+qui-joue-le-plus-souvent:
+  title: Qui joue le plus souvent ?
+  text: |
+    C'est une course de Vitesse. Le monstre joue une fois par tour ; ton armée joue d'autant plus
+    souvent qu'elle est rapide face à lui. Un peu plus rapide, elle glisse de temps en temps une
+    action en plus. À égalité, c'est ton armée qui joue en premier.
+  passages:
+    - document: docs/game-design.md
+      section: 4. Le combat
+      rows: [Initiative]
+  fingerprint: "be1b6012e3a1"
+
+comment-ca-finit:
+  title: Comment ça finit
+  text: |
+    Le combat s'arrête quand le monstre n'a plus de Vie : victoire ! Ou quand c'est ton armée :
+    défaite. Pas de chrono, un combat peut durer longtemps. Et les soins ne font jamais monter ton
+    armée au-dessus de sa Vie maximale.
+  passages:
+    - document: docs/game-design.md
+      section: 4. Le combat
+      rows: [Fin, Soin]
+  fingerprint: "db9d9a068c73"
+
+petite-ou-grande-armee:
+  title: Petite ou grande armée
+  text: |
+    Que l'armée compte une poignée d'abonnés ou des milliers, un combat dure à peu près autant
+    d'actions : le monstre grandit avec elle, seuls les chiffres changent. Dans une petite armée,
+    tout le monde joue. Dans une immense armée, seuls quelques personnages tirés au sort deviennent
+    les héros du jour.
+  passages:
+    - document: docs/game-design.md
+      section: 4. Le combat
+      block: Selon la taille de l'armée
+    - document: docs/game-design.md
+      section: 4. Le combat
+      rows: ["10 (jour 2)", "1 000", "100 000"]
+  fingerprint: "a1f8bb6d1f63"
+
+# Navigation
+
+menu-accueil:
+  title: Accueil
+
+pied-de-page:
+  text: |
+    **Spell Army** · {site} · {compte Instagram}
