@@ -15,13 +15,18 @@ function settingsRow(rows: CalibrationSettings[]): CalibrationSettings {
 	return seededRow(rows, "Réglages du calibrage absents");
 }
 
-/** Lit les réglages du calibrage. Lève une erreur si la ligne manque (base non migrée). */
+/**
+ * Lit les réglages du calibrage. `forUpdate` verrouille leur ligne jusqu'à la fin de la transaction
+ * de `executor` : aucune modification ne passe entre cette lecture et une écriture qui en dérive.
+ *
+ * @throws {Error} si la ligne manque (base non migrée).
+ */
 export async function readCalibrationSettings(
 	executor: Executor,
+	{ forUpdate = false }: { forUpdate?: boolean } = {},
 ): Promise<CalibrationSettings> {
-	return settingsRow(
-		await executor.select(settingsColumns).from(calibrationSettings),
-	);
+	const query = executor.select(settingsColumns).from(calibrationSettings);
+	return settingsRow(await (forUpdate ? query.for("update") : query));
 }
 
 /**
@@ -43,9 +48,7 @@ export async function updateCalibrationSettings(
 		throw new Error("Aucun réglage à modifier : le patch est vide.");
 	}
 	return executor.transaction(async (tx) => {
-		const before = settingsRow(
-			await tx.select(settingsColumns).from(calibrationSettings).for("update"),
-		);
+		const before = await readCalibrationSettings(tx, { forUpdate: true });
 		const after = settingsRow(
 			await tx
 				.update(calibrationSettings)

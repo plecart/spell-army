@@ -230,7 +230,9 @@ export interface LaunchPlan {
  * Lit le lancement du combat du jour à l'instant `now`, ou le refuse sans rien écrire. L'état de la
  * saison se lit d'abord, verrouillé jusqu'à la fin de la transaction de `executor` : un retrait de
  * joueur ou un choix des forcés, qui prennent le même verrou, ne passe pas entre cette lecture et
- * l'écriture du journal. Refus, dans cet ordre, chacun seul :
+ * l'écriture du journal. Les réglages du calibrage se lisent verrouillés de même : une modification
+ * de p (`modifier_reglages`) attend la fin du lancement, ou le lancement la sienne, et p baissé
+ * dérive toujours du p en base. Refus, dans cet ordre, chacun seul :
  * - la saison est terminée, par son constat : « saison 1 terminée au jour N » (issue #21,
  *   Décisions, 5) ;
  * - un combat s'est déjà joué à cette date (Décisions, 9).
@@ -268,7 +270,7 @@ export async function planLaunch(
 		pool,
 		army,
 		forced,
-		settings: await readCalibrationSettings(executor),
+		settings: await readCalibrationSettings(executor, { forUpdate: true }),
 	};
 }
 
