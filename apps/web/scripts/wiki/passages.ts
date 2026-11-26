@@ -1,21 +1,9 @@
-// Les passages des documents que le wiki recopie, lus à la génération : le concept au cadrage, la
-// puissance d'un sort et le combat au game design (`passagesOf`), et ceux que déclarent les
-// explications du fichier de textes (`rawPassages`), avec leur empreinte et leur « Règle exacte ».
-// Les sections se découpent par leurs titres, comme `packages/combat/test/annexe-b.ts` lit
-// l'annexe B. Un passage introuvable ou incomplet arrête la génération en le nommant, jamais une page
-// vide ; les statuts internes n'y sont pas recopiés.
+// Les passages des documents que déclarent les explications du fichier de textes (`rawPassages`),
+// avec leur empreinte et leur « Règle exacte ». Les sections se découpent par leurs titres, comme
+// `packages/combat/test/annexe-b.ts` lit l'annexe B. Un passage introuvable arrête la génération en
+// le nommant, jamais une page vide ; les statuts et les renvois internes n'y sont pas recopiés.
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
-
-/** Les passages recopiés, en Markdown, sans statut interne. */
-export interface Passages {
-	/** Cadrage, § 1 « Ce qui est ferme », la puce « Le concept », sur une ligne. */
-	concept: string;
-	/** Game design, § 2 : le bloc « Puissance d'un sort lancé par l'armée », sa formule et le paragraphe qui la suit. */
-	power: string;
-	/** Game design, § 4 « Le combat », entier. */
-	combat: string;
-}
 
 /** Le texte des deux documents. */
 export interface Documents {
@@ -28,17 +16,6 @@ const GAME_DESIGN = "docs/game-design.md";
 const ROOT = new URL("../../../../", import.meta.url);
 
 const BLOCK_SEPARATOR = "\n\n";
-// La puce « Le concept » et ses lignes de suite, indentées de deux espaces.
-const CONCEPT = /^- (\*\*Le concept\*\* :.*(?:\n {2}.*)*)/m;
-const POWER = "Puissance d'un sort lancé par l'armée";
-// Son titre en gras, puis la formule en citation et le paragraphe qui la suit, reconnus à leur forme.
-const POWER_FORMULA = "> valeur = ";
-// Le début d'un bloc qui n'est pas un paragraphe, sans indentation : tableau (GFM), citation, titre
-// ATX, bloc HTML, liste à puces ou numérotée suivie d'une espace, code clôturé (``` ou ~~~) ou
-// indenté de quatre espaces, ligne de séparation seule. Ne voit ni titre setext, ni définition de
-// lien, ni liste indentée ou à tabulation ; refuse à tort un paragraphe ouvert par un autolien
-// `<…>`.
-const NOT_PARAGRAPH = /^(?:[|>#<]|[-*+] |\d+[.)] |```|~~~| {4}|([-*_])\1{2,}$)/;
 
 // Les statuts internes des documents, que le wiki ne montre pas : entre parenthèses après un titre,
 // « (décidé) », et en colonne d'un tableau.
@@ -126,49 +103,6 @@ function section(document: string, name: string, title: string): string {
 		.slice(start + 1, end < 0 ? undefined : end)
 		.join("\n")
 		.trim();
-}
-
-function concept(cadrage: string): string {
-	const bullet = CONCEPT.exec(
-		section(cadrage, CADRAGE, "1. Ce qui est ferme"),
-	)?.[1];
-	if (bullet === undefined) {
-		throw new Error(`${CADRAGE} : puce « Le concept » introuvable au § 1.`);
-	}
-	return bullet.replace(/\n +/g, " ");
-}
-
-function power(gameDesign: string): string {
-	const blocks = section(gameDesign, GAME_DESIGN, "2. Les sorts").split(
-		BLOCK_SEPARATOR,
-	);
-	const start = blocks.findIndex((block) => block.startsWith(`**${POWER}**`));
-	if (start < 0) {
-		throw new Error(`${GAME_DESIGN} : bloc « ${POWER} » introuvable au § 2.`);
-	}
-	const [title, formula, paragraph] = blocks.slice(start);
-	if (
-		!formula?.startsWith(POWER_FORMULA) ||
-		paragraph === undefined ||
-		NOT_PARAGRAPH.test(paragraph)
-	) {
-		throw new Error(
-			`${GAME_DESIGN} : bloc « ${POWER} » incomplet au § 2 : sa formule ou le paragraphe qui la suit manque.`,
-		);
-	}
-	return [title, formula, paragraph].join(BLOCK_SEPARATOR);
-}
-
-/**
- * Les passages que recopie le wiki, extraits du texte des deux documents. Lève une erreur qui nomme
- * le document et la section, la puce ou le bloc introuvable, ou le bloc incomplet.
- */
-export function passagesOf({ cadrage, gameDesign }: Documents): Passages {
-	return {
-		concept: withoutStatuses(concept(cadrage)),
-		power: withoutStatuses(power(gameDesign)),
-		combat: withoutStatuses(section(gameDesign, GAME_DESIGN, "4. Le combat")),
-	};
 }
 
 /** La première cellule d'une ligne de tableau, sans ses blancs. */

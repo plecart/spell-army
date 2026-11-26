@@ -24,5 +24,4 @@ export default databaseTestConfig([
 	"test/wiki-generation.test.ts",
 	"test/wiki-pages.test.ts",
 	"test/wiki-textes.test.ts",
-	"test/wiki-transcription.test.ts",
 ]);

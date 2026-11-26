@@ -82,7 +82,9 @@ tes-stats:
     Tu as {nombre de stats} stats : Vie, Force, Magie et Vitesse, chacune jusqu'à
     {maximum d'une stat}. Elles font toujours {total des points} points en tout. Le tirage les
     répartit dans les plages de ta classe : deux Magiciens n'ont pas forcément les mêmes, et le tien
-    peut être un génie… ou un raté. Va vite voir sur {site} si tu as eu de la chance !
+    peut être un génie… ou un raté. Tes stats font l'[efficacité](Sorts#comment-marche-un-sort) de
+    ton sort, et ton [verdict](Personnages#ton-verdict) te dit si tu as eu de la chance : va vite le
+    voir sur {site} !
   passages:
     - document: docs/game-design.md
       section: 1. Le personnage
@@ -327,3 +329,21 @@ menu-accueil:
 pied-de-page:
   text: |
     **Spell Army** · {site} · {compte Instagram}
+
+# Libellés des pages : le bloc repliable d'une règle, le texte alternatif d'un visuel réservé, et
+# les en-têtes des tableaux de sorts.
+
+regle-exacte:
+  title: Règle exacte
+
+visuel-a-venir:
+  title: Visuel à venir
+
+colonne-visuel:
+  title: Visuel
+
+colonne-sort:
+  title: Sort
+
+colonne-description:
+  title: Ce qu'il fait

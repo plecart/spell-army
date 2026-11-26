@@ -20,7 +20,7 @@ const EMPTY_URL = `${EMPTY_DATABASE_URL}\n`;
 // La frontière que les tests en processus ne voient pas : Node, sans Vitest, charge la commande, ses
 // paquets et le pilote de la base, lit la table `spells`, puis ferme le pool pour sortir.
 describe("la commande wiki, lancée par Node", () => {
-	test("sur une base migrée où le sort n° 6 a une image : sortie 0, le bilan, les 36 pages et l'image", async () => {
+	test("sur une base migrée où le sort n° 6 a une image : sortie 0, le bilan, les 6 pages, l'image et les deux visuels réservés", async () => {
 		const url = await createMigratedDatabase(inject("testDatabaseUrl"));
 		const db = createClient(url);
 		onTestFinished(() => db.$client.end());
@@ -30,11 +30,11 @@ describe("la commande wiki, lancée par Node", () => {
 		const folder = await outputFolder();
 		expect(await runWiki([folder], { DATABASE_URL: url })).toEqual({
 			code: 0,
-			stdout: `Wiki écrit dans ${folder} : 36 pages, 1 image.\n`,
+			stdout: `Wiki écrit dans ${folder} : 6 pages, 3 images.\n`,
 			stderr: "",
 		});
 		const files = await filesOf(folder);
-		expect(files).toHaveLength(36 + 1);
+		expect(files).toHaveLength(6 + 3);
 		expect(files).toContain("images/sort-6.png");
 	});
 
@@ -170,7 +170,7 @@ describe("la commande wiki, lancée par Node", () => {
 			),
 		).toEqual({
 			code: 0,
-			stdout: `Wiki écrit dans ${target} : 36 pages, 0 image.\n`,
+			stdout: `Wiki écrit dans ${target} : 6 pages, 2 images.\n`,
 			stderr: "",
 		});
 		expect(existsSync(join(target, "Home.md"))).toBe(true);

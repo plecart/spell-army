@@ -2,7 +2,6 @@ import { existsSync } from "node:fs";
 import { refusedQuery } from "donnees/test/erreur-postgres";
 import { describe, expect, test } from "vitest";
 import { generateWiki } from "../scripts/wiki/generate.ts";
-import { passagesOf, readDocuments } from "../scripts/wiki/passages.ts";
 import {
 	generated,
 	IMAGE_BYTES,
@@ -10,8 +9,6 @@ import {
 	POOL,
 	withImage,
 } from "./wiki.ts";
-
-const DOCUMENTS = await readDocuments();
 
 describe("la génération du wiki", () => {
 	test("deux générations sur les mêmes entrées sont identiques octet pour octet", async () => {
@@ -117,98 +114,4 @@ describe("la génération du wiki", () => {
 			message: `La lecture des sorts a échoué : ${reason}.`,
 		});
 	});
-
-	// Les ancres des passages recopiés : chacune retirée de son document, la génération s'arrête en
-	// la nommant, plutôt que de publier une page vide.
-	test.each([
-		[
-			"## 1. Ce qui est ferme",
-			"docs/etudes/00-cadrage.md : section « 1. Ce qui est ferme » introuvable.",
-			"cadrage",
-		],
-		[
-			"- **Le concept** :",
-			"docs/etudes/00-cadrage.md : puce « Le concept » introuvable au § 1.",
-			"cadrage",
-		],
-		[
-			"## 2. Les sorts",
-			"docs/game-design.md : section « 2. Les sorts » introuvable.",
-			"gameDesign",
-		],
-		[
-			"**Puissance d'un sort lancé par l'armée**",
-			"docs/game-design.md : bloc « Puissance d'un sort lancé par l'armée » introuvable au § 2.",
-			"gameDesign",
-		],
-		[
-			"## 4. Le combat",
-			"docs/game-design.md : section « 4. Le combat » introuvable.",
-			"gameDesign",
-		],
-	] as const)(
-		"sans l'ancre « %s », la génération s'arrête : « %s »",
-		(anchor, message, document) => {
-			expect(DOCUMENTS[document]).toContain(anchor);
-			const altered = {
-				...DOCUMENTS,
-				[document]: DOCUMENTS[document].replace(anchor, "ancre retirée"),
-			};
-			expect(() => passagesOf(altered)).toThrow(message);
-		},
-	);
-
-	// Le titre doit être suivi de la formule en citation, puis d'un paragraphe : un autre bloc à leur
-	// place — le tableau du § 2 — serait recopié sans rien signaler.
-	const TITLE = "**Puissance d'un sort lancé par l'armée** :";
-	const FORMULA = "> valeur = coefficient du sort × stat de l'armée";
-	const PARAGRAPH =
-		"La stat de l'armée est la somme de celles de ses personnages.";
-	// Un paragraphe qui s'ouvre sur du gras ou du gras italique reste un paragraphe.
-	test.each([
-		"**La stat** de l'armée est la somme.",
-		"***La stat*** de l'armée est la somme.",
-	])("un paragraphe qui s'ouvre sur « %s » suit la formule", (paragraph) => {
-		const gameDesign = [
-			"## 2. Les sorts",
-			TITLE,
-			FORMULA,
-			paragraph,
-			"## 4. Le combat",
-		].join("\n\n");
-		expect(passagesOf({ ...DOCUMENTS, gameDesign }).power).toContain(paragraph);
-	});
-	const TABLE = "| Sort | Effet |\n|---|---|\n| Boule de feu | dégâts |";
-	// Un bloc de chaque forme qui n'est pas un paragraphe, à la place du paragraphe.
-	const NOT_PARAGRAPHS = {
-		"un tableau": TABLE,
-		"une autre citation": FORMULA,
-		"un titre": "### Exemple",
-		"une liste à puces": "- un lanceur",
-		"une liste numérotée": "1. un lanceur",
-		"un bloc de code": "```\nvaleur\n```",
-		"un code entre tildes": "~~~\nvaleur\n~~~",
-		"un code indenté": "    valeur",
-		"un bloc HTML": "<div>valeur</div>",
-		"une ligne de séparation": "---",
-	};
-	test.each([
-		{ form: "qui finit le § 2 sur sa formule", blocks: [TITLE, FORMULA] },
-		{ form: "sans sa formule", blocks: [TITLE, PARAGRAPH, PARAGRAPH] },
-		...Object.entries(NOT_PARAGRAPHS).map(([kind, block]) => ({
-			// Vitest tronque `$form` à 40 caractères : chaque nom reste court, donc distinct.
-			form: `formule puis ${kind}`,
-			blocks: [TITLE, FORMULA, block],
-		})),
-	])(
-		"un bloc « Puissance d'un sort lancé par l'armée » $form arrête la génération, qui le nomme",
-		({ blocks }) => {
-			const gameDesign = ["## 2. Les sorts", ...blocks, "## 4. Le combat"].join(
-				"\n\n",
-			);
-			expect(() => passagesOf({ ...DOCUMENTS, gameDesign })).toThrow(
-				"docs/game-design.md : bloc « Puissance d'un sort lancé par l'armée » incomplet au § 2 : sa formule ou le paragraphe qui la suit manque.",
-			);
-		},
-	);
 });

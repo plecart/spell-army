@@ -22,16 +22,17 @@ const TEXTS_NAME = "apps/web/scripts/wiki/textes.yaml";
 const INSTAGRAM_HANDLE = "spell_army";
 const SITE_DOMAIN = "spellarmy.com";
 
+/** Le maximum d'une stat : la plus haute borne des plages des classes. */
+export const STAT_MAXIMUM = Math.max(
+	...Object.values(CLASS_RANGES).flatMap((ranges) =>
+		Object.values(ranges).map(([, max]) => max),
+	),
+);
+
 /** La valeur de chaque nom de valeur des textes, lue ici seulement. */
 const VALUES: Readonly<Record<string, string>> = {
 	"total des points": String(STATS_TOTAL),
-	"maximum d'une stat": String(
-		Math.max(
-			...Object.values(CLASS_RANGES).flatMap((ranges) =>
-				Object.values(ranges).map(([, max]) => max),
-			),
-		),
-	),
+	"maximum d'une stat": String(STAT_MAXIMUM),
 	"nombre de classes": String(CLASS_KEYS.length),
 	"nombre de stats": String(STAT_KEYS.length),
 	"compte Instagram": `[@${INSTAGRAM_HANDLE}](${instagramUrl(INSTAGRAM_HANDLE)})`,
