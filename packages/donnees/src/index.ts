@@ -26,8 +26,10 @@ export {
 } from "./monsters.ts";
 export {
 	auditLog,
+	COMBAT_DATE_UNIQUE,
 	calibrationSettings,
 	classDefaultModels,
+	combats,
 	excludedPlayers,
 	type FullPassTrigger,
 	importLock,
@@ -37,10 +39,31 @@ export {
 	MAX_MONSTER_NAME_LENGTH,
 	modelFiles,
 	monsters,
+	nextCombatForced,
 	players,
 	type QuickPassTrigger,
+	seasonState,
 	spells,
 } from "./schema.ts";
+export {
+	type ArmyMember,
+	type CombatRecord,
+	dailyArrivals,
+	type ForcedRecord,
+	findCombat,
+	insertCombat,
+	listArmy,
+	listCombatsOfMonster,
+	type MonsterCombat,
+	type NewCombat,
+	type ParisDay,
+	parisCalendar,
+	readForced,
+	readSeasonState,
+	replaceForced,
+	type SeasonStateRecord,
+	writeSeasonState,
+} from "./season.ts";
 export {
 	findSpellByKey,
 	type ImageSummary,

@@ -1,0 +1,1181 @@
+{
+  "id": "31a34c67-6218-4ff4-9e4d-32de4c258683",
+  "prevId": "61cdbaca-8cc9-44ce-916f-83dfb8f87562",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.audit_log": {
+      "name": "audit_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "audit_log_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "tool": {
+          "name": "tool",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "input": {
+          "name": "input",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "succeeded": {
+          "name": "succeeded",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "before": {
+          "name": "before",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "after": {
+          "name": "after",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "audit_log_succeeded_check": {
+          "name": "audit_log_succeeded_check",
+          "value": "\"audit_log\".\"succeeded\" = (\"audit_log\".\"error\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.calibration_settings": {
+      "name": "calibration_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "smallint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "recruit_share": {
+          "name": "recruit_share",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recruit_share_drop": {
+          "name": "recruit_share_drop",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference_window_days": {
+          "name": "reference_window_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "average_recruit_life": {
+          "name": "average_recruit_life",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "average_recruit_strength": {
+          "name": "average_recruit_strength",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "average_recruit_magic": {
+          "name": "average_recruit_magic",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "average_recruit_speed": {
+          "name": "average_recruit_speed",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "day_two_budget_recruits": {
+          "name": "day_two_budget_recruits",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "calibration_settings_id_check": {
+          "name": "calibration_settings_id_check",
+          "value": "\"calibration_settings\".\"id\" = 1"
+        },
+        "calibration_settings_recruit_share_check": {
+          "name": "calibration_settings_recruit_share_check",
+          "value": "\"calibration_settings\".\"recruit_share\" between 0 and 1"
+        },
+        "calibration_settings_recruit_share_drop_check": {
+          "name": "calibration_settings_recruit_share_drop_check",
+          "value": "\"calibration_settings\".\"recruit_share_drop\" between 0 and 1"
+        },
+        "calibration_settings_reference_window_days_check": {
+          "name": "calibration_settings_reference_window_days_check",
+          "value": "\"calibration_settings\".\"reference_window_days\" >= 1"
+        },
+        "calibration_settings_average_recruit_life_check": {
+          "name": "calibration_settings_average_recruit_life_check",
+          "value": "\"calibration_settings\".\"average_recruit_life\" > 0 and \"calibration_settings\".\"average_recruit_life\" < 'Infinity'::double precision"
+        },
+        "calibration_settings_average_recruit_strength_check": {
+          "name": "calibration_settings_average_recruit_strength_check",
+          "value": "\"calibration_settings\".\"average_recruit_strength\" > 0 and \"calibration_settings\".\"average_recruit_strength\" < 'Infinity'::double precision"
+        },
+        "calibration_settings_average_recruit_magic_check": {
+          "name": "calibration_settings_average_recruit_magic_check",
+          "value": "\"calibration_settings\".\"average_recruit_magic\" > 0 and \"calibration_settings\".\"average_recruit_magic\" < 'Infinity'::double precision"
+        },
+        "calibration_settings_average_recruit_speed_check": {
+          "name": "calibration_settings_average_recruit_speed_check",
+          "value": "\"calibration_settings\".\"average_recruit_speed\" > 0 and \"calibration_settings\".\"average_recruit_speed\" < 'Infinity'::double precision"
+        },
+        "calibration_settings_day_two_budget_recruits_check": {
+          "name": "calibration_settings_day_two_budget_recruits_check",
+          "value": "\"calibration_settings\".\"day_two_budget_recruits\" >= 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.class_default_models": {
+      "name": "class_default_models",
+      "schema": "",
+      "columns": {
+        "class": {
+          "name": "class",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "model_file_id": {
+          "name": "model_file_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "class_default_models_model_file_id_model_files_id_fk": {
+          "name": "class_default_models_model_file_id_model_files_id_fk",
+          "tableFrom": "class_default_models",
+          "tableTo": "model_files",
+          "columnsFrom": [
+            "model_file_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.combats": {
+      "name": "combats",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "combats_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "fought_on": {
+          "name": "fought_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "season": {
+          "name": "season",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "chapter": {
+          "name": "chapter",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "day": {
+          "name": "day",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt": {
+          "name": "attempt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "monster_id": {
+          "name": "monster_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "log": {
+          "name": "log",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recorded_at": {
+          "name": "recorded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "combats_fought_on_unique": {
+          "name": "combats_fought_on_unique",
+          "columns": [
+            {
+              "expression": "fought_on",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "combats_season_day_unique": {
+          "name": "combats_season_day_unique",
+          "columns": [
+            {
+              "expression": "season",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "day",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "combats_monster_id_monsters_id_fk": {
+          "name": "combats_monster_id_monsters_id_fk",
+          "tableFrom": "combats",
+          "tableTo": "monsters",
+          "columnsFrom": [
+            "monster_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "combats_season_check": {
+          "name": "combats_season_check",
+          "value": "\"combats\".\"season\" >= 1"
+        },
+        "combats_chapter_check": {
+          "name": "combats_chapter_check",
+          "value": "\"combats\".\"chapter\" >= 1"
+        },
+        "combats_day_check": {
+          "name": "combats_day_check",
+          "value": "\"combats\".\"day\" >= 1"
+        },
+        "combats_attempt_check": {
+          "name": "combats_attempt_check",
+          "value": "\"combats\".\"attempt\" >= 1"
+        },
+        "combats_outcome_check": {
+          "name": "combats_outcome_check",
+          "value": "\"combats\".\"outcome\" in ('victory', 'defeat', 'exhaustion')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.excluded_players": {
+      "name": "excluded_players",
+      "schema": "",
+      "columns": {
+        "instagram_id": {
+          "name": "instagram_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "excluded_players_instagram_id_check": {
+          "name": "excluded_players_instagram_id_check",
+          "value": "\"excluded_players\".\"instagram_id\" ~ '^[1-9][0-9]{0,19}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.import_lock": {
+      "name": "import_lock",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "smallint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "holder": {
+          "name": "holder",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "import_lock_id_check": {
+          "name": "import_lock_id_check",
+          "value": "\"import_lock\".\"id\" = 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.import_passes": {
+      "name": "import_passes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "import_passes_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "trigger": {
+          "name": "trigger",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pages": {
+          "name": "pages",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "added": {
+          "name": "added",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "invalid_ids": {
+          "name": "invalid_ids",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "invalid_usernames": {
+          "name": "invalid_usernames",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cursor": {
+          "name": "cursor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "import_passes_one_unfinished_full": {
+          "name": "import_passes_one_unfinished_full",
+          "columns": [
+            {
+              "expression": "kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"import_passes\".\"kind\" = 'full' and \"import_passes\".\"status\" <> 'done'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "import_passes_trigger_check": {
+          "name": "import_passes_trigger_check",
+          "value": "(\"import_passes\".\"kind\" = 'quick' and \"import_passes\".\"trigger\" in ('tick', 'mcp')) or (\"import_passes\".\"kind\" = 'full' and \"import_passes\".\"trigger\" in ('weekly', 'self_check', 'mcp'))"
+        },
+        "import_passes_status_check": {
+          "name": "import_passes_status_check",
+          "value": "\"import_passes\".\"status\" in ('running', 'interrupted', 'failed', 'done')"
+        },
+        "import_passes_finished_at_check": {
+          "name": "import_passes_finished_at_check",
+          "value": "(\"import_passes\".\"finished_at\" is null) = (\"import_passes\".\"status\" = 'running')"
+        },
+        "import_passes_error_check": {
+          "name": "import_passes_error_check",
+          "value": "(\"import_passes\".\"error\" is not null) = (\"import_passes\".\"status\" = 'failed')"
+        },
+        "import_passes_cursor_check": {
+          "name": "import_passes_cursor_check",
+          "value": "\"import_passes\".\"kind\" = 'full' or \"import_passes\".\"cursor\" is null"
+        },
+        "import_passes_pages_check": {
+          "name": "import_passes_pages_check",
+          "value": "\"import_passes\".\"pages\" >= 0"
+        },
+        "import_passes_added_check": {
+          "name": "import_passes_added_check",
+          "value": "\"import_passes\".\"added\" >= 0"
+        },
+        "import_passes_invalid_ids_check": {
+          "name": "import_passes_invalid_ids_check",
+          "value": "\"import_passes\".\"invalid_ids\" >= 0"
+        },
+        "import_passes_invalid_usernames_check": {
+          "name": "import_passes_invalid_usernames_check",
+          "value": "\"import_passes\".\"invalid_usernames\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.model_files": {
+      "name": "model_files",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "model_files_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "class": {
+          "name": "class",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monster": {
+          "name": "monster",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content": {
+          "name": "content",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size": {
+          "name": "size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "generated": {
+            "as": "octet_length(\"model_files\".\"content\")",
+            "type": "stored"
+          }
+        },
+        "sha256": {
+          "name": "sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "generated": {
+            "as": "encode(sha256(\"model_files\".\"content\"), 'hex')",
+            "type": "stored"
+          }
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "model_files_owner_check": {
+          "name": "model_files_owner_check",
+          "value": "(\"model_files\".\"class\" is null) <> (\"model_files\".\"monster\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.monsters": {
+      "name": "monsters",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "monsters_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "season": {
+          "name": "season",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "chapter": {
+          "name": "chapter",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "profile": {
+          "name": "profile",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attacks": {
+          "name": "attacks",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scale_factor": {
+          "name": "scale_factor",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "trait": {
+          "name": "trait",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "monsters_name_unique": {
+          "name": "monsters_name_unique",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "monsters_season_chapter_unique": {
+          "name": "monsters_season_chapter_unique",
+          "columns": [
+            {
+              "expression": "season",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "chapter",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "monsters_season_check": {
+          "name": "monsters_season_check",
+          "value": "\"monsters\".\"season\" >= 1"
+        },
+        "monsters_chapter_check": {
+          "name": "monsters_chapter_check",
+          "value": "\"monsters\".\"chapter\" >= 1"
+        },
+        "monsters_name_check": {
+          "name": "monsters_name_check",
+          "value": "\"monsters\".\"name\" ~ '[^[:space:]]' and char_length(\"monsters\".\"name\") <= 64"
+        },
+        "monsters_trait_check": {
+          "name": "monsters_trait_check",
+          "value": "\"monsters\".\"trait\" ~ '[^[:space:]]'"
+        },
+        "monsters_scale_factor_check": {
+          "name": "monsters_scale_factor_check",
+          "value": "\"monsters\".\"scale_factor\" > 0 and \"monsters\".\"scale_factor\" < 'Infinity'::double precision"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.next_combat_forced": {
+      "name": "next_combat_forced",
+      "schema": "",
+      "columns": {
+        "rank": {
+          "name": "rank",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "instagram_id": {
+          "name": "instagram_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "next_combat_forced_instagram_id_unique": {
+          "name": "next_combat_forced_instagram_id_unique",
+          "columns": [
+            {
+              "expression": "instagram_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "next_combat_forced_rank_check": {
+          "name": "next_combat_forced_rank_check",
+          "value": "\"next_combat_forced\".\"rank\" >= 1"
+        },
+        "next_combat_forced_instagram_id_check": {
+          "name": "next_combat_forced_instagram_id_check",
+          "value": "\"next_combat_forced\".\"instagram_id\" ~ '^[1-9][0-9]{0,19}$'"
+        },
+        "next_combat_forced_position_check": {
+          "name": "next_combat_forced_position_check",
+          "value": "\"next_combat_forced\".\"position\" in ('first', 'last', 'middle')"
+        },
+        "next_combat_forced_reason_check": {
+          "name": "next_combat_forced_reason_check",
+          "value": "\"next_combat_forced\".\"reason\" ~ '[^[:space:]]'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.players": {
+      "name": "players",
+      "schema": "",
+      "columns": {
+        "instagram_id": {
+          "name": "instagram_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "arrived_at": {
+          "name": "arrived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "spell_number": {
+          "name": "spell_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_file_id": {
+          "name": "model_file_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "players_spell_number_spells_number_fk": {
+          "name": "players_spell_number_spells_number_fk",
+          "tableFrom": "players",
+          "tableTo": "spells",
+          "columnsFrom": [
+            "spell_number"
+          ],
+          "columnsTo": [
+            "number"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "players_model_file_id_model_files_id_fk": {
+          "name": "players_model_file_id_model_files_id_fk",
+          "tableFrom": "players",
+          "tableTo": "model_files",
+          "columnsFrom": [
+            "model_file_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "players_instagram_id_check": {
+          "name": "players_instagram_id_check",
+          "value": "\"players\".\"instagram_id\" ~ '^[1-9][0-9]{0,19}$'"
+        },
+        "players_username_check": {
+          "name": "players_username_check",
+          "value": "\"players\".\"username\" ~ '^[A-Za-z0-9._]{1,30}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.season_state": {
+      "name": "season_state",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "smallint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "season": {
+          "name": "season",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "chapter": {
+          "name": "chapter",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt": {
+          "name": "attempt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "combats_played": {
+          "name": "combats_played",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "defeat_streak": {
+          "name": "defeat_streak",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "budget": {
+          "name": "budget",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_outcome": {
+          "name": "last_outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "end_day": {
+          "name": "end_day",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "season_state_id_check": {
+          "name": "season_state_id_check",
+          "value": "\"season_state\".\"id\" = 1"
+        },
+        "season_state_season_check": {
+          "name": "season_state_season_check",
+          "value": "\"season_state\".\"season\" >= 1"
+        },
+        "season_state_chapter_check": {
+          "name": "season_state_chapter_check",
+          "value": "\"season_state\".\"chapter\" >= 1"
+        },
+        "season_state_attempt_check": {
+          "name": "season_state_attempt_check",
+          "value": "\"season_state\".\"attempt\" >= 1"
+        },
+        "season_state_end_day_check": {
+          "name": "season_state_end_day_check",
+          "value": "\"season_state\".\"end_day\" >= 1"
+        },
+        "season_state_combats_played_check": {
+          "name": "season_state_combats_played_check",
+          "value": "\"season_state\".\"combats_played\" >= 0"
+        },
+        "season_state_defeat_streak_check": {
+          "name": "season_state_defeat_streak_check",
+          "value": "\"season_state\".\"defeat_streak\" >= 0"
+        },
+        "season_state_last_outcome_check": {
+          "name": "season_state_last_outcome_check",
+          "value": "\"season_state\".\"last_outcome\" in ('victory', 'defeat', 'exhaustion')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.spells": {
+      "name": "spells",
+      "schema": "",
+      "columns": {
+        "number": {
+          "name": "number",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recipe": {
+          "name": "recipe",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "form": {
+          "name": "form",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effect": {
+          "name": "effect",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weight": {
+          "name": "weight",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image": {
+          "name": "image",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image_type": {
+          "name": "image_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "spells_key_unique": {
+          "name": "spells_key_unique",
+          "columns": [
+            {
+              "expression": "key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "spells_weight_check": {
+          "name": "spells_weight_check",
+          "value": "\"spells\".\"weight\" >= 0 and \"spells\".\"weight\" < 'Infinity'::double precision"
+        },
+        "spells_name_check": {
+          "name": "spells_name_check",
+          "value": "\"spells\".\"name\" ~ '[^[:space:]]'"
+        },
+        "spells_description_check": {
+          "name": "spells_description_check",
+          "value": "\"spells\".\"description\" ~ '[^[:space:]]'"
+        },
+        "spells_image_check": {
+          "name": "spells_image_check",
+          "value": "(\"spells\".\"image\" is null) = (\"spells\".\"image_type\" is null)"
+        },
+        "spells_image_type_check": {
+          "name": "spells_image_type_check",
+          "value": "\"spells\".\"image_type\" in ('image/png', 'image/jpeg', 'image/webp')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
