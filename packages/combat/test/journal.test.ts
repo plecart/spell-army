@@ -183,6 +183,13 @@ describe("le journal stocké, dans la saison", () => {
 		});
 	});
 
+	test("un contexte plus large que l'en-tête de saison : seuls ses six champs entrent à l'en-tête", () => {
+		const log = fight(input("42"));
+		const wider = { ...SEASON, combatsPlayed: 13, defeatStreak: 1 };
+
+		expect(seasonLogOf(log, wider).header).toEqual({ ...log.header, ...SEASON });
+	});
+
 	test("l'ordre des clés est fixé par le code, en-tête de saison compris", () => {
 		const stored = seasonLogOf(fight(input("42")), SEASON);
 

@@ -113,14 +113,29 @@ export interface SeasonLog extends CombatLog {
 }
 
 /**
- * Le journal stocké : le journal du combat, dont l'en-tête reçoit les champs de la saison. Actions et
- * bilan restent ceux du combat.
+ * Le journal stocké : le journal du combat, dont l'en-tête reçoit les six champs de la saison, pris
+ * un à un dans `context` — un objet plus large, l'état de la saison par exemple, n'y fait entrer
+ * rien d'autre. Actions et bilan restent ceux du combat.
  *
  * @example `seasonLogOf(fight(input), { season: 1, chapter: 12, day: 14, attempt: 2,
  * recruitShare: 0.6, referenceRecruits: 20 }).header.chapter` vaut 12.
  */
-export function seasonLogOf(log: CombatLog, context: SeasonHeader): SeasonLog {
-	return { ...log, header: { ...log.header, ...context } };
+export function seasonLogOf(
+	log: CombatLog,
+	{ season, chapter, day, attempt, recruitShare, referenceRecruits }: SeasonHeader,
+): SeasonLog {
+	return {
+		...log,
+		header: {
+			...log.header,
+			season,
+			chapter,
+			day,
+			attempt,
+			recruitShare,
+			referenceRecruits,
+		},
+	};
 }
 
 /**

@@ -3,7 +3,7 @@
  * combat, sans base ni horloge. Lancer le combat, choisir l'armée du jour et écrire l'état, le
  * journal et p en base reviennent à l'appelant.
  */
-import { type BudgetComponents, lowerShare } from "./calibration.ts";
+import { type BudgetComponents, capRecruitShare } from "./calibration.ts";
 import type { Outcome } from "./log.ts";
 import { sha256 } from "./sha256.ts";
 import type { Stats } from "./spell.ts";
@@ -120,6 +120,14 @@ export function budgetForLaunch(
 	army: Stats,
 ): BudgetComponents {
 	assertOngoing(state);
+	return currentBudget(state, army);
+}
+
+/**
+ * Le budget du monstre de l'état ; au premier combat de la saison, qui n'en a pas encore, l'armée
+ * `army` seule.
+ */
+function currentBudget(state: SeasonState, army: Stats): BudgetComponents {
 	return state.budget ?? { kind: "army", army };
 }
 
@@ -191,7 +199,7 @@ function afterDefeat(
 ): SeasonTransition {
 	const defeatStreak = state.defeatStreak + 1;
 	const lost = { ...state, attempt: state.attempt + 1, defeatStreak };
-	const budget = budgetForLaunch(state, army);
+	const budget = currentBudget(state, army);
 	if (defeatStreak % DEFEATS_PER_DROP !== 0) {
 		return {
 			state: { ...lost, budget },
@@ -200,7 +208,7 @@ function afterDefeat(
 	}
 	const recruitShare = loweredShare(settings);
 	return {
-		state: { ...lost, budget: lowerShare(budget, recruitShare) },
+		state: { ...lost, budget: capRecruitShare(budget, recruitShare) },
 		recruitShare,
 	};
 }
