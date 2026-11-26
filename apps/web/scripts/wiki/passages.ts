@@ -1,8 +1,10 @@
 // Les passages des documents que le wiki recopie, lus à la génération : le concept au cadrage, la
-// puissance d'un sort et le combat au game design. Les sections se découpent par leurs titres `## `,
-// comme `packages/combat/test/annexe-b.ts` lit l'annexe B. Un passage introuvable ou incomplet
-// arrête la génération en le nommant, jamais une page vide ; les statuts internes n'y sont pas
-// recopiés.
+// puissance d'un sort et le combat au game design (`passagesOf`), et ceux que déclarent les
+// explications du fichier de textes (`rawPassages`), avec leur empreinte et leur « Règle exacte ».
+// Les sections se découpent par leurs titres, comme `packages/combat/test/annexe-b.ts` lit
+// l'annexe B. Un passage introuvable ou incomplet arrête la génération en le nommant, jamais une page
+// vide ; les statuts internes n'y sont pas recopiés.
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
 /** Les passages recopiés, en Markdown, sans statut interne. */
@@ -42,8 +44,45 @@ const NOT_PARAGRAPH = /^(?:[|>#<]|[-*+] |\d+[.)] |```|~~~| {4}|([-*_])\1{2,}$)/;
 // « (décidé) », et en colonne d'un tableau.
 const INLINE_STATUS = / \((?:décidé|proposé|ouvert)\)/giu;
 const STATUS_COLUMN = "Statut";
+// Les renvois internes entre parenthèses, avec l'espace qui les précède (#64, D9 et T3) : « (#10) »,
+// « (ADR 0001) », « (§ 2) », « (§ 6, « Équilibre ») », « (mesuré : … ) », « (annexe A) ».
+const INTERNAL_REFERENCE =
+	/ \((?:#\d+|ADR \d+|§ [^)]*|mesuré :[^)]*|annexe [A-Z])\)/g;
 // Une barre verticale de tableau, hors d'une barre échappée par un antislash (GFM, « Tables »).
 const CELL_SEPARATOR = /(?<!\\)\|/;
+
+// Un titre ATX : ses `#`, puis son texte.
+const HEADING = /^(#+) (.*)$/;
+// Le libellé en gras qui ouvre une puce, « - **Le concept** : … ».
+const BULLET_LABEL = /^- \*\*(.+?)\*\*/;
+// Le titre en gras qui ouvre un bloc, sans son point final : « **Selon la taille de l'armée.** … ».
+const BLOCK_TITLE = /^\*\*(.+?)\.?\*\*/;
+// Ce qui clôt un bloc et ses suites : un tableau, un titre, un autre titre en gras.
+const BLOCK_END = /^(?:\||#|\*\*)/;
+// Les lignes de suite d'une puce, indentées de deux espaces.
+const BULLET_CONTINUATION = "  ";
+
+/** Les documents que peut citer un passage, par chemin dans le dépôt. */
+const DOCUMENT_KEYS: ReadonlyMap<string, keyof Documents> = new Map([
+	[CADRAGE, "cadrage"],
+	[GAME_DESIGN, "gameDesign"],
+]);
+
+// L'empreinte d'un passage : le début hexadécimal de son SHA-256, assez long pour qu'une
+// modification du passage la change (#64, D3 et T7).
+const FINGERPRINT_LENGTH = 12;
+
+/**
+ * Où lire un passage : dans `document` (son chemin dans le dépôt), sous le titre `section`, de tout
+ * niveau, les lignes d'un tableau nommées par leur première cellule (`rows`) ; une puce ouverte par
+ * son libellé en gras (`bullet`) ; ou un bloc ouvert par son titre en gras (`block`), avec les blocs
+ * qui le suivent jusqu'au prochain tableau, titre ou titre en gras.
+ */
+export type PassageLocator = { document: string; section: string } & (
+	| { rows: readonly string[] }
+	| { bullet: string }
+	| { block: string }
+);
 
 /** Un tableau sans sa colonne « Statut » ; tout autre bloc tel quel. */
 function withoutStatusColumn(block: string): string {
@@ -63,15 +102,28 @@ function withoutStatuses(markdown: string): string {
 		.join(BLOCK_SEPARATOR);
 }
 
-/** Le corps de la section `## <title>` de `document`, que `name` nomme dans l'erreur s'il manque. */
+/** Le niveau du titre ATX `line`, le nombre de ses `#` ; l'infini pour une ligne qui n'en est pas un. */
+const headingLevel = (line: string) =>
+	HEADING.exec(line)?.[1]?.length ?? Number.POSITIVE_INFINITY;
+
+/**
+ * Le corps de la section de titre `title`, de tout niveau, dans `document` : jusqu'au titre suivant
+ * de même niveau ou plus haut. `name` nomme le document dans l'erreur si la section manque.
+ */
 function section(document: string, name: string, title: string): string {
-	const found = document
-		.split(/^## /m)
-		.find((candidate) => candidate.split("\n", 1)[0] === title);
-	if (found === undefined) {
+	const lines = document.split("\n");
+	const start = lines.findIndex((line) => HEADING.exec(line)?.[2] === title);
+	if (start < 0) {
 		throw new Error(`${name} : section « ${title} » introuvable.`);
 	}
-	return found.slice(title.length).trim();
+	const level = headingLevel(lines[start] ?? "");
+	const end = lines.findIndex(
+		(line, index) => index > start && headingLevel(line) <= level,
+	);
+	return lines
+		.slice(start + 1, end < 0 ? undefined : end)
+		.join("\n")
+		.trim();
 }
 
 function concept(cadrage: string): string {
@@ -116,6 +168,102 @@ export function passagesOf({ cadrage, gameDesign }: Documents): Passages {
 		combat: withoutStatuses(section(gameDesign, GAME_DESIGN, "4. Le combat")),
 	};
 }
+
+/** La première cellule d'une ligne de tableau, sans ses blancs. */
+const firstCell = (row: string) => row.split(CELL_SEPARATOR)[1]?.trim();
+
+/**
+ * Les lignes `labels` du tableau de `body` qui porte la première, sous son en-tête et dans l'ordre
+ * du tableau ; `where` nomme la section dans l'erreur si l'une manque.
+ */
+function rows(body: string, labels: readonly string[], where: string): string {
+	const table =
+		body
+			.split(BLOCK_SEPARATOR)
+			.map((block) => block.split("\n"))
+			.find(
+				(lines) =>
+					lines[0]?.startsWith("|") &&
+					lines.slice(2).some((row) => firstCell(row) === labels[0]),
+			) ?? [];
+	const [header = "", separator = "", ...data] = table;
+	const missing = labels.find(
+		(label) => !data.some((row) => firstCell(row) === label),
+	);
+	if (missing !== undefined) {
+		throw new Error(`${where} : ligne « ${missing} » introuvable.`);
+	}
+	const kept = data.filter((row) => labels.includes(firstCell(row) ?? ""));
+	return [header, separator, ...kept].join("\n");
+}
+
+/** La puce de `body` ouverte par le libellé en gras `label`, sur une ligne. */
+function bullet(body: string, label: string, where: string): string {
+	const lines = body.split("\n");
+	const start = lines.findIndex(
+		(line) => BULLET_LABEL.exec(line)?.[1] === label,
+	);
+	if (start < 0) {
+		throw new Error(`${where} : puce « ${label} » introuvable.`);
+	}
+	const end = lines.findIndex(
+		(line, index) => index > start && !line.startsWith(BULLET_CONTINUATION),
+	);
+	return lines
+		.slice(start, end < 0 ? undefined : end)
+		.map((line) => line.trim())
+		.join(" ")
+		.slice("- ".length);
+}
+
+/** Le bloc de `body` ouvert par le titre en gras `label`, avec ses suites. */
+function block(body: string, label: string, where: string): string {
+	const blocks = body.split(BLOCK_SEPARATOR);
+	const start = blocks.findIndex(
+		(candidate) => BLOCK_TITLE.exec(candidate)?.[1] === label,
+	);
+	if (start < 0) {
+		throw new Error(`${where} : bloc « ${label} » introuvable.`);
+	}
+	const end = blocks.findIndex(
+		(candidate, index) => index > start && BLOCK_END.test(candidate),
+	);
+	return blocks.slice(start, end < 0 ? undefined : end).join(BLOCK_SEPARATOR);
+}
+
+/** Le texte brut du passage `locator`, tel que son document l'écrit. */
+function passage(documents: Documents, locator: PassageLocator): string {
+	const key = DOCUMENT_KEYS.get(locator.document);
+	if (key === undefined) {
+		throw new Error(`Document inconnu : ${locator.document}.`);
+	}
+	const body = section(documents[key], locator.document, locator.section);
+	const where = `${locator.document}, section « ${locator.section} »`;
+	if ("rows" in locator) return rows(body, locator.rows, where);
+	if ("bullet" in locator) return bullet(body, locator.bullet, where);
+	return block(body, locator.block, where);
+}
+
+/**
+ * Le texte brut des passages `locators`, à la suite, avant tout filtre. Lève une erreur qui nomme
+ * le document inconnu, ou le document, la section et la ligne, la puce ou le bloc introuvable.
+ */
+export function rawPassages(
+	documents: Documents,
+	locators: readonly PassageLocator[],
+): string {
+	return locators
+		.map((locator) => passage(documents, locator))
+		.join(BLOCK_SEPARATOR);
+}
+
+/** La « Règle exacte » d'un texte brut de passages : sans statut ni renvoi interne (#64, D9). */
+export const exactRule = (raw: string) =>
+	withoutStatuses(raw).replace(INTERNAL_REFERENCE, "");
+
+/** L'empreinte d'un texte brut de passages, qui change quand il change. */
+export const fingerprintOf = (raw: string) =>
+	createHash("sha256").update(raw).digest("hex").slice(0, FINGERPRINT_LENGTH);
 
 /** Le texte des deux documents, lu dans le dépôt ; une erreur de Node s'il ne se lit pas. */
 export async function readDocuments(): Promise<Documents> {
