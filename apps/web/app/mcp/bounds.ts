@@ -12,6 +12,9 @@ export function grouped(count: number): string {
 		.join("");
 }
 
+/** Un texte saisi : sans les blancs qui l'entourent, de 1 à `max` caractères. */
+export const text = (max: number) => z.string().trim().min(1).max(max);
+
 /**
  * Le schéma d'octets reçus en base64, `subject` (« l'image ») d'au plus `maxBytes` octets, un
  * multiple de 3. Le base64 écrit 3 octets en 4 caractères : borner le texte à `maxBytes` / 3 × 4

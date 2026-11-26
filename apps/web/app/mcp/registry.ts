@@ -11,6 +11,12 @@ import {
 	removePlayerTool,
 	searchPlayerTool,
 } from "./player-tools.ts";
+import {
+	chooseForcedTool,
+	launchCombatTool,
+	readLogTool,
+	readSeasonTool,
+} from "./season-tools.ts";
 import { readSettingsTool, updateSettingsTool } from "./settings-tools.ts";
 import {
 	addSpellTool,
@@ -38,6 +44,10 @@ export function createRegistry(
 		listMonstersTool,
 		createMonsterTool(),
 		removeMonsterTool,
+		readSeasonTool,
+		chooseForcedTool,
+		launchCombatTool,
+		readLogTool,
 		depositModelTool,
 		setClassModelTool,
 		listPassesTool,

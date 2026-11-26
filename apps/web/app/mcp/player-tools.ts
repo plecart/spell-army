@@ -1,4 +1,4 @@
-import { INSTAGRAM_ID_PATTERN, INSTAGRAM_USERNAME_PATTERN } from "donnees";
+import { INSTAGRAM_USERNAME_PATTERN } from "donnees";
 import {
 	type FoundPlayer,
 	giveSpell,
@@ -11,11 +11,10 @@ import {
 } from "joueurs";
 import { z } from "zod";
 import type { McpTool } from "./tool.ts";
-import { CLASSES } from "./vocabulary.ts";
+import { CLASSES, instagramId } from "./vocabulary.ts";
 
-// Les formes Instagram de `donnees`, en entrée comme en sortie : un pseudo rendu à Claude reste un
-// champ court et nettoyé (ADR 0003, « Pseudos, données non fiables »).
-const instagramId = z.string().regex(INSTAGRAM_ID_PATTERN);
+// La forme Instagram d'un pseudo, de `donnees`, en entrée comme en sortie : un pseudo rendu à Claude
+// reste un champ court et nettoyé (ADR 0003, « Pseudos, données non fiables »).
 const username = z.string().regex(INSTAGRAM_USERNAME_PATTERN);
 
 const search = z.strictObject({

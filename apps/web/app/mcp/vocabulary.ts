@@ -1,4 +1,5 @@
 import type { Stat } from "combat";
+import { INSTAGRAM_ID_PATTERN } from "donnees";
 import type { PassLogEntry } from "joueurs";
 import type { ClassKey } from "personnages";
 import { z } from "zod";
@@ -37,6 +38,9 @@ export function renamed<
 	) as Renamed<Values, Names>;
 }
 
+/** L'identifiant d'un joueur, sous sa forme Instagram de `donnees`, en entrée comme en sortie. */
+export const instagramId = z.string().regex(INSTAGRAM_ID_PATTERN);
+
 /** Le nom de chaque stat dans les outils (game design § 1, « Statistiques »). */
 export const STATS = {
 	life: "vie",
@@ -47,6 +51,22 @@ export const STATS = {
 
 /** La stat du modèle de chaque nom de stat des outils. */
 export const STAT_OF = inverse(STATS);
+
+/** Une valeur par stat, sous les noms du modèle de `combat` : des stats, un profil. */
+export const modelStats = z.strictObject({
+	life: z.number(),
+	strength: z.number(),
+	magic: z.number(),
+	speed: z.number(),
+});
+
+/** Une valeur par stat, sous les noms de stat des outils (`STATS`). */
+export const toolStats = z.strictObject({
+	[STATS.life]: z.number(),
+	[STATS.strength]: z.number(),
+	[STATS.magic]: z.number(),
+	[STATS.speed]: z.number(),
+});
 
 /**
  * Le nom de chaque classe dans les outils (game design § 1, « Classe »), pour chaque classe de
