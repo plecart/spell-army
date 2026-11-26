@@ -9,6 +9,7 @@
 		"./test/erreur-postgres": "./test/erreur-postgres.ts",
 		"./test/formes-instagram": "./test/formes-instagram.ts",
 		"./test/global-setup": "./test/global-setup.ts",
+		"./test/golem": "./test/golem.ts",
 		"./test/vitest-config": "./test/vitest-config.ts"
 	},
 	"scripts": {
