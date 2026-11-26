@@ -4,6 +4,7 @@ export {
 	updateCalibrationSettings,
 } from "./calibration-settings.ts";
 export {
+	closeClient,
 	createClient,
 	EMPTY_DATABASE_URL,
 	type Executor,

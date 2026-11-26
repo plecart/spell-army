@@ -6,6 +6,7 @@ export default databaseTestConfig([
 	"test/docker-unreachable.test.ts",
 	"test/env-des-scripts.test.ts",
 	"test/exception-audit.test.ts",
+	"test/fermeture-du-pool.test.ts",
 	"test/migrate-command.test.ts",
 	"test/refus-dependabot.test.ts",
 	"test/sources-du-wiki.test.ts",
