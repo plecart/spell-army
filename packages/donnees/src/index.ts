@@ -63,6 +63,7 @@ export {
 	type NewCombat,
 	type ParisDay,
 	parisCalendar,
+	playersAmong,
 	readForced,
 	readSeasonState,
 	replaceForced,

@@ -226,6 +226,23 @@ export async function listArmy(
 }
 
 /**
+ * Parmi `ids`, les identifiants qui sont ceux d'un joueur, par identifiant croissant : un forcé à
+ * choisir en est un (issue #21, Décisions, 4), un retiré n'en étant plus, sa ligne supprimée. Un
+ * seul paramètre tableau, quel que soit le nombre d'identifiants.
+ */
+export async function playersAmong(
+	executor: Executor,
+	ids: readonly string[],
+): Promise<string[]> {
+	const rows = await executor
+		.select({ instagramId: players.instagramId })
+		.from(players)
+		.where(sql`${players.instagramId} = any(${sql.param(ids)})`)
+		.orderBy(players.instagramId);
+	return rows.map(({ instagramId }) => instagramId);
+}
+
+/**
  * Les arrivées par date (game design § 6, « Recrues de référence » ; issue #21, Décisions, 7) : le
  * nombre de joueurs arrivés chacune des `days` dates complètes du calendrier Europe/Paris qui
  * précèdent `lastMidnight`, de la plus ancienne à la veille ; une date sans arrivée vaut 0. Un

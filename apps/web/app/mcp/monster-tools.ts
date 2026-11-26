@@ -20,7 +20,7 @@ import {
 } from "donnees";
 import { simulationArmies } from "personnages";
 import { z } from "zod";
-import { grouped } from "./bounds.ts";
+import { grouped, text } from "./bounds.ts";
 import { SAMPLE_LAST_SEED, sampleSeeds } from "./sample.ts";
 import {
 	MAX_DESCRIPTION_LENGTH,
@@ -28,13 +28,16 @@ import {
 	spellOf,
 } from "./spell-vocabulary.ts";
 import { type McpTool, refuseIfAny } from "./tool.ts";
-import { renamed, STAT_OF, STATS } from "./vocabulary.ts";
+import {
+	modelStats,
+	renamed,
+	STAT_OF,
+	STATS,
+	toolStats,
+} from "./vocabulary.ts";
 
 // Le bestiaire (issue #20) : un monstre dans les noms français des outils, ses schémas Zod, sa
 // traduction dans le modèle de `combat` (`MonsterDesign`) et retour, et les trois outils.
-
-/** Un texte saisi : sans les blancs qui l'entourent, de 1 à `max` caractères. */
-const text = (max: number) => z.string().trim().min(1).max(max);
 
 // Les règles d'un monstre (game design § 3) que disent les descriptions : le nombre d'attaques, et
 // leur coefficient moyen en notation française.
@@ -65,16 +68,9 @@ const toolMonster = z.strictObject({
 	nom: text(MAX_MONSTER_NAME_LENGTH).describe(
 		`Le nom du monstre, unique toutes saisons confondues, sous lequel deposer_fichier_3d range ses fichiers : 1 à ${MAX_MONSTER_NAME_LENGTH} caractères, sans les blancs qui l'entourent.`,
 	),
-	profil: z
-		.strictObject({
-			[STATS.life]: z.number(),
-			[STATS.strength]: z.number(),
-			[STATS.magic]: z.number(),
-			[STATS.speed]: z.number(),
-		})
-		.describe(
-			"Le multiplicateur de chaque stat, qui répartit le budget du monstre (game design § 3, « Profil ») : un nombre ≥ 0, 1 gardant le budget.",
-		),
+	profil: toolStats.describe(
+		"Le multiplicateur de chaque stat, qui répartit le budget du monstre (game design § 3, « Profil ») : un nombre ≥ 0, 1 gardant le budget.",
+	),
 	attaques: z
 		.array(
 			z.strictObject({
@@ -106,12 +102,7 @@ const removal = toolMonster.pick({ nom: true });
 
 // Le profil et les attaques tels que la table les porte : le modèle de `combat`.
 const storedDesign = z.strictObject({
-	profile: z.strictObject({
-		life: z.number(),
-		strength: z.number(),
-		magic: z.number(),
-		speed: z.number(),
-	}),
+	profile: modelStats,
 	attacks: z.array(
 		z.strictObject({
 			name: z.string(),
@@ -140,7 +131,7 @@ function modelDesign({ profil, attaques }: NewToolMonster): MonsterDesign {
  * Le profil et les attaques d'une ligne de la table, que `donnees` rend sans les lire : relus par
  * `storedDesign`, jamais pris sur parole. Une ligne qui n'a pas la forme du modèle lève.
  */
-function designOf({ profile, attacks }: MonsterRecord): MonsterDesign {
+export function designOf({ profile, attacks }: MonsterRecord): MonsterDesign {
 	return storedDesign.parse({ profile, attacks });
 }
 
