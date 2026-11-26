@@ -5,13 +5,16 @@ import { anchorOf } from "../scripts/wiki/markdown.ts";
 import { wikiPages } from "../scripts/wiki/pages.ts";
 import { readDocuments } from "../scripts/wiki/passages.ts";
 import { readTextsFile, textsOf } from "../scripts/wiki/textes.ts";
-import { ADDED, generated, IMAGE_BYTES, POOL, withImage } from "./wiki.ts";
+import {
+	ADDED,
+	generated,
+	IMAGE_BYTES,
+	INTERNAL_STATUS,
+	POOL,
+	withImage,
+} from "./wiki.ts";
 
 const TEXTS = textsOf(await readTextsFile(), await readDocuments());
-
-// Un statut interne des documents, en mot entier et quelle que soit la casse : « Décidé »,
-// « (décidé) », « Proposé », « Ouvert », « ouverts ».
-const STATUS = /(?<!\p{L})(?:décidé|proposé|ouvert)e?s?(?!\p{L})/giu;
 
 // La cible d'un lien Markdown, la source d'une balise d'image, un titre ATX et une adresse externe.
 const LINK = /\]\(([^)\s]+)\)/g;
@@ -209,7 +212,9 @@ describe("les pages du wiki", () => {
 	test("aucune page ne porte de statut interne : ni Décidé, ni Proposé, ni Ouvert", async () => {
 		const pages = await (await generated(POOL)).pages();
 		const statuses = [...pages].flatMap(([name, markdown]) =>
-			[...markdown.matchAll(STATUS)].map(([word]) => `${name} : ${word}`),
+			[...markdown.matchAll(INTERNAL_STATUS)].map(
+				([word]) => `${name} : ${word}`,
+			),
 		);
 		expect(statuses).toEqual([]);
 	});

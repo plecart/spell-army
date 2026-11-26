@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { exactRule, readDocuments } from "../scripts/wiki/passages.ts";
 import { readTextsFile, staleTexts, textsOf } from "../scripts/wiki/textes.ts";
+import { INTERNAL_STATUS } from "./wiki.ts";
 
 const DOCUMENTS = await readDocuments();
 const SOURCE = await readTextsFile();
@@ -337,11 +338,17 @@ describe("les passages des explications", () => {
 	});
 });
 
-// Un renvoi interne entre parenthèses ou un statut interne des documents : les formes relevées le
-// 2026-11-26 dans les passages autorisés — « (annexe A) », « (#10) », « (§ 2) », « (mesuré : … ) »,
-// la colonne « Statut » et « (décidé) » — et « (ADR n) » et « (annexes …) », que retire aussi D9.
-const INTERNAL =
-	/\((?:#|ADR |§|mesuré|annexes? )|(?<!\p{L})(?:décidé|proposé|ouvert)e?s?(?!\p{L})/giu;
+// Un renvoi interne entre parenthèses : les formes relevées le 2026-11-26 dans les passages
+// autorisés — « (annexe A) », « (#10) », « (§ 2) », « (mesuré : … ) » — et « (ADR n) » et
+// « (annexes …) », que retire aussi D9. Les statuts relevés au même endroit, la colonne « Statut »
+// et « (décidé) », sont ceux d'`INTERNAL_STATUS`.
+const INTERNAL_REFERENCE = /\((?:#|ADR |§|mesuré|annexes? )/giu;
+
+/** Les renvois et les statuts internes que porte `markdown`. */
+const internals = (markdown: string) =>
+	[INTERNAL_REFERENCE, INTERNAL_STATUS].flatMap((pattern) =>
+		[...markdown.matchAll(pattern)].map(([found]) => found),
+	);
 
 describe("les Règles exactes ne gardent rien d'interne", () => {
 	test.each([
@@ -386,7 +393,7 @@ describe("les Règles exactes ne gardent rien d'interne", () => {
 		"Décidé",
 		"(décidé)",
 	])("le relevé reconnaît « %s »", (form) => {
-		expect(form.match(INTERNAL)).not.toBeNull();
+		expect(internals(form)).not.toEqual([]);
 	});
 
 	const RULES = [...TEXTS].flatMap(([key, { rule }]) =>
@@ -396,7 +403,7 @@ describe("les Règles exactes ne gardent rien d'interne", () => {
 	test.each(RULES)(
 		"la Règle exacte de « %s » ne garde ni renvoi ni statut interne",
 		(_, rule) => {
-			expect(rule.match(INTERNAL) ?? []).toEqual([]);
+			expect(internals(rule)).toEqual([]);
 		},
 	);
 });
