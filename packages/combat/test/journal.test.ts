@@ -1,11 +1,15 @@
+import { createHash } from "node:crypto";
 import { describe, expect, test } from "vitest";
 import {
 	type CombatLog,
 	type Fighter,
 	type FightInput,
 	fight,
+	poolVersionOf,
 	RULES_VERSION,
+	STARTING_POOL,
 	type SeasonLog,
+	type Spell,
 	seasonLogOf,
 	serializeLog,
 } from "../src/index.ts";
@@ -187,7 +191,10 @@ describe("le journal stocké, dans la saison", () => {
 		const log = fight(input("42"));
 		const wider = { ...SEASON, combatsPlayed: 13, defeatStreak: 1 };
 
-		expect(seasonLogOf(log, wider).header).toEqual({ ...log.header, ...SEASON });
+		expect(seasonLogOf(log, wider).header).toEqual({
+			...log.header,
+			...SEASON,
+		});
 	});
 
 	test("l'ordre des clés est fixé par le code, en-tête de saison compris", () => {
@@ -196,5 +203,34 @@ describe("le journal stocké, dans la saison", () => {
 		expect(serializeLog(reversedKeys(stored) as SeasonLog)).toBe(
 			serializeLog(stored),
 		);
+	});
+});
+
+describe("la version de la réserve", () => {
+	// Les trois premiers sorts de la réserve de départ.
+	const POOL = STARTING_POOL.slice(0, 3);
+
+	test("le SHA-256 de la réserve en JSON, en hexadécimal : la réserve vide, celui de « [] »", () => {
+		expect(poolVersionOf([])).toBe(
+			createHash("sha256").update("[]").digest("hex"),
+		);
+	});
+
+	test("les mêmes sorts, leurs clés insérées dans un autre ordre : la même version", () => {
+		expect(poolVersionOf(reversedKeys(POOL) as Spell[])).toBe(
+			poolVersionOf(POOL),
+		);
+	});
+
+	test.each([
+		[
+			"un poids changé",
+			POOL.map((spell, index) =>
+				index === 0 ? { ...spell, weight: spell.weight + 1 } : spell,
+			),
+		],
+		["un sort de moins", POOL.slice(1)],
+	])("%s : une autre version", (_, other) => {
+		expect(poolVersionOf(other)).not.toBe(poolVersionOf(POOL));
 	});
 });

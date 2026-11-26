@@ -10,6 +10,7 @@ import {
 	type SeasonSettings,
 	type SeasonState,
 	type Stats,
+	seasonEndNotice,
 	seedOf,
 } from "../src/index.ts";
 import {
@@ -297,6 +298,13 @@ describe("la fin de la saison", () => {
 		const { state } = after(atChapter(30), "victory");
 
 		expect(state).toMatchObject({ chapter: 30, endDay: 34, budget: null });
+	});
+
+	test("le constat de fin : aucun tant que la saison continue ; « saison 1 terminée au jour 34 » après la victoire du chapitre 30", () => {
+		expect(seasonEndNotice(after(atChapter(29), "victory").state)).toBeNull();
+		expect(seasonEndNotice(after(atChapter(30), "victory").state)).toBe(
+			"saison 1 terminée au jour 34",
+		);
 	});
 
 	test("victoire du chapitre 29 : le chapitre 30, la saison continue", () => {
