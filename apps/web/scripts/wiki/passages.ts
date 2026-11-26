@@ -1,7 +1,7 @@
 // Les passages des documents que déclarent les explications du fichier de textes (`rawPassages`),
-// avec leur empreinte et leur « Règle exacte ». Les sections se découpent par leurs titres, comme
-// `packages/combat/test/annexe-b.ts` lit l'annexe B. Un passage introuvable arrête la génération en
-// le nommant, jamais une page vide ; les statuts et les renvois internes n'y sont pas recopiés.
+// avec leur empreinte et leur « Règle exacte ». Les sections se découpent par leurs titres, de tout
+// niveau. Un passage introuvable arrête la génération en le nommant, jamais une page vide ; les
+// statuts et les renvois internes n'y sont pas recopiés.
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
