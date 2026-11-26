@@ -370,7 +370,7 @@ describe("les Règles exactes ne gardent rien d'interne", () => {
 		],
 		["un statut de titre", "**Puissance** (décidé) :", "**Puissance** :"],
 		[
-			"un renvoi en tête de bloc, sans coller ce bloc au précédent",
+			"un renvoi en tête de bloc, sans coller ce bloc au précédent (l'espace qui le suivait reste, sans effet sur le rendu)",
 			"Fin du bloc.\n\n(§ 2) Bloc suivant.",
 			"Fin du bloc.\n\n Bloc suivant.",
 		],
