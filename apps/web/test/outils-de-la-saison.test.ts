@@ -17,6 +17,7 @@ import {
 	readForced,
 	readSeasonState,
 	replaceForced,
+	updateCalibrationSettings,
 	writeSeasonState,
 } from "donnees";
 import { injectFailure, waitForOneLockWaiter } from "donnees/test/base-neuve";
@@ -185,6 +186,42 @@ async function launchOn(client: Client, days: readonly number[]) {
 		vi.setSystemTime(morningOf(day));
 		resultOf(await launch(client));
 	}
+}
+
+/**
+ * Lance le combat confirmé pendant une transaction ouverte sur `db` après `work` : le lancement
+ * attend le verrou que `work` a pris, puis la transaction se valide et le lancement joue. Rend sa
+ * sortie.
+ */
+async function launchDuring(
+	db: Executor,
+	client: Client,
+	work: (tx: Executor) => Promise<unknown>,
+): Promise<Launched> {
+	const code = await codeFor(client, "lancer_combat", {});
+	let locked = () => {};
+	const holding = new Promise<void>((resolve) => {
+		locked = resolve;
+	});
+	let release = () => {};
+	const held = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const working = db.transaction(async (tx) => {
+		await work(tx);
+		locked();
+		await held;
+	});
+
+	await holding;
+	const launching = call(client, "lancer_combat", { code });
+	try {
+		await waitForOneLockWaiter(db);
+	} finally {
+		release();
+	}
+	await working;
+	return resultOf(await launching);
 }
 
 /** `result` est le refus `message`, et la dernière ligne d'audit de `tool`, en erreur, le garde. */
@@ -739,29 +776,11 @@ describe("lancer_combat", () => {
 
 	test("un choix des forcés en cours : le lancement confirmé attend sa fin, et joue avec la liste choisie", async () => {
 		const { db, client } = await seasonWith();
-		const code = await codeFor(client, "lancer_combat", {});
-		let locked = () => {};
-		const holding = new Promise<void>((resolve) => {
-			locked = resolve;
-		});
-		let release = () => {};
-		const held = new Promise<void>((resolve) => {
-			release = resolve;
-		});
-		const choosing = db.transaction(async (tx) => {
-			await replaceForced(tx, [
+		await launchDuring(db, client, (tx) =>
+			replaceForced(tx, [
 				{ instagramId: LATE_EVENING, position: "first", reason: "commentaire" },
-			]);
-			locked();
-			await held;
-		});
-
-		await holding;
-		const launching = call(client, "lancer_combat", { code });
-		await waitForOneLockWaiter(db);
-		release();
-		await choosing;
-		resultOf(await launching);
+			]),
+		);
 
 		const { journal } = outputOf(
 			await call(client, "lire_journal", { jour: 1 }),
@@ -770,6 +789,18 @@ describe("lancer_combat", () => {
 			{ id: LATE_EVENING, position: "first", reason: "commentaire" },
 		]);
 		expect(await readForced(db)).toEqual([]);
+	});
+
+	test("une modification de p en cours à la 2e défaite de suite : le lancement attend sa fin, et baisse le p modifié, de 0,5 à 0,4", async () => {
+		const { db, client } = await seasonWith(CRUSHING);
+		await launchOn(client, [16]);
+		vi.setSystemTime(morningOf(17));
+		await launchDuring(db, client, (tx) =>
+			updateCalibrationSettings(tx, { recruitShare: 0.5 }),
+		);
+
+		expect(await headerOf(client, 2)).toMatchObject({ recruitShare: 0.5 });
+		expect((await readCalibrationSettings(db)).recruitShare).toBe(0.4);
 	});
 
 	test("un budget rangé qui n'a pas la forme d'un budget : lire_saison et lancer_combat refusés, rien d'écrit", async () => {
