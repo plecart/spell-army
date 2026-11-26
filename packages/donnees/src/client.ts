@@ -46,6 +46,23 @@ export async function closeClient(
 export const EMPTY_DATABASE_URL =
 	"DATABASE_URL est vide : renseigne-la dans le shell ou dans le fichier .env de la racine.";
 
+/**
+ * La seule ligne d'une table que pose une migration, dans `rows`, lues ou écrites.
+ *
+ * @param missing le début du refus, ce qui manque : « État de la saison absent ».
+ * @throws {Error} quand `rows` est vide : la base n'est pas migrée, et le refus dit comment la
+ * migrer.
+ */
+export function seededRow<T>(rows: T[], missing: string): T {
+	const [row] = rows;
+	if (!row) {
+		throw new Error(
+			`${missing} : la base n'est pas migrée (pnpm --filter donnees run migrate).`,
+		);
+	}
+	return row;
+}
+
 /** Le client que rend `createClient`, ou une transaction ouverte sur lui. */
 export type Executor = PgDatabase<NodePgQueryResultHKT>;
 

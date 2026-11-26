@@ -1,5 +1,5 @@
 import { getTableColumns } from "drizzle-orm";
-import type { Executor } from "./client.ts";
+import { type Executor, seededRow } from "./client.ts";
 import { calibrationSettings } from "./schema.ts";
 
 /** Réglages du calibrage (`docs/game-design.md` § 6) : la ligne de `calibration_settings` sans `id`. */
@@ -12,13 +12,7 @@ export type CalibrationSettings = Omit<
 const { id: _id, ...settingsColumns } = getTableColumns(calibrationSettings);
 
 function settingsRow(rows: CalibrationSettings[]): CalibrationSettings {
-	const [row] = rows;
-	if (!row) {
-		throw new Error(
-			"Réglages du calibrage absents : la base n'est pas migrée (pnpm --filter donnees run migrate).",
-		);
-	}
-	return row;
+	return seededRow(rows, "Réglages du calibrage absents");
 }
 
 /** Lit les réglages du calibrage. Lève une erreur si la ligne manque (base non migrée). */

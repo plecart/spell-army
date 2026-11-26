@@ -5,6 +5,7 @@ import {
 	boolean,
 	check,
 	customType,
+	date,
 	doublePrecision,
 	integer,
 	jsonb,
@@ -407,5 +408,127 @@ export const auditLog = pgTable(
 			"audit_log_succeeded_check",
 			sql`${table.succeeded} = (${table.error} is null)`,
 		),
+	],
+);
+
+/**
+ * Les issues d'un combat, celles d'`Outcome` (`packages/combat/src/log.ts`) : `exhaustion`, la
+ * défaite par épuisement du garde-fou (game design § 4).
+ */
+const OUTCOMES = ["victory", "defeat", "exhaustion"] as const;
+
+/**
+ * L'état de la saison (game design § 7 ; issue #21, Décisions, 3 et 5), en une seule ligne
+ * (`id = 1`) que pose la migration `0009_saison` au début de la saison 1 ; `season.ts` la lit et
+ * l'écrit. Les champs sont ceux de `SeasonState` (`packages/combat/src/season.ts`) : saison,
+ * chapitre, tentative, combats joués, défaites de suite ; `budget`, le budget du prochain monstre,
+ * que `donnees` ne lit pas ; `last_outcome`, l'issue du dernier combat ; `end_day`, le jour de fin
+ * de la saison. Ces trois derniers sont nuls au début de la saison. Chaque borne est une contrainte
+ * `check`, nommée `season_state_<colonne>_check`.
+ */
+export const seasonState = pgTable(
+	"season_state",
+	{
+		id: smallint().primaryKey(),
+		season: integer().notNull(),
+		chapter: integer().notNull(),
+		attempt: integer().notNull(),
+		combatsPlayed: integer("combats_played").notNull(),
+		defeatStreak: integer("defeat_streak").notNull(),
+		budget: jsonb(),
+		lastOutcome: text("last_outcome", { enum: OUTCOMES }),
+		endDay: integer("end_day"),
+	},
+	(table) => [
+		check("season_state_id_check", sql`${table.id} = 1`),
+		...[table.season, table.chapter, table.attempt, table.endDay].map(
+			(ordinal) =>
+				check(`season_state_${ordinal.name}_check`, sql`${ordinal} >= 1`),
+		),
+		...[table.combatsPlayed, table.defeatStreak].map((count) =>
+			check(`season_state_${count.name}_check`, sql`${count} >= 0`),
+		),
+		check(
+			"season_state_last_outcome_check",
+			oneOf(table.lastOutcome, OUTCOMES),
+		),
+	],
+);
+
+/**
+ * Le nom de l'index unique de la date des combats : la violation qu'un second lancement le même jour
+ * lève, concurrent compris (issue #21, Décisions, 9), que l'appelant reconnaît par
+ * `postgresErrorCode`.
+ */
+export const COMBAT_DATE_UNIQUE = "combats_fought_on_unique";
+
+/**
+ * Les combats de la saison (game design § 7 et § 9 ; issue #21, Décisions, 3 et 9) : la date du
+ * combat au calendrier Europe/Paris, une seule par combat (`COMBAT_DATE_UNIQUE`) ; saison, chapitre,
+ * jour — le numéro du combat dans la saison, un seul par saison (`combats_season_day_unique`) — et
+ * tentative ; le monstre affronté, qu'un combat empêche de retirer (`on delete restrict` : le
+ * retrait lève `restrict_violation`, code 23001, sur `combats_monster_id_monsters_id_fk`) ; l'issue ;
+ * le journal stocké (`SeasonLog` de `packages/combat/src/log.ts`), que `donnees` ne lit pas ;
+ * l'instant de la transaction qui l'écrit. Chaque borne est une contrainte `check`, nommée
+ * `combats_<colonne>_check`. `season.ts` lit et écrit la table.
+ */
+export const combats = pgTable(
+	"combats",
+	{
+		id: integer().primaryKey().generatedAlwaysAsIdentity(),
+		foughtOn: date("fought_on").notNull(),
+		season: integer().notNull(),
+		chapter: integer().notNull(),
+		day: integer().notNull(),
+		attempt: integer().notNull(),
+		monsterId: integer("monster_id")
+			.notNull()
+			.references(() => monsters.id, { onDelete: "restrict" }),
+		outcome: text({ enum: OUTCOMES }).notNull(),
+		log: jsonb().notNull(),
+		recordedAt: timestamp("recorded_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		uniqueIndex(COMBAT_DATE_UNIQUE).on(table.foughtOn),
+		uniqueIndex("combats_season_day_unique").on(table.season, table.day),
+		...[table.season, table.chapter, table.day, table.attempt].map((ordinal) =>
+			check(`combats_${ordinal.name}_check`, sql`${ordinal} >= 1`),
+		),
+		check("combats_outcome_check", oneOf(table.outcome, OUTCOMES)),
+	],
+);
+
+/** Les positions d'un forcé, celles de `Forced` (`packages/combat/src/log.ts`, game design § 5). */
+const FORCED_POSITIONS = ["first", "last", "middle"] as const;
+
+/**
+ * Les forcés du prochain combat (game design § 5 ; issue #21, Décisions, 4 et 11), au rang où le
+ * mainteneur les a choisis, chacun une fois (`next_combat_forced_instagram_id_unique`) : la liste
+ * entière se remplace, et le combat la consomme. Aucune clé étrangère vers `players` : un forcé
+ * retiré depuis son choix reste, pour que le lancement le refuse en le nommant. Chaque borne est une
+ * contrainte `check`, nommée `next_combat_forced_<colonne>_check`. `season.ts` lit et écrit la table.
+ */
+export const nextCombatForced = pgTable(
+	"next_combat_forced",
+	{
+		rank: integer().primaryKey(),
+		instagramId: text("instagram_id").notNull(),
+		position: text({ enum: FORCED_POSITIONS }).notNull(),
+		reason: text().notNull(),
+	},
+	(table) => [
+		uniqueIndex("next_combat_forced_instagram_id_unique").on(table.instagramId),
+		check("next_combat_forced_rank_check", sql`${table.rank} >= 1`),
+		check(
+			"next_combat_forced_instagram_id_check",
+			matches(table.instagramId, INSTAGRAM_ID_PATTERN),
+		),
+		check(
+			"next_combat_forced_position_check",
+			oneOf(table.position, FORCED_POSITIONS),
+		),
+		check("next_combat_forced_reason_check", notBlank(table.reason)),
 	],
 );
