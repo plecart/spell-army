@@ -9,21 +9,10 @@ import {
 	listCombatsOfMonster,
 	listMonsters,
 	type NewCombat,
-	type NewMonster,
 	postgresErrorCode,
 } from "../src/index.ts";
 import { freshDatabase, waitForOneLockWaiter } from "./base-neuve.ts";
-
-// Un monstre du bestiaire : `donnees` ne lit ni le profil ni les attaques.
-const GOLEM: NewMonster = {
-	season: 1,
-	chapter: 1,
-	name: "Golem de lave",
-	profile: { life: 1.5, strength: 1, magic: 1, speed: 0.5 },
-	attacks: [],
-	scaleFactor: 1.1653817482293547,
-	trait: "Sa peau de lave brûle qui la frappe.",
-};
+import { GOLEM } from "./golem.ts";
 
 // Un combat sans son monstre : `donnees` ne lit pas le journal, que `combat` construit.
 const COMBAT: Omit<NewCombat, "monsterId"> = {

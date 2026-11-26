@@ -11,6 +11,7 @@ import {
 	injectFailure,
 	waitForOneLockWaiter,
 } from "donnees/test/base-neuve";
+import { GOLEM } from "donnees/test/golem";
 import { describe, expect, test } from "vitest";
 import {
 	previewRemoval,
@@ -49,15 +50,7 @@ function logOf(id: string, reason = "Concours") {
 
 /** Range au premier jour de la saison 1 un combat dont le journal porte `TARGET`. */
 async function storeCombatOfTarget(db: Executor): Promise<void> {
-	const { id: monsterId } = await insertMonster(db, {
-		season: 1,
-		chapter: 1,
-		name: "Golem de lave",
-		profile: {},
-		attacks: [],
-		scaleFactor: 1,
-		trait: "Brûlant.",
-	});
+	const { id: monsterId } = await insertMonster(db, GOLEM);
 	await insertCombat(db, {
 		foughtOn: "2026-01-16",
 		season: 1,

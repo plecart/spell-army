@@ -9,6 +9,7 @@ import {
 	readSeasonState,
 } from "../src/index.ts";
 import { freshDatabase, waitForOneLockWaiter } from "./base-neuve.ts";
+import { GOLEM } from "./golem.ts";
 
 // Le joueur retiré, et « 100 », dont il n'est qu'un préfixe.
 const TARGET = "10";
@@ -42,15 +43,7 @@ function logOf(id: string, reason = "Gagnant du concours 10") {
 /** Une base neuve où un monstre est rangé, et une fonction qui y range un combat à la date `on`. */
 async function databaseWithMonster() {
 	const db = await freshDatabase();
-	const { id: monsterId } = await insertMonster(db, {
-		season: 1,
-		chapter: 1,
-		name: "Golem de lave",
-		profile: {},
-		attacks: [],
-		scaleFactor: 1,
-		trait: "Brûlant.",
-	});
+	const { id: monsterId } = await insertMonster(db, GOLEM);
 	const fight = (db: Executor, day: number, log: NewCombat["log"]) =>
 		insertCombat(db, {
 			foughtOn: `2026-01-${10 + day}`,
