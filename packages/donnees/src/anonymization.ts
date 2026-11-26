@@ -10,17 +10,22 @@ import { readSeasonState } from "./season.ts";
 /** Ce qui remplace l'identifiant d'un joueur retiré dans les journaux stockés. */
 export const REMOVED_PLAYER_LABEL = "retiré";
 
-/** `value`, chacun de ses textes égal à `from`, à toute profondeur, remplacé par `to`. */
+/**
+ * `value`, chacun de ses textes égal à `from`, à toute profondeur, remplacé par `to`, ainsi que le
+ * `reason` d'un objet dont l'`id` vaut `from` : le motif d'un forcé, texte libre du mainteneur, peut
+ * nommer le joueur qu'il décrit.
+ */
 function replaceText(value: unknown, from: string, to: string): unknown {
 	if (value === from) return to;
 	if (Array.isArray(value)) {
 		return value.map((item) => replaceText(item, from, to));
 	}
 	if (value !== null && typeof value === "object") {
+		const describesPlayer = "id" in value && value.id === from;
 		return Object.fromEntries(
 			Object.entries(value).map(([key, item]) => [
 				key,
-				replaceText(item, from, to),
+				describesPlayer && key === "reason" ? to : replaceText(item, from, to),
 			]),
 		);
 	}
@@ -29,9 +34,10 @@ function replaceText(value: unknown, from: string, to: string): unknown {
 
 /**
  * Remplace par `REMOVED_PLAYER_LABEL` chaque texte égal à `instagramId` dans les journaux de combat
- * stockés — tirés, actions, forcés, forcés non atteints — et rend le nombre de journaux réécrits.
- * Seuls ceux qui le portent le sont, trouvés par la base. Un texte égal, pas un texte qui le
- * contient : « 10 » ne touche ni « 100 », ni le nombre 10. Rejouée, elle ne réécrit rien.
+ * stockés — tirés, actions, forcés, forcés non atteints — et le motif du forcé qu'il était, puis
+ * rend le nombre de journaux réécrits. Seuls ceux qui le portent le sont, trouvés par la base. Un
+ * texte égal, pas un texte qui le contient : « 10 » ne touche ni « 100 », ni le nombre 10, ni le
+ * motif d'un autre forcé qui le citerait. Rejouée, elle ne réécrit rien.
  *
  * Ouvre sa propre transaction, un point de sauvegarde quand `executor` en est déjà une, ce qui
  * l'annule avec celle de l'appelant. Elle verrouille d'abord l'état de la saison, comme le

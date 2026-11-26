@@ -29,12 +29,12 @@ const WITNESS = "11";
 const PREFIXED = "100";
 
 /**
- * Un journal de combat où `id` est tiré, joue, est forcé et n'est pas atteint, avec le témoin et
- * « 100 ».
+ * Un journal de combat où `id` est tiré, joue, est forcé pour `reason` et n'est pas atteint, avec
+ * le témoin et « 100 ».
  */
-function logOf(id: string) {
+function logOf(id: string, reason = "Concours") {
 	return {
-		header: { forced: [{ id, position: "first", reason: "Concours" }] },
+		header: { forced: [{ id, position: "first", reason }] },
 		actions: [
 			{ number: 1, fighter: { id } },
 			{ number: 2, fighter: { id: WITNESS } },
@@ -154,7 +154,7 @@ describe("retrait d'un joueur", () => {
 			const db = await databaseWith(setup);
 			await storeCombatOfTarget(db);
 			await removePlayer(db, TARGET);
-			expect(await storedLog(db)).toEqual(logOf("retiré"));
+			expect(await storedLog(db)).toEqual(logOf("retiré", "retiré"));
 		},
 	);
 
