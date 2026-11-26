@@ -362,6 +362,11 @@ describe("les Règles exactes ne gardent rien d'interne", () => {
 			"Avec la puissance.",
 		],
 		["un statut de titre", "**Puissance** (décidé) :", "**Puissance** :"],
+		[
+			"un renvoi en tête de bloc, sans coller ce bloc au précédent",
+			"Fin du bloc.\n\n(§ 2) Bloc suivant.",
+			"Fin du bloc.\n\n Bloc suivant.",
+		],
 	])("le filtre retire %s", (_, raw, rule) => {
 		expect(exactRule(raw)).toBe(rule);
 	});

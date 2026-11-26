@@ -21,12 +21,13 @@ const BLOCK_SEPARATOR = "\n\n";
 // « (décidé) », et en colonne d'un tableau.
 const INLINE_STATUS = / \((?:décidé|proposé|ouvert)\)/giu;
 const STATUS_COLUMN = "Statut";
-// Les renvois internes entre parenthèses, avec les blancs qui les précèdent (#64, D9 et T3) :
+// Les renvois internes entre parenthèses, avec les blancs de leur ligne qui les précèdent — jamais un
+// saut de ligne, qui collerait un bloc ouvert par un renvoi au bloc précédent (#64, D9 et T3) :
 // « (#10) », « (ADR 0001) », « (§ 2) », « (§ 6, « Équilibre ») », « (mesuré : … ) », « (annexe A) »,
 // « (annexes A et B, § 3) ». Population bornée : les formes des passages autorisés, recomptées sur
 // les passages réels par `wiki-textes.test.ts`, pas toute la prose des documents.
 const INTERNAL_REFERENCE =
-	/\s*\((?:#\d+|ADR \d+|§ [^)]*|mesuré :[^)]*|annexes? [A-Z][^)]*)\)/g;
+	/[^\S\n]*\((?:#\d+|ADR \d+|§ [^)]*|mesuré :[^)]*|annexes? [A-Z][^)]*)\)/g;
 // Une barre verticale de tableau, hors d'une barre échappée par un antislash (GFM, « Tables »).
 const CELL_SEPARATOR = /(?<!\\)\|/;
 
