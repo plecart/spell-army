@@ -69,6 +69,12 @@ describe("aucun chiffre écrit en dur", () => {
 			"« tes-stats » : « text » : chiffre écrit en dur « 3 »",
 		],
 		[
+			"un chiffre hors ASCII dans un texte",
+			"{total des points} points en tout",
+			"{total des points} points en tout, ou ½ de plus",
+			"« tes-stats » : « text » : chiffre écrit en dur « ½ »",
+		],
+		[
 			"un nom de valeur inconnu",
 			"{total des points} points en tout",
 			"{total des point} points en tout",
@@ -112,6 +118,11 @@ describe("le fichier de textes, saisi à la main, se valide champ par champ", ()
 			"un fichier qui n'est pas une table",
 			"- a\n- b\n",
 			"une table d'entrées est attendue",
+		],
+		[
+			"une clé hors kebab-case",
+			"Ta_classe:\n  title: T\n",
+			"« Ta_classe » : clé en kebab-case attendue",
 		],
 		[
 			"une entrée qui n'est pas une table",
@@ -248,6 +259,20 @@ describe("les passages des explications", () => {
 			"block: Puissance",
 			"docs/game-design.md, section « 2. Les sorts » : bloc « Puissance » introuvable.",
 		],
+		// Une section s'arrête au titre suivant de même niveau ou plus haut : la ligne d'une section
+		// suivante n'est pas la sienne.
+		[
+			"une ligne de la section suivante, de même niveau",
+			"rows: [Enrôlement]",
+			"rows: [Défaite]",
+			"docs/etudes/00-cadrage.md, section « Joueurs » : ligne « Défaite » introuvable.",
+		],
+		[
+			"une ligne d'une section suivante, plus haute",
+			"rows: [Classe]",
+			"rows: [Recette]",
+			"docs/game-design.md, section « 1. Le personnage » : ligne « Recette » introuvable.",
+		],
 		[
 			"un document inconnu",
 			"document: docs/etudes/00-cadrage.md",
@@ -284,8 +309,10 @@ describe("les passages des explications", () => {
 		).toEqual(["Statistiques", "Total", "Loterie"]);
 	});
 
-	test("une puce se rend sur une ligne, son libellé en gras", () => {
-		expect(TEXTS.get("accueil")?.rule).toMatch(/^\*\*Le concept\*\* : [^\n]+$/);
+	test("une puce se rend sur une ligne, son libellé en gras, jusqu'à la puce suivante", () => {
+		expect(TEXTS.get("accueil")?.rule).toBe(
+			"**Le concept** : un compte Instagram ; chaque abonné devient un personnage ; tous les personnages forment une armée qui affronte un monstre par jour, en tour par tour ; chaque combat est raconté dans une vidéo qui met en avant de vrais abonnés.",
+		);
 	});
 
 	test("un bloc se rend avec ce qui le suit jusqu'au tableau, puis les lignes autorisées", () => {
@@ -312,9 +339,9 @@ describe("les passages des explications", () => {
 
 // Un renvoi interne entre parenthèses ou un statut interne des documents : les formes relevées le
 // 2026-11-26 dans les passages autorisés — « (annexe A) », « (#10) », « (§ 2) », « (mesuré : … ) »,
-// la colonne « Statut » et « (décidé) » — et « (ADR n) », que retire aussi D9.
+// la colonne « Statut » et « (décidé) » — et « (ADR n) » et « (annexes …) », que retire aussi D9.
 const INTERNAL =
-	/\((?:#|ADR |§|mesuré|annexe )|(?<!\p{L})(?:décidé|proposé|ouvert)e?s?(?!\p{L})/giu;
+	/\((?:#|ADR |§|mesuré|annexes? )|(?<!\p{L})(?:décidé|proposé|ouvert)e?s?(?!\p{L})/giu;
 
 describe("les Règles exactes ne gardent rien d'interne", () => {
 	test.each([
@@ -328,6 +355,12 @@ describe("les Règles exactes ne gardent rien d'interne", () => {
 		],
 		["une mesure", "Plus rapide (mesuré : 51 % à 7 %).", "Plus rapide."],
 		["une annexe", "Une plage par stat (annexe A).", "Une plage par stat."],
+		["des annexes", "Les plages (annexes A et B, § 3, § 4).", "Les plages."],
+		[
+			"un renvoi après une espace insécable",
+			"Avec la puissance\u00a0(§ 2).",
+			"Avec la puissance.",
+		],
 		["un statut de titre", "**Puissance** (décidé) :", "**Puissance** :"],
 	])("le filtre retire %s", (_, raw, rule) => {
 		expect(exactRule(raw)).toBe(rule);
@@ -340,6 +373,7 @@ describe("les Règles exactes ne gardent rien d'interne", () => {
 
 	test.each([
 		"(annexe A)",
+		"(annexes A et B)",
 		"(#10)",
 		"(§ 2)",
 		"(mesuré : x)",

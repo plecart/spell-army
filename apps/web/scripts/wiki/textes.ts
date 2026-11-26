@@ -38,6 +38,8 @@ const VALUES: Readonly<Record<string, string>> = {
 	site: `[${SITE_DOMAIN}](https://${SITE_DOMAIN})`,
 };
 
+// Une clé d'entrée, en kebab-case : des mots de minuscules ASCII et de chiffres, liés par un tiret.
+const KEY = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 // Un nom de valeur entre accolades.
 const VALUE_NAME = /\{([^{}]*)\}/g;
 // Une accolade restée seule une fois les noms de valeur retirés.
@@ -176,7 +178,10 @@ function entriesOf(source: string): [string, TextEntry][] {
 		throw new Error(`${TEXTS_NAME} : une table d'entrées est attendue.`);
 	}
 	const errors = Object.entries(file).flatMap(([key, entry]) =>
-		entryErrors(entry).map((error) => `« ${key} » : ${error}`),
+		[
+			...(KEY.test(key) ? [] : ["clé en kebab-case attendue"]),
+			...entryErrors(entry),
+		].map((error) => `« ${key} » : ${error}`),
 	);
 	if (errors.length > 0) {
 		throw new Error(`${TEXTS_NAME} :\n- ${errors.join("\n- ")}`);
