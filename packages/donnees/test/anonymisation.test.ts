@@ -15,17 +15,17 @@ const TARGET = "10";
 const PREFIXED = "100";
 
 /**
- * Un journal où `id` est tiré, joue une action, est forcé et n'est pas atteint, aux côtés de
- * « 100 », que le joueur retiré ne fait que préfixer ; un nombre 10 et des textes qui contiennent
- * « 10 » sans l'être ne sont pas des identifiants.
+ * Un journal où `id` est tiré, joue une action, est forcé pour `reason` et n'est pas atteint, aux
+ * côtés de « 100 », que le joueur retiré ne fait que préfixer ; un nombre 10 et des textes qui
+ * contiennent « 10 » sans l'être ne sont pas des identifiants, le motif d'un autre forcé compris.
  */
-function logOf(id: string) {
+function logOf(id: string, reason = "Gagnant du concours 10") {
 	return {
 		header: {
 			seed: "a10b",
 			forced: [
-				{ id, position: "first", reason: "Gagnant du concours 10" },
-				{ id: PREFIXED, position: "last", reason: "Anniversaire" },
+				{ id, position: "first", reason },
+				{ id: PREFIXED, position: "last", reason: "Parrain du 10" },
 			],
 		},
 		actions: [
@@ -70,7 +70,9 @@ describe("anonymisation des journaux", () => {
 		const { db, fight } = await databaseWithMonster();
 		await fight(db, 1, logOf(TARGET));
 		expect(await anonymizeCombatLogs(db, TARGET)).toBe(1);
-		expect((await findCombat(db, 1, 1))?.log).toEqual(logOf("retiré"));
+		expect((await findCombat(db, 1, 1))?.log).toEqual(
+			logOf("retiré", "retiré"),
+		);
 	});
 
 	test("seuls les journaux qui le portent sont réécrits ; rejouée, l'anonymisation ne réécrit rien", async () => {
@@ -100,6 +102,8 @@ describe("anonymisation des journaux", () => {
 			await fight(tx, 1, logOf(TARGET));
 		});
 		expect(await anonymized).toBe(1);
-		expect((await findCombat(db, 1, 1))?.log).toEqual(logOf("retiré"));
+		expect((await findCombat(db, 1, 1))?.log).toEqual(
+			logOf("retiré", "retiré"),
+		);
 	});
 });
