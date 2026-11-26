@@ -114,7 +114,8 @@ const ATTRIBUTE_SPECIALS = /[&"|]/g;
 // chiffres décimaux, le tiret bas, le tiret et l'espace ; et ses seules capitales ASCII passent en
 // minuscules. Lu le 2026-11-26 : `[^\p{Word}\- ]` et `downcase(:ascii)` du `TableOfContentsFilter`
 // de html-pipeline v2.14.3, et l'ancre `…-greek-letter-Θ` de docs.github.com (« Basic writing and
-// formatting syntax », « Section links »). Le rendu du wiki reste à constater (#64).
+// formatting syntax », « Section links »). Constaté le 2026-11-26 sur le wiki publié : `dégâts`,
+// `qui-joue-` (#64).
 const NOT_IN_ANCHOR = /[^\p{L}\p{M}\p{Nd}\p{Pc} -]/gu;
 const ASCII_CAPITAL = /[A-Z]/g;
 

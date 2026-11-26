@@ -90,12 +90,14 @@ function drawableSpells(spells: readonly WikiSpell[]): WikiSpell[] {
  * réservés —, puis rend ce qui a été écrit. Les textes et les passages viennent du dépôt, les sorts
  * de `source`.
  *
- * Lève une erreur, à afficher telle quelle, avant toute écriture : une faute du fichier de textes,
- * ou un passage qu'il déclare introuvable dans son document (`textsOf`) ; un échec de lecture des
- * sorts, expliqué pour une table absente ou un droit refusé, sinon nommé par sa raison
- * (`failureReason`) ; aucun sort tirable ; un sort tirable invalide (`validateSpell`), qu'elle
- * nomme ; une image de sort d'un type inconnu, ou une entrée du fichier de textes sans le titre ou
- * le texte qu'une page lui demande (`wikiPages`) ; un dossier qui n'est pas vide (`writeFolder`).
+ * Lève une erreur, à afficher telle quelle, avant toute écriture : un fichier du dépôt qu'elle
+ * lit — textes, documents, visuels réservés — illisible, par l'erreur de Node qui le nomme ; une
+ * faute du fichier de textes, ou un passage qu'il déclare introuvable dans son document
+ * (`textsOf`) ; un échec de lecture des sorts, expliqué pour une table absente ou un droit refusé,
+ * sinon nommé par sa raison (`failureReason`) ; aucun sort tirable ; un sort tirable invalide
+ * (`validateSpell`), qu'elle nomme ; une image de sort d'un type inconnu, ou une entrée du fichier
+ * de textes sans le titre ou le texte qu'une page lui demande (`wikiPages`) ; un dossier qui n'est
+ * pas vide (`writeFolder`).
  */
 export async function generateWiki(
 	folder: string,

@@ -108,7 +108,7 @@ test.each([
 	expect(found).toEqual([]);
 });
 
-/// Un passage valide, que des cas complètent d'un champ fautif.
+// Un passage valide, que des cas complètent d'un champ fautif.
 const PASSAGE =
 	"    - document: docs/game-design.md\n      section: 1. Le personnage\n      rows: [Total]\n";
 
