@@ -20,6 +20,8 @@ on:
       - packages/combat/src/**
       - packages/donnees/src/**
       - apps/web/app/annuaire/address.ts
+      - apps/web/app/stat-names.ts
+      - apps/web/app/site.ts
       - apps/web/app/mcp/spell-vocabulary.ts
       - apps/web/scripts/wiki.ts
       - apps/web/scripts/wiki/**

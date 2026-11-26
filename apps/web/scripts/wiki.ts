@@ -35,8 +35,9 @@ try {
 				image: row.image,
 			})),
 		);
+		// Toujours plusieurs images : chaque génération écrit au moins la bannière et un portrait.
 		console.log(
-			`Wiki écrit dans ${target} : ${pages} pages, ${images} ${images > 1 ? "images" : "image"}.`,
+			`Wiki écrit dans ${target} : ${pages} pages, ${images} images.`,
 		);
 	} finally {
 		await closeClient(db);

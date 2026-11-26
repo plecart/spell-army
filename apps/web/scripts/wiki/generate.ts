@@ -1,11 +1,13 @@
 // La génération du wiki du jeu : les sorts de la source injectée — la table `spells` pour la
-// commande, une liste pour les tests —, les tirables validés, rendus avec les passages des
-// documents, puis écrits dans un dossier vide. Rien n'est écrit tant que tout n'est pas rendu.
+// commande, une liste pour les tests —, les tirables validés, rendus avec le fichier de textes, les
+// passages des documents qu'il explique et les visuels réservés, puis écrits dans un dossier vide.
+// Rien n'est écrit tant que tout n'est pas rendu.
 import { validateSpell } from "combat";
 import { postgresErrorCode } from "donnees";
 import { writeFolder } from "./folder.ts";
-import { type WikiSpell, wikiPages } from "./pages.ts";
-import { passagesOf, readDocuments } from "./passages.ts";
+import { readPlaceholders, type WikiSpell, wikiPages } from "./pages.ts";
+import { readDocuments } from "./passages.ts";
+import { readTextsFile, textsOf } from "./textes.ts";
 
 /** La lecture des sorts, poids 0 compris : la génération ne publie que les tirables. */
 export type SpellSource = () => Promise<readonly WikiSpell[]>;
@@ -84,21 +86,27 @@ function drawableSpells(spells: readonly WikiSpell[]): WikiSpell[] {
 }
 
 /**
- * Écrit dans `folder` toutes les pages du wiki et les images des sorts, puis rend ce qui a été
- * écrit. Les passages viennent des documents du dépôt, les sorts de `source`.
+ * Écrit dans `folder` toutes les pages du wiki et ses images — celles des sorts et les visuels
+ * réservés —, puis rend ce qui a été écrit. Les textes et les passages viennent du dépôt, les sorts
+ * de `source`.
  *
- * Lève une erreur, à afficher telle quelle, avant toute écriture : un passage introuvable ou
- * incomplet dans son document ; un échec de lecture des sorts, expliqué pour une table absente ou
- * un droit refusé, sinon nommé par sa raison (`failureReason`) ; aucun sort tirable ; un
- * sort tirable invalide (`validateSpell`), ou dont l'image est d'un type inconnu (`wikiPages`),
- * qu'elle nomme ; un dossier qui n'est pas vide (`writeFolder`).
+ * Lève une erreur, à afficher telle quelle, avant toute écriture : une faute du fichier de textes,
+ * ou un passage qu'il déclare introuvable dans son document (`textsOf`) ; un échec de lecture des
+ * sorts, expliqué pour une table absente ou un droit refusé, sinon nommé par sa raison
+ * (`failureReason`) ; aucun sort tirable ; un sort tirable invalide (`validateSpell`), qu'elle
+ * nomme ; une image de sort d'un type inconnu, ou une entrée du fichier de textes sans le titre ou
+ * le texte qu'une page lui demande (`wikiPages`) ; un dossier qui n'est pas vide (`writeFolder`).
  */
 export async function generateWiki(
 	folder: string,
 	source: SpellSource,
 ): Promise<WikiSummary> {
-	const passages = passagesOf(await readDocuments());
-	const files = wikiPages(passages, drawableSpells(await readSpells(source)));
+	const texts = textsOf(await readTextsFile(), await readDocuments());
+	const files = wikiPages(
+		texts,
+		drawableSpells(await readSpells(source)),
+		await readPlaceholders(),
+	);
 	await writeFolder(folder, files);
 	const pages = [...files.values()].filter(
 		(content) => typeof content === "string",

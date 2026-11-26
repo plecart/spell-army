@@ -60,9 +60,22 @@ export async function filesOf(folder: string): Promise<string[]> {
 export async function generated(spells: readonly WikiSpell[]) {
 	const folder = await outputFolder();
 	await generateWiki(folder, async () => spells);
+	const files = () => filesOf(folder);
+	const page = (name: string) => readFile(join(folder, `${name}.md`), "utf8");
 	return {
-		files: () => filesOf(folder),
-		page: (name: string) => readFile(join(folder, `${name}.md`), "utf8"),
+		files,
+		page,
+		/** Le Markdown de chaque page, par nom de page. */
+		pages: async () => {
+			const names = (await files())
+				.filter((file) => file.endsWith(".md"))
+				.map((file) => file.slice(0, -".md".length));
+			return new Map(
+				await Promise.all(
+					names.map(async (name) => [name, await page(name)] as const),
+				),
+			);
+		},
 		bytes: async (path: string) => [...(await readFile(join(folder, path)))],
 	};
 }
