@@ -65,11 +65,12 @@ export function budgetOf(components: BudgetComponents): Stats {
 }
 
 /**
- * Les mêmes composantes, leur p ramené à `recruitShare` s'il est plus bas : le monstre recalculé à
- * la baisse de p « ne peut que rétrécir » (game design § 6), même si le mainteneur a relevé p depuis
- * qu'il a été fixé. Une règle sans terme en p rend ses composantes telles quelles.
+ * Les mêmes composantes, leur p plafonné à `recruitShare` : ramené à lui s'il est plus haut, gardé
+ * sinon. Le monstre recalculé à la baisse de p « ne peut que rétrécir » (game design § 6), même si le
+ * mainteneur a relevé p depuis qu'il a été fixé. Une règle sans terme en p rend ses composantes
+ * telles quelles.
  */
-export function lowerShare(
+export function capRecruitShare(
 	components: BudgetComponents,
 	recruitShare: number,
 ): BudgetComponents {

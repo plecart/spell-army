@@ -309,6 +309,10 @@ describe("la fin de la saison", () => {
 		["lancer un combat", (state: SeasonState) => nextBudget(state)],
 		["compter une victoire", (state: SeasonState) => after(state, "victory")],
 		["compter une défaite", (state: SeasonState) => after(state, "defeat")],
+		[
+			"compter un épuisement",
+			(state: SeasonState) => after(state, "exhaustion"),
+		],
 	])("saison terminée : refus de %s, le message dit quand", (_, act) => {
 		const ended = after(atChapter(30), "victory").state;
 
