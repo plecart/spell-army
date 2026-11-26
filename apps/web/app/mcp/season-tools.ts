@@ -267,9 +267,11 @@ function describeLaunch({
  */
 function audited(
 	{ state, recruitShare }: SeasonTransition,
-	shareChanged: boolean,
+	recruitShareChanged: boolean,
 ) {
-	return shareChanged ? { etat: state, p: recruitShare } : { etat: state };
+	return recruitShareChanged
+		? { etat: state, p: recruitShare }
+		: { etat: state };
 }
 
 const launched = z.strictObject({
@@ -307,7 +309,7 @@ export const launchCombatTool: McpTool = {
 	run: async (executor) => {
 		const { date, log, before, after, next } = await launchCombat(executor);
 		const { header, summary } = log;
-		const shareChanged = after.recruitShare !== before.recruitShare;
+		const recruitShareChanged = after.recruitShare !== before.recruitShare;
 		return {
 			output: {
 				jour: header.day,
@@ -318,8 +320,8 @@ export const launchCombatTool: McpTool = {
 				actions: summary.actionCount,
 				saison: toToolSeason(next),
 			},
-			before: audited(before, shareChanged),
-			after: audited(after, shareChanged),
+			before: audited(before, recruitShareChanged),
+			after: audited(after, recruitShareChanged),
 		};
 	},
 };

@@ -168,17 +168,15 @@ function dateTaken(date: string): string {
 }
 
 /**
- * Vrai si le dernier combat joué dans la saison l'a été à la date `date`. Les combats se jouent un
- * par date, dans l'ordre de leurs jours : un combat à cette date ne peut être que le dernier.
+ * La date du dernier combat joué dans la saison, `undefined` avant le premier. Les combats se jouent
+ * un par date, dans l'ordre de leurs jours : un combat à la date du jour ne peut être que le dernier.
  */
-async function foughtOn(
+async function lastFoughtOn(
 	executor: Executor,
-	state: SeasonState,
-	date: string,
-): Promise<boolean> {
+	{ season, combatsPlayed }: SeasonState,
+): Promise<string | undefined> {
 	// Avant le premier combat, le jour 0 n'en a aucun.
-	const last = await findCombat(executor, state.season, state.combatsPlayed);
-	return last?.foughtOn === date;
+	return (await findCombat(executor, season, combatsPlayed))?.foughtOn;
 }
 
 /** Le refus d'une armée vide (issue #21, Décisions, 10). */
@@ -252,7 +250,7 @@ export async function planLaunch(
 	if (end !== null) {
 		throw new Error(end);
 	}
-	if (await foughtOn(executor, state, calendar.date)) {
+	if ((await lastFoughtOn(executor, state)) === calendar.date) {
 		throw new Error(dateTaken(calendar.date));
 	}
 	const bestiary = await listMonsters(executor);
