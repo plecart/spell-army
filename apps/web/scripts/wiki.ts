@@ -4,6 +4,7 @@
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import {
+	closeClient,
 	createClient,
 	EMPTY_DATABASE_URL,
 	listSpellsWithImages,
@@ -38,7 +39,7 @@ try {
 			`Wiki écrit dans ${target} : ${pages} pages, ${images} ${images > 1 ? "images" : "image"}.`,
 		);
 	} finally {
-		await db.$client.end();
+		await closeClient(db);
 	}
 } catch (error) {
 	console.error(error instanceof Error ? error.message : String(error));

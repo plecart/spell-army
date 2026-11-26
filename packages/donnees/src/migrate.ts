@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { createClient } from "./client.ts";
+import { closeClient, createClient } from "./client.ts";
 
 const MIGRATIONS_FOLDER = fileURLToPath(
 	new URL("../migrations", import.meta.url),
@@ -16,6 +16,6 @@ export async function applyMigrations(url: string): Promise<void> {
 	try {
 		await migrate(client, { migrationsFolder: MIGRATIONS_FOLDER });
 	} finally {
-		await client.$client.end();
+		await closeClient(client);
 	}
 }

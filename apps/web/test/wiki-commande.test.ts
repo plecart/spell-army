@@ -99,6 +99,13 @@ describe("la commande wiki, lancée par Node", () => {
 			},
 			reason: "code 3D000",
 		},
+		// pg 8.23.1 garde dans son pool le client dont la connexion a levé sur ce port : sans la
+		// fermeture bornée, Node sortait en 13 sans raison (#55).
+		{
+			form: "un port qui n'est pas un nombre",
+			url: () => `postgresql://u:${SECRET}@127.0.0.1/${ABSENT_BASE}?port=abc`,
+			reason: "code ERR_SOCKET_BAD_PORT",
+		},
 		// L'erreur sans code de pg (connection-parameters.js, pg 8.23.1) cite entre guillemets la
 		// valeur d'un paramètre de l'URL : le message est masqué du premier au dernier guillemet, même
 		// quand la valeur en porte un.
