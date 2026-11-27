@@ -82,6 +82,12 @@ const nextConfig: NextConfig = {
 	// personnalisés de production, sans schéma. Un projet sans domaine personnalisé y reçoit son
 	// `.vercel.app`, où la redirection bouclerait : elle n'est pas posée, pas plus que sur une
 	// prévisualisation.
+	//
+	// La route du tic n'est pas redirigée (ni `/api/tic/…`) : Vercel Schedules l'appelle sur un
+	// déploiement de production, et sa doc ne dit ni sur quel hôte ni s'il suit une redirection — un
+	// 308 non suivi n'y lancerait aucun tic. Le filet, lui, l'appelle sur le domaine du projet. La
+	// `source` exclut le chemin par une assertion négative, forme de « Regex Path Matching » (doc
+	// Next.js « redirects »).
 	async redirects() {
 		const domain = process.env.VERCEL_PROJECT_PRODUCTION_URL;
 		if (
@@ -93,9 +99,9 @@ const nextConfig: NextConfig = {
 		}
 		return [
 			{
-				source: "/:path*",
+				source: "/:path((?!api/tic(?:/|$)).*)",
 				has: [{ type: "host", value: ".*\\.vercel\\.app" }],
-				destination: `https://${domain}/:path*`,
+				destination: `https://${domain}/:path`,
 				permanent: true,
 			},
 		];
