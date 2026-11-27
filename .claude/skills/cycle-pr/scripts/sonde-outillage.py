@@ -32,8 +32,13 @@ la plus chère, et s'arrête au premier KO :
 que la session choisit et passe : une option omise saute sa sonde, et la sortie le dit
 (`SAUTÉE`) — c'est la forme d'une ligne `n/a` ou marquée `# non vérifiée`. Chacune est découpée
 comme par un shell POSIX (`shlex.split`) et lancée sans shell : ni tube, ni redirection, ni `&&`,
-ni `\\` — `shlex` le mange (mesuré le 2026-10-21), les chemins s'écrivent avec `/` ; sous Windows,
-un programme `.cmd` comme `npm` ne se trouve pas, un `make` si (mesuré le 2026-10-21).
+ni `\\` — `shlex` le mange (mesuré le 2026-10-21), les chemins s'écrivent avec `/`. Son programme
+se résout comme le shell le trouve, `PATHEXT` compris (`default_run`) : sous Windows, un `pnpm` ou
+un `npm` installés en `.cmd` se lancent sous leur nom nu. Un `.cmd` passe par `cmd.exe`, qui relit
+ses arguments sans échappement (CPython, `Doc/library/subprocess.rst`, « Security
+Considerations ») : un `&`, un `|` ou un `%` y est interprété (mesuré le 2026-11-27 sur un `.cmd`
+témoin, Python 3.12.10). Rien n'est refusé : la commande vient de `pipeline.config.md`, une entrée
+de confiance.
 
 Il ne corrige rien : il ne répare pas ce qu'une sonde trouve et ne touche à aucune configuration —
 un KO se remonte à l'utilisateur, à qui revient l'arbitrage (`cycle-pr` Étape 1).
@@ -52,6 +57,7 @@ seule ; lancé depuis la racine du dépôt.
 import argparse
 import io
 import shlex
+import shutil
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
@@ -86,9 +92,20 @@ def default_run(cmd: Sequence[str]) -> subprocess.CompletedProcess[str]:
     """Lance `cmd` sans shell en capturant ses deux sorties, décodées en UTF-8 — jamais la page
     de code de la console, qui lit un accent de travers sous Windows. Un octet qui n'est
     pas de l'UTF-8 devient `\\ufffd` : une sortie mal encodée ne fait pas tomber la sonde qui la
-    rapporte."""
+    rapporte.
+
+    Le programme se résout par `shutil.which`, qui lit `PATHEXT` : sous Windows, le `pnpm` d'une
+    commande du projet est un `pnpm.CMD` que `CreateProcess` ne trouve pas sous son nom nu
+    (`[WinError 2]`, mesuré le 2026-11-27). Introuvable, il part tel quel, et lève `OSError`.
+    """
+    program = shutil.which(cmd[0]) or cmd[0]
     return subprocess.run(
-        list(cmd), capture_output=True, text=True, encoding="utf-8", errors="replace", check=False
+        [program, *cmd[1:]],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
     )
 
 
