@@ -6,8 +6,8 @@ lue par `ast` sur la commande passée, ou sur `executable=` qui la remplace hors
 quand la fonction la reçoit en paramètre, là où ses appelants la construisent et dans ce qu'elle
 lui réaffecte ; un lanceur injecté se reçoit sous le nom `run` (`run: Run = default_run` dans
 `main`), et ses appelants sont les appels `run(...)`. Une commande qui ne se suit pas jusqu'à son
-programme — lue de la ligne de commande, d'une boucle, d'un attribut, ou réécrite autrement que
-par une affectation simple (`Script.reecrit`) — rougit. Hors garde : un lancement qui ne s'écrit
+programme — lue de la ligne de commande, d'une boucle, d'un attribut, ou réécrite, paramètre ou
+variable, autrement que par une affectation simple (`Script.reecrit`) — rougit. Hors garde : un lancement qui ne s'écrit
 pas `subprocess.<lanceur>(...)` (`from subprocess import run`, `os.system`).
 
 Population : `.claude/skills/*/scripts/*.py`, hors `mcp-builder` (skill public). Une forme nouvelle
@@ -120,7 +120,8 @@ class Script:
     def valeurs(self, nom: str, ici: ast.AST) -> list[tuple[ast.AST | None, ast.AST]]:
         """Ce que `nom` peut valoir en `ici`, chacun avec un nœud de sa portée : pour un
         paramètre, les arguments des appelants, ce que la fonction lui réaffecte, et `None` si
-        elle le réécrit autrement ; la valeur affectée sinon ; rien si rien ne se suit."""
+        elle le réécrit autrement ; la valeur affectée sinon, et `None` si la portée la réécrit
+        autrement ; rien si rien ne se suit."""
         noeud = ici
         while noeud in self.parents:
             noeud = self.parents[noeud]
@@ -138,7 +139,7 @@ class Script:
             if isinstance(noeud, (ast.FunctionDef, ast.Module)):
                 portee = noeud.body if isinstance(noeud, ast.Module) else ast.walk(noeud)
                 if trouvees := affectations(portee, nom):
-                    return trouvees
+                    return trouvees + ([(None, noeud)] if self.reecrit(noeud, nom) else [])
         return []
 
     def formes_du_lancement(self, appel: ast.Call) -> list[str | None]:
@@ -241,6 +242,17 @@ def lanceur(*corps: str, lance: str = "list(cmd)") -> str:
             id="shutil.which appelé mais non retenu",
         ),
         pytest.param(lancement('["git"], executable="pnpm"'), False, id="executable= en dur"),
+        pytest.param(
+            "import subprocess\ndef f():\n    cmd = ['git', 's']\n    cmd[0] = 'pnpm'\n"
+            "    subprocess.run(cmd)\n",
+            False,
+            id="locale réécrite",
+        ),
+        pytest.param(
+            "import subprocess\nCMD = ['git', 's']\nCMD[0] = 'pnpm'\nsubprocess.run(CMD)\n",
+            False,
+            id="constante de module réécrite",
+        ),
         pytest.param(lanceur("cmd = list(cmd)"), True, id="reprise list(cmd)"),
         pytest.param(lanceur("cmd = [*cmd]"), True, id="reprise [*cmd]"),
         pytest.param(lancement('["git"], executable=None'), True, id="executable=None"),
@@ -257,5 +269,4 @@ def test_une_forme_de_lancement_ecrite_a_la_main_est_admise_ou_rougit(source, ad
     assert lancements
     formes = {forme for appel in lancements for forme in lu.formes_du_lancement(appel)}
     assert (formes <= ADMISES.keys()) is admise, formes
-
 
