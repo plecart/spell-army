@@ -95,5 +95,9 @@ Tous les leviers du plan gratuit sont activés (cadrage, Décidé) :
 
 - Qu'une « Production Branch » au nom d'une branche qui n'existe pas laisse bien `main` en
   prévisualisation : la doc n'en parle pas ; à constater au premier déploiement de `main`.
+- Qu'une Release GitHub, qui crée son tag, déclenche le workflow de livraison comme un `git push` du
+  tag : à constater à la première livraison par une Release.
+- Qu'une promotion de prévisualisation lève un Instant Rollback en cours : à constater au premier
+  retour arrière.
 - Le lien entre DNSSEC et le statut de proxy (la page Cloudflare n'en dit rien) : sans effet ici,
   puisque le proxy est coupé.
