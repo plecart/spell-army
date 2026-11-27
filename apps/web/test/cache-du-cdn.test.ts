@@ -1,4 +1,5 @@
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, test } from "vitest";
+import { importNextConfig } from "./config-next.ts";
 
 // La fraîcheur du CDN : 30 min fraîche, puis 30 min servie périmée pendant qu'il la revalide.
 const CDN_CACHE = {
@@ -8,9 +9,7 @@ const CDN_CACHE = {
 
 describe("cache du CDN", () => {
 	test("l'annuaire, « Informations » et la fiche d'une recrue sont servis par le CDN de Vercel, aucune réponse n'y passant plus d'une heure", async () => {
-		// La config charge le `.env` de la racine à son import : rien du poste n'entre dans le test.
-		vi.spyOn(process, "loadEnvFile").mockImplementation(() => {});
-		const { default: nextConfig } = await import("../next.config.ts");
+		const nextConfig = await importNextConfig();
 		const cached = (await nextConfig.headers?.())?.filter(({ headers }) =>
 			headers.some(({ key }) => key === CDN_CACHE.key),
 		);

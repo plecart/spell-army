@@ -18,6 +18,7 @@ export default databaseTestConfig([
 	"test/informations.test.tsx",
 	"test/jeton.test.ts",
 	"test/lectures-gardees.test.ts",
+	"test/redirection-vercel-app.test.ts",
 	"test/route-du-tic.test.ts",
 	"test/route.test.ts",
 	"test/vignettes.test.ts",

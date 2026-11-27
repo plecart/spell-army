@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
+import { importNextConfig } from "./config-next.ts";
 
 // La CSP sans jeton d'ADR 0004 (« Protections Vercel », ligne « En-têtes »), hors développement.
 const CSP =
@@ -7,9 +8,7 @@ const CSP =
 /** Les en-têtes que la config pose sur toutes les pages, `/` compris, sous `NODE_ENV` = `nodeEnv`. */
 async function securityHeaders(nodeEnv: string) {
 	vi.stubEnv("NODE_ENV", nodeEnv);
-	// La config charge le `.env` de la racine à son import : rien du poste n'entre dans le test.
-	vi.spyOn(process, "loadEnvFile").mockImplementation(() => {});
-	const { default: nextConfig } = await import("../next.config.ts");
+	const nextConfig = await importNextConfig();
 	const everyPage = (await nextConfig.headers?.())?.find(
 		({ source }) => source === "/:path*",
 	);
