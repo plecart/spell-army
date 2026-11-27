@@ -42,8 +42,8 @@ Tous les leviers du plan gratuit sont activés (cadrage, Décidé) :
   Permissions-Policy. La CSP : `default-src 'self'`, `script-src 'self' 'unsafe-inline'`,
   `style-src 'self' 'unsafe-inline'`, `img-src 'self' data: blob:`, `connect-src 'self' blob:`,
   `object-src 'none'`, `base-uri 'none'`, `form-action 'self'`, `frame-ancestors 'none'` ;
-  `'unsafe-eval'` s'ajoute aux scripts en développement seulement. Les pages restent statiques et
-  servies par le CDN (ADR 0002).
+  `'unsafe-eval'` s'ajoute aux scripts en développement seulement. Sans jeton par requête, les pages
+  gardent le cache CDN (ADR 0002).
 - **Attack Mode** en cas de pic : il laisse passer les tâches planifiées.
 
 ### Serveur MCP et secrets
