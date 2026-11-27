@@ -243,6 +243,42 @@ describe("point d'entrée du serveur MCP", () => {
 		},
 	);
 
+	// Aucun client navigateur n'est prévu : tout `Origin` non vide est refusé, avant le jeton. Sans
+	// `Origin`, la requête de Claude Code, les autres tests de ce fichier passent.
+	test.each<[string, Record<string, string>]>([
+		[
+			"une origine étrangère, avec le bon jeton",
+			{ origin: "https://ailleurs.example", authorization: AUTHORIZATION },
+		],
+		[
+			"une origine étrangère, sans jeton : l'origine se contrôle d'abord",
+			{ origin: "https://ailleurs.example" },
+		],
+		[
+			"l'origine opaque null, avec le bon jeton",
+			{ origin: "null", authorization: AUTHORIZATION },
+		],
+	])(
+		"403, %s : l'outil n'est pas exécuté, rien n'est écrit",
+		async (_, headers) => {
+			const { db, database, tools, serve, responses } = await freshEndpoint();
+			const callTool = async () => {
+				const client = await connectClient(serve, headers);
+				await client.callTool({
+					name: "regler_part",
+					arguments: { part: 0.5 },
+				});
+			};
+			await expect(callTool()).rejects.toThrow();
+			const statuses = responses.map((response) => response.status);
+			expect(statuses).not.toHaveLength(0);
+			expect(statuses).toEqual(statuses.map(() => 403));
+			expect(database).not.toHaveBeenCalled();
+			expect(tools.setShare.run).not.toHaveBeenCalled();
+			expect(await auditRows(db)).toEqual([]);
+		},
+	);
+
 	test("la liste publie l'outil d'essai avec son titre, ses annotations et ses schémas stricts", async () => {
 		const client = await connectClient((await freshEndpoint()).serve);
 		const { tools } = await client.listTools();
