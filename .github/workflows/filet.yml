@@ -1,8 +1,8 @@
 # Le filet du tic de l'import (ADR 0002, ligne « Filet ») : toutes les 6 heures, et à la demande, il
-# appelle la route du tic de la prod, comme Vercel Schedules chaque heure. Il n'ajoute rien si le tic
-# tourne, grâce au verrou et à l'idempotence ; il prend le relais si Schedules est bloqué ou en panne
-# (docs/exploitation.md, « Tic de l'import »). La pré-prod n'importe pas : ni tic ni filet (ADR 0002,
-# ligne « Une seule tâche »).
+# appelle la route du tic de la prod, comme Vercel Schedules chaque heure. Il n'ajoute rien si le
+# tic tourne, grâce au verrou et à l'idempotence ; il prend le relais si Schedules est bloqué ou en
+# panne (docs/exploitation.md, « Tic de l'import »). La pré-prod n'importe pas : ni tic ni filet
+# (ADR 0002, ligne « Une seule tâche »).
 #
 # Toute réponse en erreur, 4xx ou 5xx, fait échouer le job — un 401 comme un 500
 # (`--fail-with-body`, qui écrit aussi le corps reçu) : hypothèse retenue en attendant le choix du
