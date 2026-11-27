@@ -52,7 +52,7 @@ Lues par `cycle-pr`, `execution-qa` et la génération de CI. `n/a` = étape abs
 - format:check : `pnpm biome format .`                  # vérifie sans écrire
 - typecheck    : `pnpm -r typecheck`
 - audit        : `pnpm audit --audit-level=high`            # audit des dépendances, porte de CI
-- build        : `pnpm -r --if-present run build`   # paquets qui ont un script `build` : `apps/web` (`next build`)
+- build        : `pnpm -r --if-present run build`   # paquets qui ont un script `build` : `apps/web`, qui applique les migrations sur un déploiement de production seulement (`VERCEL_ENV=production`, `scripts/migrer-en-production.ts`), puis lance `next build`
 - migration    : `pnpm --filter donnees run migrate`   # applique les migrations à la base de `DATABASE_URL` (shell ou `.env` racine)
 - dérive du schéma : `pnpm --filter donnees run drift`   # sort en 1 quand `drizzle-kit generate` produirait une migration ; laisse alors dans `packages/donnees/migrations` ce qu'il a écrit
 - run local    : `pnpm --filter web dev`   # Next.js en développement, sur 127.0.0.1 seulement ; lit le `.env` racine, sans écraser une variable déjà posée
