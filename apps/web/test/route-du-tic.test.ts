@@ -8,6 +8,15 @@ import { TICK_SECRET, tickRequest } from "./montage.ts";
 // Secret factice de 31 octets, un de moins que le minimum admis.
 const SHORT_SECRET = "s".repeat(31);
 
+// Les variables d'environnement que lit le tic.
+const TICK_VARIABLES = [
+	"CRON_SECRET",
+	"DATABASE_URL",
+	"HEALTHCHECKS_PING_URL",
+	"HIKERAPI_ACCESS_KEY",
+	"INSTAGRAM_ACCOUNT_ID",
+];
+
 /** La route, évaluée à neuf : son import ne doit lire aucune variable ni ouvrir de connexion. */
 async function importRoute() {
 	vi.resetModules();
@@ -54,11 +63,10 @@ describe("tic : refus avant toute base et tout fournisseur", () => {
 
 describe("route /api/tic", () => {
 	beforeEach(() => {
-		vi.stubEnv("CRON_SECRET", undefined);
+		for (const name of TICK_VARIABLES) {
+			vi.stubEnv(name, undefined);
+		}
 		vi.stubEnv("DATABASE_URL", UNREACHABLE_DATABASE_URL);
-		vi.stubEnv("HEALTHCHECKS_PING_URL", undefined);
-		vi.stubEnv("HIKERAPI_ACCESS_KEY", undefined);
-		vi.stubEnv("INSTAGRAM_ACCOUNT_ID", undefined);
 	});
 
 	test("exporte POST seul, et une durée maximale de 300 s, sous laquelle le tic court jusqu'à 240 s", async () => {
@@ -94,13 +102,7 @@ describe("route /api/tic", () => {
 			new URL("../../../.env.example", import.meta.url),
 			"utf8",
 		).split(/\r?\n/);
-		for (const name of [
-			"CRON_SECRET",
-			"DATABASE_URL",
-			"HEALTHCHECKS_PING_URL",
-			"HIKERAPI_ACCESS_KEY",
-			"INSTAGRAM_ACCOUNT_ID",
-		]) {
+		for (const name of TICK_VARIABLES) {
 			expect(lines).toContain(`${name}=`);
 		}
 	});
