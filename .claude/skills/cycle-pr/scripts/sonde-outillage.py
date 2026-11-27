@@ -36,9 +36,9 @@ ni `\\` — `shlex` le mange (mesuré le 2026-10-21), les chemins s'écrivent av
 se résout comme le shell le trouve, `PATHEXT` compris (`default_run`) : sous Windows, un `pnpm` ou
 un `npm` installés en `.cmd` se lancent sous leur nom nu. Un `.cmd` passe par `cmd.exe`, qui relit
 ses arguments sans échappement (CPython, `Doc/library/subprocess.rst`, « Security
-Considerations ») : un `&`, un `|` ou un `%` y est interprété (mesuré le 2026-11-27 sur un `.cmd`
-témoin, Python 3.12.10). Rien n'est refusé : la commande vient de `pipeline.config.md`, une entrée
-de confiance.
+Considerations ») : un `%` y est développé, un `&` ou un `|` interprété dans un argument sans
+espace (mesuré le 2026-11-27 sur un `.cmd` témoin, Python 3.12.10). Rien n'est refusé : la
+commande vient de `pipeline.config.md`, une entrée de confiance.
 
 Il ne corrige rien : il ne répare pas ce qu'une sonde trouve et ne touche à aucune configuration —
 un KO se remonte à l'utilisateur, à qui revient l'arbitrage (`cycle-pr` Étape 1).
@@ -89,7 +89,8 @@ class Ko(Exception):
 
 
 def default_run(cmd: Sequence[str]) -> subprocess.CompletedProcess[str]:
-    """Lance `cmd` sans shell en capturant ses deux sorties, décodées en UTF-8 — jamais la page
+    """Lance `cmd` sans shell — un `.cmd` passe toutefois par `cmd.exe`, voir le docstring du
+    module — en capturant ses deux sorties, décodées en UTF-8 — jamais la page
     de code de la console, qui lit un accent de travers sous Windows. Un octet qui n'est
     pas de l'UTF-8 devient `\\ufffd` : une sortie mal encodée ne fait pas tomber la sonde qui la
     rapporte.
