@@ -7,6 +7,7 @@ export default databaseTestConfig([
 	"test/annuaire-variables.test.tsx",
 	"test/aucune-requete-libre.test.ts",
 	"test/cache-du-cdn.test.ts",
+	"test/en-tetes-de-securite.test.ts",
 	"test/fiche-arrivee.test.ts",
 	"test/fiche-ecran.test.tsx",
 	"test/fiche-fermeture.test.ts",

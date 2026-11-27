@@ -22,6 +22,46 @@ const CDN_CACHE = {
 	value: "max-age=1800, stale-while-revalidate=1800",
 };
 
+/**
+ * Les en-têtes de sécurité de toutes les pages (ADR 0004, « Protections Vercel », ligne
+ * « En-têtes »). La CSP est sans jeton : une CSP à jetons rendrait toutes les pages dynamiques et
+ * leur retirerait le cache du CDN (ADR 0002). `'unsafe-inline'` admet le script de thème du gabarit
+ * racine et les attributs `style=` ; `data:` et `blob:`, les fonds SVG des cartes, les vignettes et
+ * les textures de la scène 3D. En développement seulement, React évalue du code pour ses piles
+ * d'erreurs : `'unsafe-eval'` s'ajoute aux scripts (guide Next.js « Content Security Policy »).
+ */
+function securityHeaders() {
+	const scripts =
+		process.env.NODE_ENV === "development"
+			? "'self' 'unsafe-inline' 'unsafe-eval'"
+			: "'self' 'unsafe-inline'";
+	const csp = [
+		"default-src 'self'",
+		`script-src ${scripts}`,
+		"style-src 'self' 'unsafe-inline'",
+		"img-src 'self' data: blob:",
+		"connect-src 'self' blob:",
+		"object-src 'none'",
+		"base-uri 'none'",
+		"form-action 'self'",
+		"frame-ancestors 'none'",
+	].join("; ");
+	return [
+		// Deux ans, sous-domaines compris, sans `preload` (briefing de la PR #76).
+		{
+			key: "Strict-Transport-Security",
+			value: "max-age=63072000; includeSubDomains",
+		},
+		{ key: "Content-Security-Policy", value: csp },
+		{ key: "X-Content-Type-Options", value: "nosniff" },
+		{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+		{
+			key: "Permissions-Policy",
+			value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+		},
+	];
+}
+
 const nextConfig: NextConfig = {
 	// Les paquets du dépôt exposent leurs sources TypeScript : Next.js les compile avec l'application.
 	transpilePackages: ["combat", "donnees", "joueurs", "personnages"],
@@ -29,7 +69,11 @@ const nextConfig: NextConfig = {
 	// agents du dépôt vivent dans `CLAUDE.md`.
 	agentRules: false,
 	async headers() {
-		return CDN_CACHED_PAGES.map((source) => ({ source, headers: [CDN_CACHE] }));
+		return [
+			...CDN_CACHED_PAGES.map((source) => ({ source, headers: [CDN_CACHE] })),
+			// `/:path*` couvre aussi `/`.
+			{ source: "/:path*", headers: securityHeaders() },
+		];
 	},
 };
 

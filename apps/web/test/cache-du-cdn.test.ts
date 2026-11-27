@@ -11,7 +11,10 @@ describe("cache du CDN", () => {
 		// La config charge le `.env` de la racine à son import : rien du poste n'entre dans le test.
 		vi.spyOn(process, "loadEnvFile").mockImplementation(() => {});
 		const { default: nextConfig } = await import("../next.config.ts");
-		expect(await nextConfig.headers?.()).toEqual([
+		const cached = (await nextConfig.headers?.())?.filter(({ headers }) =>
+			headers.some(({ key }) => key === CDN_CACHE.key),
+		);
+		expect(cached).toEqual([
 			{ source: "/", headers: [CDN_CACHE] },
 			{ source: "/informations", headers: [CDN_CACHE] },
 			{ source: "/recrues/:identifiant", headers: [CDN_CACHE] },
