@@ -7,8 +7,9 @@ quand la fonction la reçoit en paramètre, là où ses appelants la construisen
 lui réaffecte ; un lanceur injecté se reçoit sous le nom `run` (`run: Run = default_run` dans
 `main`), et ses appelants sont les appels `run(...)`. Une commande qui ne se suit pas jusqu'à son
 programme — lue de la ligne de commande, d'une boucle, d'un attribut, ou réécrite, paramètre ou
-variable, autrement que par une affectation simple (`Script.reecrit`) — rougit. Hors garde : un lancement qui ne s'écrit
-pas `subprocess.<lanceur>(...)` (`from subprocess import run`, `os.system`).
+variable, autrement que par une affectation simple (`Script.reecrit`) — rougit. Hors garde : un
+lancement qui ne s'écrit pas `subprocess.<lanceur>(...)` (`from subprocess import run`,
+`os.system`).
 
 Population : `.claude/skills/*/scripts/*.py`, hors `mcp-builder` (skill public). Une forme nouvelle
 et légitime s'ajoute à `ADMISES`, avec son motif.
@@ -269,4 +270,3 @@ def test_une_forme_de_lancement_ecrite_a_la_main_est_admise_ou_rougit(source, ad
     assert lancements
     formes = {forme for appel in lancements for forme in lu.formes_du_lancement(appel)}
     assert (formes <= ADMISES.keys()) is admise, formes
-
