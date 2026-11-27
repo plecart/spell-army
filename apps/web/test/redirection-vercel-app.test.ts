@@ -30,7 +30,8 @@ async function redirectsAt(
  * Next.js, comme `server/lib/router-utils/resolve-routes.js` les applique — `buildCustomRoute`,
  * `matchHas`, `prepareDestination` —, puis l'adresse s'écrit par `url.format`, comme
  * `router-server.js`, et se normalise par `URL` : c'est le comportement de la `source` qu'on
- * éprouve, pas sa chaîne.
+ * éprouve, pas sa chaîne. Ces modules internes de Next peuvent bouger à une montée de version :
+ * le test rougit alors sans que la redirection ait changé ; rebrancher sur les nouveaux chemins.
  */
 async function redirectionOf(host: string, pathname: string) {
 	const redirects = (await redirectsAt("production", PRODUCTION_DOMAIN)) ?? [];
