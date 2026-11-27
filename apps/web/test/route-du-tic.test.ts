@@ -31,20 +31,23 @@ describe("tic : refus avant toute base et tout fournisseur", () => {
 		],
 		["sans secret configuré", { authorization: "Bearer undefined" }, undefined],
 	])(
-		"%s : 401, WWW-Authenticate: Bearer, corps vide ; ni base ni fournisseur demandés",
+		"%s : 401, WWW-Authenticate: Bearer, corps vide ; ni base, ni fournisseur, ni signal demandés",
 		async (_, headers, secret) => {
 			const database = vi.fn();
 			const provider = vi.fn();
+			const pingUrl = vi.fn();
 			const response = await createTickEndpoint({
 				secret: () => secret,
 				database,
 				provider,
+				pingUrl,
 			})(tickRequest(headers));
 			expect(response.status).toBe(401);
 			expect(response.headers.get("www-authenticate")).toBe("Bearer");
 			expect(await response.text()).toBe("");
 			expect(database).not.toHaveBeenCalled();
 			expect(provider).not.toHaveBeenCalled();
+			expect(pingUrl).not.toHaveBeenCalled();
 		},
 	);
 });
@@ -53,6 +56,7 @@ describe("route /api/tic", () => {
 	beforeEach(() => {
 		vi.stubEnv("CRON_SECRET", undefined);
 		vi.stubEnv("DATABASE_URL", UNREACHABLE_DATABASE_URL);
+		vi.stubEnv("HEALTHCHECKS_PING_URL", undefined);
 		vi.stubEnv("HIKERAPI_ACCESS_KEY", undefined);
 		vi.stubEnv("INSTAGRAM_ACCOUNT_ID", undefined);
 	});
@@ -93,6 +97,7 @@ describe("route /api/tic", () => {
 		for (const name of [
 			"CRON_SECRET",
 			"DATABASE_URL",
+			"HEALTHCHECKS_PING_URL",
 			"HIKERAPI_ACCESS_KEY",
 			"INSTAGRAM_ACCOUNT_ID",
 		]) {

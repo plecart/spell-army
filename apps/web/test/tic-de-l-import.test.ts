@@ -12,13 +12,34 @@ const INSTANT = expect.stringMatching(
 );
 const NONE_DISCARDED = { identifiant_invalide: 0, pseudo_invalide: 0 };
 
-/** Le tic sur `db` et le fournisseur `provider`, sous le secret `TICK_SECRET`. */
-function tickOn(db: Executor, provider: () => FollowerProvider) {
+// Une adresse de signal factice : le `fetch` global est espionné, aucun réseau n'est joint.
+const PING_URL = "https://hc-ping.example/signal-factice";
+
+/**
+ * Le tic sur `db` et le fournisseur `provider`, sous le secret `TICK_SECRET`, qui envoie son signal
+ * à l'adresse que rend `pingUrl` : aucune par défaut.
+ */
+function tickOn(
+	db: Executor,
+	provider: () => FollowerProvider,
+	pingUrl: () => string | undefined = () => undefined,
+) {
 	return createTickEndpoint({
 		secret: () => TICK_SECRET,
 		database: () => db,
 		provider,
+		pingUrl,
 	});
+}
+
+/** Un fournisseur sain de 3 abonnés. */
+const healthyProvider = () => new FakeFollowerProvider(followers(3));
+
+/** Le `fetch` global espionné, sans réseau : chaque signal reçoit `answer()`, un 200 par défaut. */
+function spyOnPing(
+	answer: () => Promise<Response> = async () => new Response("OK"),
+) {
+	return vi.spyOn(globalThis, "fetch").mockImplementation(answer);
 }
 
 /** Le statut et le corps JSON d'une réponse. */
@@ -176,10 +197,7 @@ describe("tic de l'import, sur la base de test", () => {
 		const db = await freshDatabase();
 		await db.$client.query("drop table import_passes");
 		const serverLog = vi.spyOn(console, "error").mockReturnValue();
-		const response = await tickOn(
-			db,
-			() => new FakeFollowerProvider(followers(3)),
-		)(tickRequest());
+		const response = await tickOn(db, healthyProvider)(tickRequest());
 		const text = await response.text();
 		expect({ status: response.status, body: JSON.parse(text) }).toEqual({
 			status: 500,
@@ -195,4 +213,128 @@ describe("tic de l'import, sur la base de test", () => {
 			}),
 		);
 	});
+});
+
+describe("signal healthchecks.io du tic, sur la base de test", () => {
+	test.each<[string, (db: Executor) => Promise<unknown>]>([
+		["un tic qui fait tourner ses passes", async () => {}],
+		[
+			"un tic doublé, le verrou pris",
+			(db) => acquireImportLock(db, new Date()),
+		],
+	])(
+		"200, %s : un signal, à l'adresse configurée, sous un délai",
+		async (_, before) => {
+			const ping = spyOnPing();
+			const db = await freshDatabase();
+			await before(db);
+			const response = await tickOn(
+				db,
+				healthyProvider,
+				() => PING_URL,
+			)(tickRequest());
+			expect(response.status).toBe(200);
+			expect(ping).toHaveBeenCalledExactlyOnceWith(PING_URL, {
+				signal: expect.any(AbortSignal),
+			});
+		},
+	);
+
+	test.each<[string, number, (db: Executor) => Promise<Response>]>([
+		[
+			"un secret refusé",
+			401,
+			(db) =>
+				tickOn(
+					db,
+					healthyProvider,
+					() => PING_URL,
+				)(tickRequest({ authorization: `Bearer ${"u".repeat(32)}` })),
+		],
+		[
+			"une passe close en erreur",
+			500,
+			(db) => {
+				const provider = new FakeFollowerProvider(followers(4), {
+					pageSize: 2,
+				});
+				provider.failingPage = 2;
+				return tickOn(
+					db,
+					() => provider,
+					() => PING_URL,
+				)(tickRequest());
+			},
+		],
+		[
+			"la configuration de l'import incomplète",
+			500,
+			(db) =>
+				tickOn(
+					db,
+					() => {
+						throw new Error("configuration HikerAPI : clé absente");
+					},
+					() => PING_URL,
+				)(tickRequest()),
+		],
+		[
+			"un tic réussi, sans adresse de signal",
+			200,
+			(db) => tickOn(db, healthyProvider, () => undefined)(tickRequest()),
+		],
+		[
+			"un tic réussi, à l'adresse de signal vide",
+			200,
+			(db) => tickOn(db, healthyProvider, () => "")(tickRequest()),
+		],
+	])("%s : %i, et aucun signal", async (_, status, run) => {
+		const ping = spyOnPing();
+		vi.spyOn(console, "error").mockReturnValue();
+		const db = await freshDatabase();
+		expect((await run(db)).status).toBe(status);
+		expect(ping).not.toHaveBeenCalled();
+	});
+
+	// Un `fetch` sur une adresse illisible rejette par un message qui la recopie (mesuré le 2026-11-27,
+	// Node 24.3) : le journal ne garde que le nom de l'erreur, ou le statut.
+	test.each<[string, () => Promise<Response>, string]>([
+		[
+			"rejeté, par un message qui recopie son adresse",
+			() =>
+				Promise.reject(new TypeError(`Failed to parse URL from ${PING_URL}`)),
+			"TypeError",
+		],
+		[
+			"hors délai",
+			() =>
+				Promise.reject(
+					new DOMException(
+						"The operation was aborted due to timeout",
+						"TimeoutError",
+					),
+				),
+			"TimeoutError",
+		],
+		["en 500", async () => new Response(null, { status: 500 }), "statut 500"],
+	])(
+		"un signal %s se journalise au message fixe, sans son adresse, et le tic répond toujours 200 et ses passes",
+		async (_, answer, detail) => {
+			spyOnPing(answer);
+			const serverLog = vi.spyOn(console, "error").mockReturnValue();
+			const db = await freshDatabase();
+			const { status, body } = await read(
+				await tickOn(db, healthyProvider, () => PING_URL)(tickRequest()),
+			);
+			expect(status).toBe(200);
+			expect(body).toMatchObject({
+				passes: [{ etat: "terminee" }, { etat: "terminee" }],
+				erreur_nombre_abonnes: null,
+			});
+			expect(serverLog).toHaveBeenCalledExactlyOnceWith(
+				"Tic : signal healthchecks.io en échec",
+				detail,
+			);
+		},
+	);
 });
