@@ -2,13 +2,13 @@
 
 Sous Windows, `CreateProcess` ne lit pas `PATHEXT` : un `.cmd` appelé par son nom nu lève
 `[WinError 2]`. Chaque appel `subprocess` qui lance un programme prend donc une forme de `ADMISES`,
-lue par `ast` sur la commande passée, ou sur `executable=` qui la remplace — et, quand la fonction
-la reçoit en paramètre, là où ses appelants la construisent et dans ce qu'elle lui réaffecte ; un
-lanceur injecté se reçoit sous le nom `run` (`run: Run = default_run` dans `main`), et ses
-appelants sont les appels `run(...)`. Une commande qui ne se suit pas jusqu'à son programme — lue
-de la ligne de commande, d'une boucle, d'un attribut — rougit. Hors
-garde : un lancement qui ne s'écrit pas `subprocess.<lanceur>(...)` (`from subprocess import run`,
-`os.system`).
+lue par `ast` sur la commande passée, ou sur `executable=` qui la remplace hors `shell=True` — et,
+quand la fonction la reçoit en paramètre, là où ses appelants la construisent et dans ce qu'elle
+lui réaffecte ; un lanceur injecté se reçoit sous le nom `run` (`run: Run = default_run` dans
+`main`), et ses appelants sont les appels `run(...)`. Une commande qui ne se suit pas jusqu'à son
+programme — lue de la ligne de commande, d'une boucle, d'un attribut, ou réécrite autrement que
+par une affectation simple (`Script.reecrit`) — rougit. Hors garde : un lancement qui ne s'écrit
+pas `subprocess.<lanceur>(...)` (`from subprocess import run`, `os.system`).
 
 Population : `.claude/skills/*/scripts/*.py`, hors `mcp-builder` (skill public). Une forme nouvelle
 et légitime s'ajoute à `ADMISES`, avec son motif.
@@ -64,7 +64,7 @@ def argument(appel: ast.Call, nom: str, rang: int) -> ast.AST | None:
 def affectations(portee: Iterable[ast.AST], nom: str) -> list[tuple[ast.AST, ast.AST]]:
     """Les valeurs affectées à `nom` dans `portee`, chacune avec son affectation, hors celles qui
     ne font que le reprendre (`cmd = list(cmd)`) : elles ne changent pas son programme."""
-    reprises = {nom, f"list({nom})", f"tuple({nom})"}
+    reprises = {nom, f"list({nom})", f"tuple({nom})", f"[*{nom}]"}
     return [
         (n.value, n) for n in portee
         if isinstance(n, ast.Assign)
@@ -101,10 +101,26 @@ class Script:
         noms = {fonction.name, "run"} if injectee else {fonction.name}
         return [a for a in self.appels if isinstance(a.func, ast.Name) and a.func.id in noms]
 
-    def valeurs(self, nom: str, ici: ast.AST) -> list[tuple[ast.AST, ast.AST]]:
+    def reecrit(self, fonction: ast.AST, nom: str) -> bool:
+        """`fonction` écrit `nom` autrement que par une affectation simple — cible annotée,
+        augmentée, déstructurée, de boucle ou de `:=`, indice écrit, méthode appelée : une
+        réécriture que la garde ne suit pas, et qui la fait rougir."""
+        for n in ast.walk(fonction):
+            if isinstance(n, ast.Name) and n.id == nom and isinstance(n.ctx, ast.Store):
+                if n not in getattr(self.parents[n], "targets", ()):
+                    return True
+            elif isinstance(n, ast.Subscript) and not isinstance(n.ctx, ast.Load):
+                if ast.unparse(n.value) == nom:
+                    return True
+            elif isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute):
+                if ast.unparse(n.func.value) == nom:
+                    return True
+        return False
+
+    def valeurs(self, nom: str, ici: ast.AST) -> list[tuple[ast.AST | None, ast.AST]]:
         """Ce que `nom` peut valoir en `ici`, chacun avec un nœud de sa portée : pour un
-        paramètre, les arguments des appelants et ce que la fonction lui réaffecte ; la valeur
-        affectée sinon ; rien si rien ne se suit."""
+        paramètre, les arguments des appelants, ce que la fonction lui réaffecte, et `None` si
+        elle le réécrit autrement ; la valeur affectée sinon ; rien si rien ne se suit."""
         noeud = ici
         while noeud in self.parents:
             noeud = self.parents[noeud]
@@ -117,7 +133,8 @@ class Script:
                 elif noeud.args.vararg and noeud.args.vararg.arg == nom:
                     recus = [(ast.Tuple(a.args[len(params):]), a) for a in self.appelants(noeud)]
                 if recus is not None:
-                    return recus + affectations(ast.walk(noeud), nom)
+                    reecrit = [(None, noeud)] if self.reecrit(noeud, nom) else []
+                    return recus + affectations(ast.walk(noeud), nom) + reecrit
             if isinstance(noeud, (ast.FunctionDef, ast.Module)):
                 portee = noeud.body if isinstance(noeud, ast.Module) else ast.walk(noeud)
                 if trouvees := affectations(portee, nom):
@@ -126,12 +143,12 @@ class Script:
 
     def formes_du_lancement(self, appel: ast.Call) -> list[str | None]:
         """La forme de chaque programme que `appel` peut lancer, `None` pour qui n'en prend
-        aucune ; `executable=`, quand il est passé, est le programme lancé."""
-        executable = next((mot.value for mot in appel.keywords if mot.arg == "executable"), None)
-        if executable is not None:
-            return self.formes(executable, appel, programme=True)
+        aucune ; hors `shell=True`, un `executable=` autre que `None` est le programme lancé."""
         if any(ast.unparse(mot) == "shell=True" for mot in appel.keywords):
             return ["shell=True"]
+        for mot in appel.keywords:
+            if mot.arg == "executable" and ast.unparse(mot.value) != "None":
+                return self.formes(mot.value, appel, programme=True)
         return self.formes(argument(appel, "args", 0), appel, programme=False)
 
     def formes(
@@ -188,46 +205,50 @@ def test_chaque_lancement_trouve_son_programme_comme_le_shell(script):
     assert not hors_forme, f"{script}, lignes {hors_forme} : programme hors des formes {ADMISES}"
 
 
-# Formes de lancement écrites à la main, chacune autour d'une commande `git` en dur : seule la
-# forme nommée par le cas décide.
-PARAMETRE_REAFFECTE = """
-import subprocess
-def default_run(cmd):
-    cmd = ["pnpm", *cmd]
-    return subprocess.run(list(cmd))
-def main(argv, run=default_run):
-    run(("git", "status"))
-"""
-EXECUTABLE = """
-import subprocess
-def lancer():
-    return subprocess.run(["git", "status"], executable="pnpm")
-"""
-WHICH_INUTILISE = """
-import shutil, subprocess
-def default_run(cmd):
-    program = cmd[0] if shutil.which(cmd[0]) else cmd[0]
-    return subprocess.run([program, *cmd[1:]])
-def main(argv, run=default_run):
-    run(("git", "status"))
-"""
-AUTO_REAFFECTATION = """
-import subprocess
-def default_run(cmd):
-    cmd = list(cmd)
-    return subprocess.run(cmd)
-def main(argv, run=default_run):
-    run(("git", "status"))
-"""
+def lancement(arguments: str) -> str:
+    """Un script qui lance `subprocess.run(<arguments>)`."""
+    return f"import subprocess\nsubprocess.run({arguments})\n"
+
+
+def lanceur(*corps: str, lance: str = "list(cmd)") -> str:
+    """Un `default_run(cmd)` qui exécute `corps`, puis lance `lance` ; injecté sous `run`, il
+    reçoit une commande `git` en dur : seule la forme que `corps` écrit décide."""
+    return "\n".join([
+        "import shutil, subprocess",
+        "def default_run(cmd):",
+        *(f"    {ligne}" for ligne in corps),
+        f"    return subprocess.run({lance})",
+        "def main(argv, run=default_run):",
+        '    run(("git", "status"))',
+    ])
 
 
 @pytest.mark.parametrize(
     ("source", "admise"),
     [
-        pytest.param(PARAMETRE_REAFFECTE, False, id="paramètre réaffecté avant le lancement"),
-        pytest.param(EXECUTABLE, False, id="programme passé par executable="),
-        pytest.param(WHICH_INUTILISE, False, id="shutil.which appelé mais non retenu"),
-        pytest.param(AUTO_REAFFECTATION, True, id="paramètre réaffecté à lui-même"),
+        pytest.param(lanceur('cmd = ["pnpm", *cmd]'), False, id="paramètre réaffecté"),
+        pytest.param(lanceur('cmd: list[str] = ["pnpm", *cmd]'), False, id="affectation annotée"),
+        pytest.param(lanceur("cmd = list(cmd)", 'cmd[0] = "pnpm"'), False, id="indice écrit"),
+        pytest.param(
+            lanceur("cmd = list(cmd)", 'cmd.insert(0, "pnpm")'), False, id="méthode appelée"
+        ),
+        pytest.param(lanceur('if (cmd := ["pnpm", *cmd]):', "    pass"), False, id="walrus"),
+        pytest.param(lanceur('for cmd in (["pnpm"],):', "    pass"), False, id="cible de boucle"),
+        pytest.param(lanceur('cmd, _ = ["pnpm", *cmd], None'), False, id="déstructuration"),
+        pytest.param(
+            lanceur("program = cmd[0] if shutil.which(cmd[0]) else cmd[0]", lance="[program]"),
+            False,
+            id="shutil.which appelé mais non retenu",
+        ),
+        pytest.param(lancement('["git"], executable="pnpm"'), False, id="executable= en dur"),
+        pytest.param(lanceur("cmd = list(cmd)"), True, id="reprise list(cmd)"),
+        pytest.param(lanceur("cmd = [*cmd]"), True, id="reprise [*cmd]"),
+        pytest.param(lancement('["git"], executable=None'), True, id="executable=None"),
+        pytest.param(
+            lancement('"git", shell=True, executable="/bin/sh"'),
+            True,
+            id="shell=True et executable=",
+        ),
     ],
 )
 def test_une_forme_de_lancement_ecrite_a_la_main_est_admise_ou_rougit(source, admise):
@@ -236,3 +257,5 @@ def test_une_forme_de_lancement_ecrite_a_la_main_est_admise_ou_rougit(source, ad
     assert lancements
     formes = {forme for appel in lancements for forme in lu.formes_du_lancement(appel)}
     assert (formes <= ADMISES.keys()) is admise, formes
+
+
