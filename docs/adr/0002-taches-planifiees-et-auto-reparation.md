@@ -2,7 +2,9 @@
 
 - **Statut** : accepté le 2026-11-15. Précisé le 2026-11-17 : au MVP, le combat se lance à la main
   (ligne « Une seule tâche »). Précisé le 2026-11-21 : le tic fait aussi partir la passe complète
-  quand elle est due (ligne « Une seule tâche », issue #13).
+  quand elle est due (ligne « Une seule tâche », issue #13). Précisé le 2026-11-27 : le tic et le
+  filet ne tournent qu'en prod, la pré-prod n'important pas (lignes « Une seule tâche », « Budget »,
+  « Filet », #22).
 - **Source** : `docs/etudes/00-cadrage.md` § 2 « Joueurs » (Robustesse), § 2 « Architecture »
   (Planification, File d'attente) ; étude `04-architecture.md` § 3 quater
 
@@ -30,11 +32,11 @@ rattrape au tic suivant, sans intervention.
 | Sujet | Décision | Origine |
 |---|---|---|
 | Planificateur | Vercel Schedules, cible : une route de `apps/web` protégée par `CRON_SECRET`. | Accepté le 2026-11-15 |
-| Une seule tâche | Un **tic horaire** par environnement, à l'heure pile, fuseau `Europe/Paris`. Il lit l'état en base et fait ce qui est dû, dans cet ordre : (1) le combat du jour s'il n'a pas eu lieu ; (2) la suite d'une passe complète interrompue ; (3) la passe rapide ; (4) le départ d'une passe complète quand elle est due — chaque semaine, ou quand l'auto-contrôle échoue (ADR 0003). Au MVP, le mainteneur lance le combat à la main, par le MCP ; le lancement automatique à minuit vient après le MVP : le tic ne fait alors que (2), (3) et (4). | Accepté le 2026-11-15 |
+| Une seule tâche | Un **tic horaire**, en prod seulement (la pré-prod n'importe pas, ADR 0004), à l'heure pile, fuseau `Europe/Paris`. Il lit l'état en base et fait ce qui est dû, dans cet ordre : (1) le combat du jour s'il n'a pas eu lieu ; (2) la suite d'une passe complète interrompue ; (3) la passe rapide ; (4) le départ d'une passe complète quand elle est due — chaque semaine, ou quand l'auto-contrôle échoue (ADR 0003). Au MVP, le mainteneur lance le combat à la main, par le MCP ; le lancement automatique à minuit vient après le MVP : le tic ne fait alors que (2), (3) et (4). | Accepté le 2026-11-15 |
 | Rejouable | Chaque étape est idempotente. Un tic doublé ne fait rien de plus ; un tic manqué est rattrapé par le suivant. Le combat de minuit part au premier tic après minuit, entre 00 h 00 et 00 h 15 à cause du jitter. Il ne prend que les joueurs vus avant minuit (cadrage, « Conception de l'import », point 6). | Accepté le 2026-11-15 |
 | Verrou à bail | Un verrou en base, avec une date d'expiration fixée au-delà de la durée maximale d'une fonction (300 s sur Hobby). Un tic qui plante ne bloque donc jamais les suivants : le verrou expire seul. | Accepté le 2026-11-15 |
-| Budget | Deux environnements × 720 tics ≈ 1 440 exécutions par mois, sur 5 000. Une cadence plus serrée que 30 minutes est interdite sur Hobby : à 15 minutes, on atteindrait 5 760 et tout s'arrêterait jusqu'au mois suivant. | Accepté le 2026-11-15 |
-| Filet | Un cron GitHub Actions, toutes les 6 heures, appelle la même route dans chaque environnement. Il n'ajoute rien si le tic tourne, grâce au verrou et à l'idempotence ; il prend le relais si Schedules est bloqué ou en panne. Environ 240 minutes Actions par mois. | Accepté le 2026-11-15 |
+| Budget | 720 tics par mois, la prod seule, sur 5 000. Une cadence plus serrée que 30 minutes est interdite sur Hobby : à 15 minutes, on atteindrait 5 760 et tout s'arrêterait jusqu'au mois suivant. | Accepté le 2026-11-15 |
+| Filet | Un cron GitHub Actions, toutes les 6 heures, appelle la même route en prod. Il n'ajoute rien si le tic tourne, grâce au verrou et à l'idempotence ; il prend le relais si Schedules est bloqué ou en panne. Environ 240 minutes Actions par mois. | Accepté le 2026-11-15 |
 | Surveillance | Chaque tic réussi envoie un signal à healthchecks.io. Une absence prolongée de signal alerte le mainteneur ; l'alerte informe, la réparation reste automatique. | Accepté le 2026-11-15 |
 
 ## Ce qui reste hors de portée du code
