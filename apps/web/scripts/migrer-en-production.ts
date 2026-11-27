@@ -4,6 +4,9 @@
 // échec — dont `DATABASE_URL` absente, sur laquelle la commande sort en 1 — fait échouer le build,
 // donc le déploiement. Chaque migration reste compatible avec le code déjà déployé
 // (docs/exploitation.md, « Mise en ligne »).
+//
+// La migration ne tourne que sur le build Linux de Vercel : sous Windows, `execFileSync("pnpm")`,
+// sans shell, ne trouve pas `pnpm.cmd` et lève `ENOENT` (mesuré le 2026-11-27, Node 24.3).
 import { execFileSync } from "node:child_process";
 import { migrateOnProductionDeploy } from "./migration-de-production.ts";
 
