@@ -2,10 +2,11 @@
 
 Sous Windows, `CreateProcess` ne lit pas `PATHEXT` : un `.cmd` appelé par son nom nu lève
 `[WinError 2]`. Chaque appel `subprocess` qui lance un programme prend donc une forme de `ADMISES`,
-lue par `ast` sur la commande passée — et, quand la fonction la reçoit en paramètre, là où ses
-appelants la construisent ; un lanceur injecté se reçoit sous le nom `run` (`run: Run =
-default_run` dans `main`), et ses appelants sont les appels `run(...)`. Une commande qui ne se suit pas
-jusqu'à son programme — lue de la ligne de commande, d'une boucle, d'un attribut — rougit. Hors
+lue par `ast` sur la commande passée, ou sur `executable=` qui la remplace — et, quand la fonction
+la reçoit en paramètre, là où ses appelants la construisent et dans ce qu'elle lui réaffecte ; un
+lanceur injecté se reçoit sous le nom `run` (`run: Run = default_run` dans `main`), et ses
+appelants sont les appels `run(...)`. Une commande qui ne se suit pas jusqu'à son programme — lue
+de la ligne de commande, d'une boucle, d'un attribut — rougit. Hors
 garde : un lancement qui ne s'écrit pas `subprocess.<lanceur>(...)` (`from subprocess import run`,
 `os.system`).
 
@@ -17,6 +18,7 @@ job `pipeline` de la CI).
 """
 
 import ast
+from collections.abc import Iterable
 from pathlib import Path
 
 import pytest
@@ -59,11 +61,23 @@ def argument(appel: ast.Call, nom: str, rang: int) -> ast.AST | None:
     return None
 
 
+def affectations(portee: Iterable[ast.AST], nom: str) -> list[tuple[ast.AST, ast.AST]]:
+    """Les valeurs affectées à `nom` dans `portee`, chacune avec son affectation, hors celles qui
+    ne font que le reprendre (`cmd = list(cmd)`) : elles ne changent pas son programme."""
+    reprises = {nom, f"list({nom})", f"tuple({nom})"}
+    return [
+        (n.value, n) for n in portee
+        if isinstance(n, ast.Assign)
+        and any(isinstance(c, ast.Name) and c.id == nom for c in n.targets)
+        and ast.unparse(n.value) not in reprises
+    ]
+
+
 class Script:
     """Un script lu par `ast`, et ce qu'une commande y peut valoir."""
 
-    def __init__(self, chemin: Path) -> None:
-        self.arbre = ast.parse(chemin.read_text(encoding="utf-8"))
+    def __init__(self, source: str) -> None:
+        self.arbre = ast.parse(source)
         self.parents = {e: n for n in ast.walk(self.arbre) for e in ast.iter_child_nodes(n)}
         self.appels = [n for n in ast.walk(self.arbre) if isinstance(n, ast.Call)]
 
@@ -88,39 +102,41 @@ class Script:
         return [a for a in self.appels if isinstance(a.func, ast.Name) and a.func.id in noms]
 
     def valeurs(self, nom: str, ici: ast.AST) -> list[tuple[ast.AST, ast.AST]]:
-        """Ce que `nom` peut valoir en `ici`, chacun avec un nœud de sa portée : les arguments des
-        appelants pour un paramètre, la valeur affectée sinon ; rien si rien ne se suit."""
+        """Ce que `nom` peut valoir en `ici`, chacun avec un nœud de sa portée : pour un
+        paramètre, les arguments des appelants et ce que la fonction lui réaffecte ; la valeur
+        affectée sinon ; rien si rien ne se suit."""
         noeud = ici
         while noeud in self.parents:
             noeud = self.parents[noeud]
             if isinstance(noeud, (ast.FunctionDef, ast.Lambda)):
                 params = [a.arg for a in noeud.args.posonlyargs + noeud.args.args]
+                recus = None
                 if nom in params:
                     rang = params.index(nom)
-                    return [(argument(a, nom, rang), a) for a in self.appelants(noeud)]
-                if noeud.args.vararg and noeud.args.vararg.arg == nom:
-                    return [(ast.Tuple(a.args[len(params):]), a) for a in self.appelants(noeud)]
+                    recus = [(argument(a, nom, rang), a) for a in self.appelants(noeud)]
+                elif noeud.args.vararg and noeud.args.vararg.arg == nom:
+                    recus = [(ast.Tuple(a.args[len(params):]), a) for a in self.appelants(noeud)]
+                if recus is not None:
+                    return recus + affectations(ast.walk(noeud), nom)
             if isinstance(noeud, (ast.FunctionDef, ast.Module)):
                 portee = noeud.body if isinstance(noeud, ast.Module) else ast.walk(noeud)
-                affectations = [
-                    (n.value, n) for n in portee
-                    if isinstance(n, ast.Assign)
-                    and any(isinstance(c, ast.Name) and c.id == nom for c in n.targets)
-                ]
-                if affectations:
-                    return affectations
+                if trouvees := affectations(portee, nom):
+                    return trouvees
         return []
 
-    def formes_du_lancement(self, appel: ast.Call) -> list:
+    def formes_du_lancement(self, appel: ast.Call) -> list[str | None]:
         """La forme de chaque programme que `appel` peut lancer, `None` pour qui n'en prend
-        aucune."""
+        aucune ; `executable=`, quand il est passé, est le programme lancé."""
+        executable = next((mot.value for mot in appel.keywords if mot.arg == "executable"), None)
+        if executable is not None:
+            return self.formes(executable, appel, programme=True)
         if any(ast.unparse(mot) == "shell=True" for mot in appel.keywords):
             return ["shell=True"]
         return self.formes(argument(appel, "args", 0), appel, programme=False)
 
     def formes(
         self, valeur: ast.AST | None, ici: ast.AST, programme: bool, profondeur: int = 0
-    ) -> list:
+    ) -> list[str | None]:
         """La forme de chaque valeur possible d'une commande — de son programme si `programme` —,
         `None` pour une valeur qui n'en prend aucune."""
         if valeur is None or profondeur > PROFONDEUR:
@@ -137,10 +153,10 @@ class Script:
                 return ["en dur" if valeur.value in EN_DUR else None]
             if ast.unparse(valeur) == "sys.executable":
                 return ["sys.executable"]
-            resolu = any(
-                isinstance(n, ast.Call) and ast.unparse(n.func) == "shutil.which"
-                for n in ast.walk(valeur)
-            )
+            # `shutil.which(...)`, ou `shutil.which(...) or <repli>` : l'appel rend le programme.
+            if isinstance(valeur, ast.BoolOp) and isinstance(valeur.op, ast.Or):
+                valeur = valeur.values[0]
+            resolu = isinstance(valeur, ast.Call) and ast.unparse(valeur.func) == "shutil.which"
             return ["shutil.which" if resolu else None]
         if isinstance(valeur, ast.Call) and getattr(valeur.func, "id", None) in ("list", "tuple"):
             return self.formes(valeur.args[0], ici, False, suite)
@@ -156,7 +172,7 @@ def test_la_population_est_celle_du_recensement():
     trouves = [
         f"{p.parents[1].name}/{p.name}"
         for p in sorted(SKILLS.glob("*/scripts/*.py"))
-        if p.parents[1].name != "mcp-builder" and Script(p).lancements()
+        if p.parents[1].name != "mcp-builder" and Script(p.read_text(encoding="utf-8")).lancements()
     ]
     assert trouves == POPULATION
 
@@ -164,9 +180,59 @@ def test_la_population_est_celle_du_recensement():
 @pytest.mark.parametrize("script", POPULATION)
 def test_chaque_lancement_trouve_son_programme_comme_le_shell(script):
     skill, nom = script.split("/")
-    lu = Script(SKILLS / skill / "scripts" / nom)
+    lu = Script((SKILLS / skill / "scripts" / nom).read_text(encoding="utf-8"))
     hors_forme = [
         appel.lineno for appel in lu.lancements()
         if not set(lu.formes_du_lancement(appel)) <= ADMISES.keys()
     ]
     assert not hors_forme, f"{script}, lignes {hors_forme} : programme hors des formes {ADMISES}"
+
+
+# Formes de lancement écrites à la main, chacune autour d'une commande `git` en dur : seule la
+# forme nommée par le cas décide.
+PARAMETRE_REAFFECTE = """
+import subprocess
+def default_run(cmd):
+    cmd = ["pnpm", *cmd]
+    return subprocess.run(list(cmd))
+def main(argv, run=default_run):
+    run(("git", "status"))
+"""
+EXECUTABLE = """
+import subprocess
+def lancer():
+    return subprocess.run(["git", "status"], executable="pnpm")
+"""
+WHICH_INUTILISE = """
+import shutil, subprocess
+def default_run(cmd):
+    program = cmd[0] if shutil.which(cmd[0]) else cmd[0]
+    return subprocess.run([program, *cmd[1:]])
+def main(argv, run=default_run):
+    run(("git", "status"))
+"""
+AUTO_REAFFECTATION = """
+import subprocess
+def default_run(cmd):
+    cmd = list(cmd)
+    return subprocess.run(cmd)
+def main(argv, run=default_run):
+    run(("git", "status"))
+"""
+
+
+@pytest.mark.parametrize(
+    ("source", "admise"),
+    [
+        pytest.param(PARAMETRE_REAFFECTE, False, id="paramètre réaffecté avant le lancement"),
+        pytest.param(EXECUTABLE, False, id="programme passé par executable="),
+        pytest.param(WHICH_INUTILISE, False, id="shutil.which appelé mais non retenu"),
+        pytest.param(AUTO_REAFFECTATION, True, id="paramètre réaffecté à lui-même"),
+    ],
+)
+def test_une_forme_de_lancement_ecrite_a_la_main_est_admise_ou_rougit(source, admise):
+    lu = Script(source)
+    lancements = lu.lancements()
+    assert lancements
+    formes = {forme for appel in lancements for forme in lu.formes_du_lancement(appel)}
+    assert (formes <= ADMISES.keys()) is admise, formes
