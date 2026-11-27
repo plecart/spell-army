@@ -11,7 +11,7 @@ import { importNextConfig } from "./config-next.ts";
 
 // L'adresse `.vercel.app` de production, et le domaine de production vers lequel elle redirige.
 const VERCEL_APP_HOST = "spell-army.vercel.app";
-const PRODUCTION_DOMAIN = "beta.spellarmy.com";
+const PRODUCTION_DOMAIN = "spellarmy.com";
 
 /** Les redirections que la config rend au build, sous les variables système de Vercel données. */
 async function redirectsAt(
