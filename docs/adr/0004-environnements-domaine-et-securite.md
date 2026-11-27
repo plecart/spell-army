@@ -1,6 +1,6 @@
 # ADR 0004 — Environnements, domaine et sécurité
 
-- **Statut** : accepté le 2026-11-15. Précisé le 2026-11-22 : la ligne « Saisie » nomme `WIKI_DATABASE_URL`, secret de lecture du wiki (#43). Précisé le 2026-11-23 : domaine `spellarmy.com`. Précisé le 2026-11-25 : team Vercel « Spell Army », slug `spell-army`, et projet Neon `spell-army-prod` (#57).
+- **Statut** : accepté le 2026-11-15. Précisé le 2026-11-22 : la ligne « Saisie » nomme `WIKI_DATABASE_URL`, secret de lecture du wiki (#43). Précisé le 2026-11-23 : domaine `spellarmy.com`. Précisé le 2026-11-25 : team Vercel « Spell Army », slug `spell-army`, et projet Neon `spell-army-prod` (#57). Précisé le 2026-11-27 : la ligne « En-têtes » fixe une CSP sans jeton (#22).
 - **Source** : `docs/etudes/00-cadrage.md` § 1 et § 2 « Architecture » ; étude
   `08-securite-cloudflare-vercel.md`
 
@@ -38,8 +38,12 @@ Tous les leviers du plan gratuit sont activés (cadrage, Décidé) :
 - **Une seule règle de débit** sur Hobby : elle va sur `/api/mcp`.
 - **Bot Protection** en mode Log, puis Challenge. Blocage des chemins de scan (`.env`, `.git`, `wp-`).
   Aucune règle deny ou challenge ne vise la route des tâches.
-- **En-têtes** dans `next.config` : HSTS, CSP stricte, `nosniff`, `frame-ancestors 'none'`,
-  Referrer-Policy, Permissions-Policy.
+- **En-têtes** dans `next.config` : HSTS, CSP sans jeton, `nosniff`, Referrer-Policy,
+  Permissions-Policy. La CSP : `default-src 'self'`, `script-src 'self' 'unsafe-inline'`,
+  `style-src 'self' 'unsafe-inline'`, `img-src 'self' data: blob:`, `connect-src 'self' blob:`,
+  `object-src 'none'`, `base-uri 'none'`, `form-action 'self'`, `frame-ancestors 'none'` ;
+  `'unsafe-eval'` s'ajoute aux scripts en développement seulement. Les pages restent statiques et
+  servies par le CDN (ADR 0002).
 - **Attack Mode** en cas de pic : il laisse passer les tâches planifiées.
 
 ### Serveur MCP et secrets
@@ -75,6 +79,9 @@ Tous les leviers du plan gratuit sont activés (cadrage, Décidé) :
   Source : réponse d'un employé sur le
   [forum Vercel](https://community.vercel.com/t/enabling-dnssec-for-domains-purchased-through-vercel/32427),
   le 2026-01-30, sans calendrier au 2026-04-07. C'est un forum, pas la documentation.
+- Une CSP à jetons rend toutes les pages dynamiques :
+  [Content Security Policy](https://nextjs.org/docs/app/guides/content-security-policy), guide
+  Next.js mis à jour le 2026-03-20, lu le 2026-11-27.
 - `.com` et `.army` vendus par Cloudflare Registrar, lus à l'écran par le mainteneur le 2026-11-23.
 
 ## Non vérifié
