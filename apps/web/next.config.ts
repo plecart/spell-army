@@ -77,10 +77,11 @@ const nextConfig: NextConfig = {
 	},
 	// L'adresse `.vercel.app` de production redirigée vers le domaine du projet (ADR 0004, « Adresse
 	// `.vercel.app` ») : 308, chemin gardé, la requête passant d'elle-même (doc Next.js
-	// « redirects »). Lue au build, sur deux variables système de Vercel : `VERCEL_ENV`, et
-	// `VERCEL_PROJECT_PRODUCTION_URL`, le plus court des domaines personnalisés de production, sans
-	// schéma, ou le `.vercel.app` du projet qui n'en a pas (doc Vercel « System environment
-	// variables ») — la redirection y bouclerait. Une prévisualisation ne la porte jamais.
+	// « redirects »). Lue au build, sur deux variables système de Vercel (doc « System environment
+	// variables ») : `VERCEL_ENV`, et `VERCEL_PROJECT_PRODUCTION_URL`, le plus court des domaines
+	// personnalisés de production, sans schéma. Un projet sans domaine personnalisé y reçoit son
+	// `.vercel.app`, où la redirection bouclerait : elle n'est pas posée, pas plus que sur une
+	// prévisualisation.
 	async redirects() {
 		const domain = process.env.VERCEL_PROJECT_PRODUCTION_URL;
 		if (
