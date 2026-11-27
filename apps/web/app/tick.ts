@@ -103,12 +103,14 @@ async function ping(url: string | undefined): Promise<void> {
 		return;
 	}
 	try {
-		const { ok, status } = await fetch(url, {
+		const response = await fetch(url, {
 			signal: AbortSignal.timeout(PING_TIMEOUT_MS),
 		});
-		if (!ok) {
-			console.error(`Tic : ${PING_FAILED}`, `statut ${status}`);
+		if (!response.ok) {
+			console.error(`Tic : ${PING_FAILED}`, `statut ${response.status}`);
 		}
+		// Le corps n'est pas lu : l'annuler libère la connexion sans attendre le ramasse-miettes.
+		await response.body?.cancel();
 	} catch (cause) {
 		// Le nom seul : le message d'un rejet peut recopier l'adresse.
 		console.error(
