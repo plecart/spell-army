@@ -1,6 +1,6 @@
 # ADR 0004 — Environnements, domaine et sécurité
 
-- **Statut** : accepté le 2026-11-15. Précisé le 2026-11-22 : la ligne « Saisie » nomme `WIKI_DATABASE_URL`, secret de lecture du wiki (#43). Précisé le 2026-11-23 : domaine `spellarmy.com`. Précisé le 2026-11-25 : team Vercel « Spell Army », slug `spell-army`, et projet Neon `spell-army-prod` (#57). Précisé le 2026-11-27 : la ligne « En-têtes » fixe une CSP sans jeton (#22).
+- **Statut** : accepté le 2026-11-15. Précisé le 2026-11-22 : la ligne « Saisie » nomme `WIKI_DATABASE_URL`, secret de lecture du wiki (#43). Précisé le 2026-11-23 : domaine `spellarmy.com`. Précisé le 2026-11-25 : team Vercel « Spell Army », slug `spell-army`, et projet Neon `spell-army-prod` (#57). Précisé le 2026-11-27 : la ligne « En-têtes » fixe une CSP sans jeton, et la ligne « Adresse `.vercel.app` » exclut la route du tic de la redirection (#22).
 - **Source** : `docs/etudes/00-cadrage.md` § 1 et § 2 « Architecture » ; étude
   `08-securite-cloudflare-vercel.md`
 
@@ -26,7 +26,7 @@ deux pièges, au prix de deux réglages à tenir.
 | Registrar | Cloudflare Registrar, au prix coûtant. Le mainteneur achète lui-même. Domaine : `spellarmy.com`, acheté le 2026-11-23, DNSSEC lancé par Cloudflare à l'achat. | Accepté le 2026-11-15 |
 | Adresses | Prod sur le domaine nu, `www` redirigé vers lui ; pré-prod sur `beta.<domaine>`. | Accepté le 2026-11-15 |
 | DNS | Cloudflare en DNS seul (nuage gris), avec DNSSEC. Aucun proxy devant Vercel. | Décidé (cadrage) |
-| Adresse `.vercel.app` | Elle ne peut pas être supprimée. Dans chaque projet, une redirection permanente (308), limitée à l'hôte `.vercel.app` de production, envoie vers le domaine en gardant le chemin. Les autres adresses générées restent derrière la protection. | Accepté le 2026-11-15 |
+| Adresse `.vercel.app` | Elle ne peut pas être supprimée. Dans chaque projet, une redirection permanente (308), limitée à l'hôte `.vercel.app` de production, envoie vers le domaine en gardant le chemin, sauf la route du tic (`/api/tic`), que Vercel Schedules peut appeler sur cette adresse. Les autres adresses générées restent derrière la protection. | Accepté le 2026-11-15 |
 
 ### Protections Vercel
 
