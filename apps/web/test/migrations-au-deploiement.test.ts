@@ -9,7 +9,18 @@ const MIGRATION_COMMAND = readFileSync(
 	"utf8",
 ).match(/^- migration +: `([^`]+)`/m)?.[1];
 
+// Le script `build` d'`apps/web`.
+const BUILD_SCRIPT = JSON.parse(
+	readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+).scripts.build;
+
 describe("migrations au déploiement", () => {
+	test("le build migre après next build : un build en échec ne laisse aucune base migrée sous l'ancien déploiement", () => {
+		expect(BUILD_SCRIPT).toBe(
+			"next build && node scripts/migrer-en-production.ts",
+		);
+	});
+
 	test("un déploiement de production lance une fois la commande migration du projet", () => {
 		const run = vi.fn<(command: string, args: string[]) => void>();
 		expect(migrateOnProductionDeploy({ VERCEL_ENV: "production" }, run)).toBe(
@@ -35,7 +46,7 @@ describe("migrations au déploiement", () => {
 		expect(run).not.toHaveBeenCalled();
 	});
 
-	test("la commande du build, hors de Vercel, ne migre rien et le dit", async () => {
+	test("l'étape de migration du build, hors de Vercel, ne migre rien et le dit", async () => {
 		expect(
 			await runScript("migrer-en-production.ts", [], { VERCEL_ENV: undefined }),
 		).toEqual({
