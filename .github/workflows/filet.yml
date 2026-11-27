@@ -1,0 +1,44 @@
+# Le filet du tic de l'import (ADR 0002, ligne « Filet ») : toutes les 6 heures, et à la demande, il
+# appelle la route du tic de chaque environnement, comme Vercel Schedules chaque heure. Il n'ajoute
+# rien si le tic tourne, grâce au verrou et à l'idempotence ; il prend le relais si Schedules est
+# bloqué ou en panne (docs/exploitation.md, « Tic de l'import »).
+#
+# Toute réponse en erreur, 4xx ou 5xx, fait échouer le job — un 401 comme un 500
+# (`--fail-with-body`, qui écrit aussi le corps reçu) : hypothèse retenue en attendant le choix du
+# mainteneur (question [V] de la PR #76). Jusqu'à la saisie de la clé HikerAPI (#23), la route
+# répond 500, « configuration de l'import incomplète », et le filet est rouge.
+name: Filet du tic
+
+# Aucun pas ne lit le dépôt ni n'écrit : le jeton ne reçoit aucun droit (convention de `ci.yml`).
+permissions: {}
+
+on:
+  # En UTC, à la demi-heure : décalé du tic de Schedules, qui part entre HH:00 et HH:15. `schedule`
+  # ne part que de la branche par défaut, et GitHub le désactive dans un dépôt public resté 60 jours
+  # sans activité, comme `ci.yml` le note.
+  schedule:
+    - cron: "30 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  tic:
+    runs-on: ubuntu-latest
+    # Le tic court jusqu'à 240 s, sous les 300 s de sa route : `curl` l'attend 300 s au plus.
+    timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      # Un environnement GitHub par environnement servi, qui porte son propre secret `CRON_SECRET`
+      # (ADR 0004, « Saisie ») : la production s'ajoutera d'une ligne et d'un environnement.
+      matrix:
+        include:
+          - environment: beta
+            url: https://beta.spellarmy.com/api/tic
+    environment: ${{ matrix.environment }}
+    steps:
+      # Le secret et l'adresse passent par l'environnement, jamais développés dans la commande.
+      - name: Appelle le tic
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          URL: ${{ matrix.url }}
+        run: |
+          curl --fail-with-body --silent --show-error --max-time 300 -X POST -H "Authorization: Bearer $CRON_SECRET" "$URL"
