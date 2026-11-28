@@ -101,6 +101,12 @@ Ce qui marche si on s'y prend bien : Full (strict), cache désactivé, chemins `
 1. Domaine : DNS chez Cloudflare en **DNS seul** (nuage gris), certificat Vercel vérifié.
 2. **DNSSEC** activé, DS posé (automatique si registrar Cloudflare).
 3. `next.config` : HSTS (`includeSubDomains; preload` si le domaine s'y prête), CSP stricte, `nosniff`, `frame-ancestors 'none'`, Referrer-Policy, Permissions-Policy.
+   Précisé le 2026-11-27 (#22) : la CSP est posée sans jeton, avec `'unsafe-inline'` pour les
+   scripts et les styles, `data:` et `blob:` pour les images, `blob:` pour les requêtes. Une CSP à
+   jetons rend toutes les pages dynamiques (guide Next.js « Content Security Policy », mis à jour le
+   2026-03-20, lu le 2026-11-27) et retire le cache CDN dont l'ADR 0002 a besoin contre la pause du
+   plan Hobby. La CSP stricte du brief de #22 bloquait les attributs `style=` du site, ses fonds SVG
+   en `data:` et les URL `blob:` des vignettes et de la scène 3D : écartée. HSTS sans `preload`.
 4. Variables Sensitive : jeton MCP, `CRON_SECRET`.
 5. Deployment Protection : Standard Protection (Vercel Authentication sur les previews) ; **ne pas** choisir « All Deployments », qui fermerait le site public.
 6. Bot Protection en Log puis Challenge ; AI Bots selon la politique voulue.

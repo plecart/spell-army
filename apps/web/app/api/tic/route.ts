@@ -8,10 +8,12 @@ export const maxDuration = 300;
 
 /**
  * Le tic horaire de l'import (ADR 0002, « Une seule tâche »), qu'appellent Vercel Schedules et le
- * filet GitHub Actions en `POST`, avec `Authorization: Bearer <CRON_SECRET>`.
+ * filet GitHub Actions en `POST`, avec `Authorization: Bearer <CRON_SECRET>`. Réussi, il envoie son
+ * signal à `HEALTHCHECKS_PING_URL`.
  */
 export const POST = createTickEndpoint({
 	secret: () => process.env.CRON_SECRET,
 	database,
 	provider: followerProvider,
+	pingUrl: () => process.env.HEALTHCHECKS_PING_URL,
 });

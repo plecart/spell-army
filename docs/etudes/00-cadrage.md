@@ -1,6 +1,6 @@
 # Spell Army — Cadrage
 
-État au 2026-11-25. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
+État au 2026-11-27. Ce document rassemble ce qui a été décidé en conversation. Les ADR (`docs/adr/`),
 le [game design](../game-design.md) et la [direction artistique](../direction-artistique.md) en détaillent des parties ; il sert de source au PRD.
 
 Trois statuts, à ne pas confondre :
@@ -18,12 +18,12 @@ Trois statuts, à ne pas confondre :
 - **Les deux objectifs d'apprentissage** : les MCP et Vercel.
 - **Le nom** : Spell Army, en deux mots et deux majuscules, pour tout texte lu par une personne,
   noms des dossiers locaux compris (`Spell Army`). Les identifiants l'écrivent en minuscules, les
-  deux mots liés par un tiret : `spell-army` pour le dépôt, le paquet, le serveur MCP, les projets
+  deux mots liés par un tiret : `spell-army` pour le dépôt, le paquet, le serveur MCP, le projet
   Neon, la team Vercel et le conteneur Docker. Compte Instagram de prod `@spell_army`, nom de profil
   « Spell Army ». Domaine `spellarmy.com`.
 - **Deux phases** : (1) joueurs, personnages, moteur de combat, site ; (2) vidéo.
-- **Deux environnements** : pré-prod sur le compte Instagram personnel du mainteneur (public),
-  prod sur un compte neuf dédié.
+- **Deux environnements sur le compte dédié du jeu** : la prod, et une pré-prod publique qui
+  prépare les prochaines fonctionnalités sur une copie des données de la prod.
 
 ## 2. Décisions
 
@@ -80,17 +80,17 @@ Trois statuts, à ne pas confondre :
 
 | Sujet | Décision | Statut |
 |---|---|---|
-| Hébergement | Next.js sur Vercel : une seule application pour le site, le serveur MCP et les tâches planifiées, déployée dans un projet Vercel par environnement ([ADR 0004](../adr/0004-environnements-domaine-et-securite.md)). | Décidé |
-| Base | Neon (Postgres), deux projets séparés pré-prod et prod ; Drizzle. | Décidé |
+| Hébergement | Next.js sur Vercel : une seule application pour le site, le serveur MCP et les tâches planifiées, déployée dans un seul projet Vercel : la pré-prod suit `main` ; la prod est le commit de `main` qu'un tag `vX.Y.Z` désigne, promu en production ([ADR 0004](../adr/0004-environnements-domaine-et-securite.md)). | Décidé |
+| Base | Neon (Postgres), un seul projet : sa branche par défaut porte la prod, sa branche `preprod` en est une copie, recopiée depuis la prod quand le mainteneur le décide ; Drizzle. | Décidé |
 | Découpage | Monorepo pnpm, un paquet par domaine ([ADR 0001](../adr/0001-architecture-applicative.md), « Paquets ») ; le paquet d'affichage 3D, commun au site et à la vidéo, n'arrive qu'en phase 2. | Décidé |
 | Plan Vercel | Gratuit tant qu'on n'est pas bloqué, puis Pro. | Décidé |
 | Portabilité | Pouvoir migrer ailleurs : aucune règle du jeu dans une fonction propre à Vercel. Pas de Workflows au départ ([ADR 0001](../adr/0001-architecture-applicative.md)). | Décidé |
 | File d'attente | Pas de Redis ni de service auto-hébergé : la base note où l'import s'est arrêté ([ADR 0001](../adr/0001-architecture-applicative.md), [ADR 0002](../adr/0002-taches-planifiees-et-auto-reparation.md)). | Décidé |
-| Planification | Vercel Schedules (en bêta) : un tic horaire rejouable par environnement, doublé d'un filet GitHub Actions ([ADR 0002](../adr/0002-taches-planifiees-et-auto-reparation.md)). | Décidé |
+| Planification | Vercel Schedules (en bêta) : un tic horaire rejouable en prod, doublé d'un filet GitHub Actions ; la pré-prod n'importe pas ([ADR 0002](../adr/0002-taches-planifiees-et-auto-reparation.md)). | Décidé |
 | Back-office | Aucun. Un serveur MCP, piloté depuis Claude, le remplace. | Décidé |
 | Authentification MCP | Jeton fixe en v1 (seul le poste du mainteneur) ; OAuth plus tard. | Décidé |
 | Cloudflare | DNS seul avec DNSSEC. La sécurité est portée par Vercel, tous les leviers du plan gratuit activés. | Décidé |
-| Pré-prod et prod | Toutes deux visibles en public. La pré-prod montre les personnages issus des abonnés du compte personnel du mainteneur et renvoie vers ce compte ; la prod, ceux du compte dédié. | Décidé |
+| Pré-prod et prod | Toutes deux visibles en public, sur le compte du jeu : la prod sur le domaine nu, la pré-prod sur `beta.<domaine>`, avec les données de la prod copiées à la création de sa branche Neon puis recopiées à la demande. | Décidé |
 | Bandeau bêta | La pré-prod affiche un bandeau « bêta » pour qu'on ne la confonde pas avec la prod. Il est piloté par une variable d'environnement, pas par du code propre à chaque environnement. | Décidé |
 | Nom de domaine | Un domaine entièrement au nom du projet : aucune adresse Vercel visible par le public. `spellarmy.com`, acheté chez Cloudflare Registrar le 2026-11-23 ([ADR 0004](../adr/0004-environnements-domaine-et-securite.md)). | Décidé |
 | Secrets | Tout ce qui est sensible (jetons, mots de passe des comptes, codes de récupération) est conservé dans KeePassXC, qui fait référence. Aucun secret dans le dépôt, dans une issue ou dans une conversation. En fin de projet, le mainteneur sauvegarde la base sur un disque externe. | Décidé |
@@ -139,7 +139,8 @@ Tranchés depuis :
 - Page d'information et retrait d'un joueur (RGPD) : [ADR 0003](../adr/0003-import-des-abonnes.md).
 - Direction artistique, organisation du site, format et fabrication des modèles 3D : [direction artistique](../direction-artistique.md), qui garde
   ses propres points ouverts (§ 9).
-- Où acheter le domaine (Cloudflare Registrar) et pré-prod sur deux projets Vercel :
+- Où acheter le domaine (Cloudflare Registrar) ; pré-prod sur une branche d'un seul projet Vercel
+  et d'un seul projet Neon, livraison par tag (2026-11-27) :
   [ADR 0004](../adr/0004-environnements-domaine-et-securite.md).
 - Nom du jeu et domaine : Spell Army, `spellarmy.com` ([ADR 0004](../adr/0004-environnements-domaine-et-securite.md)).
 

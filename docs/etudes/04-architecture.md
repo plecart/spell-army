@@ -50,6 +50,13 @@ Le Portfolio ne contient **aucune trace de Vercel, Neon ni Supabase** ; son MCP 
 - Auth, RLS, Storage : **aucun besoin** (accès par le serveur). Deux projets Pro = 50 $/mois ; en gratuit, le site tomberait après une semaine calme.
 - [V] Neon gratuit : 1 Go/projet, 100 projets, suspension à 5 min mais **reprise automatique**, restauration 6 h, 10 branches, branche par preview Vercel. MCP officiel (OAuth ou clé, lecture seule, déconseillé en production).
 - Deux **projets** plutôt que des branches : une branche copie son parent, or la preprod (abonnés du compte perso) ne doit pas partager le lignage de la prod.
+  Inversé le 2026-11-27 (#22) : la pré-prod quitte le compte personnel pour le compte du jeu, et sa
+  base devient la branche `preprod` du projet de prod, recopiée à la demande, sans import. Côté
+  Vercel, un seul projet : `main` est la pré-prod, un tag `vX.Y.Z` promeut son commit en production.
+  Écartés : deux projets Vercel (deux jeux de réglages pour un même site) ; une branche Git `prod`
+  (le mainteneur ne veut gérer qu'une branche) ; la « production en attente » de Vercel, qui
+  construirait chaque commit de `main` avec les variables de prod. Répercuté : cadrage § 1 et § 2,
+  ADR 0001 « Base », ADR 0002, ADR 0003 « RGPD », ADR 0004 § Environnements, Protections, Saisie.
 - [S] CGU commerciales des offres gratuites Neon/Supabase non lues : à relire avant un partenariat.
 
 ### 3 ter. MCP et authentification

@@ -1,5 +1,5 @@
 # Publie le wiki du jeu (issue #43) : régénère toutes ses pages depuis les sources du dépôt et la
-# table `spells` de `spell-army-prod`, puis les pousse sur le dépôt wiki. Documentation dérivée
+# table `spells` de `spell-army`, puis les pousse sur le dépôt wiki. Documentation dérivée
 # (`.claude/pipeline.config.md`, « Documentation dérivée ») : une édition à la main du wiki est
 # écrasée à la publication suivante. Les actions sont épinglées par SHA, comme dans `ci.yml`.
 name: Wiki

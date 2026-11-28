@@ -1,0 +1,97 @@
+# La livraison (ADR 0004, § Environnements, ligne « Un projet Vercel ») : un tag `vX.Y.Z` poussé
+# sur un commit de `main` promeut en production le déploiement de pré-prod de ce commit, que Vercel
+# reconstruit avec les variables de Production (docs/exploitation.md, « Livrer »).
+#
+# Lu le 2026-11-27 :
+# - doc Vercel « Environments » (mise à jour le 2026-09-17), question « Can I promote a preview
+#   deployment to production? » : la promotion d'une prévisualisation la reconstruit avec les
+#   variables de Production. Doc « vercel promote » (2026-07-15) : promouvoir un déploiement
+#   Preview en crée un de production, confirmé par `--yes`, et la commande n'attend pas son build ;
+#   doc « vercel inspect » (2026-03-17) : `--wait` l'attend, et sort en 1 à l'expiration de
+#   `--timeout`. L'API `POST /v10/projects/{id}/promote/{deploymentId}` promeut sans reconstruire :
+#   elle ne sert pas ici.
+# - sources JS de la CLI 67.0.0 (`@vercel/cli-support`) : `promote --yes` d'un déploiement qui
+#   n'est pas de production crée par `POST /v13/deployments` un déploiement `target: production`
+#   depuis lui, et `--json` rend son identifiant sous `deployment.id` ; `inspect --wait` sort aussi
+#   en 1 sur un build `ERROR` ou `CANCELED`. La CI lance le binaire natif linux-x64 de la même
+#   version, non lu : qu'il s'y conforme est non vérifié (`--json` figure à son `promote --help`,
+#   binaire win32-x64, relevé le même jour).
+# - doc API « List deployments » (`GET /v7/deployments`, 2026-11-27) : filtres `projectId`, `sha`,
+#   `branch`, `target` et `state`. Doc « vercel api » (2026-10-06) : la commande appelle l'API avec
+#   l'authentification de la CLI et écrit le JSON sur une ligne quand sa sortie est capturée.
+# - doc « Global Options » (2026-11-14) : la CLI lit le jeton dans `VERCEL_TOKEN`, recommandé en CI
+#   plutôt que `--token`, qu'on lit dans la liste des processus ; `--scope` accepte l'identifiant
+#   de la team.
+#
+# Non vérifié : un premier passage réel, après la saisie par le mainteneur du jeton et des deux
+# variables ; qu'une Release GitHub qui crée son tag déclenche ce `push`.
+name: Livraison
+
+# Rien n'écrit sur le dépôt : le jeton ne reçoit que la lecture (convention de `ci.yml`).
+permissions:
+  contents: read
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+# Une livraison à la fois, jamais interrompue ; une livraison en attente cède sa place à la plus
+# récente (doc GitHub « Control the concurrency of workflows and jobs », lue le 2026-11-27).
+concurrency:
+  group: livraison
+  cancel-in-progress: false
+
+jobs:
+  promouvoir:
+    runs-on: ubuntu-latest
+    # Le build de production s'attend 25 min au plus (`inspect --timeout`), sous cette borne.
+    timeout-minutes: 30
+    # Le secret `VERCEL_TOKEN` et les variables `VERCEL_ORG_ID` (la team) et `VERCEL_PROJECT_ID`
+    # vivent dans l'environnement GitHub `production` (ADR 0004, « Saisie »). La CLI lit ces trois
+    # noms elle-même ; ils passent par l'environnement, jamais développés dans un script.
+    environment: production
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      # Version exacte, épinglée à la main : Dependabot ne suit pas une ligne `run:` (comme pytest
+      # dans `ci.yml`). Node et `jq` viennent de l'image `ubuntu-latest`.
+      VERCEL_CLI: vercel@67.0.0
+    steps:
+      # Tout l'historique : le clone complet écrit `refs/remotes/origin/main`
+      # (`getRefSpecForAllHistory` d'`actions/checkout`, comme `ci.yml` le note).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Sur un `push`, `GITHUB_SHA` est le commit poussé (doc GitHub « Events that trigger
+      # workflows », `push`, lue le 2026-11-27) : ici, celui que le tag désigne.
+      - name: Vérifie que le commit tagué est sur main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Le tag $GITHUB_REF_NAME désigne $GITHUB_SHA, absent de main : rien n'est promu."
+            exit 1
+          fi
+
+      # Le déploiement retenu doit porter le commit tagué (`meta.githubCommitSha`, la clé que la doc
+      # « vercel list » donne pour filtrer par commit) : un filtre ignoré par l'API ne fait jamais
+      # promouvoir un autre commit.
+      - name: Promeut en production la pré-prod de ce commit
+        run: |
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            [ -n "${!name}" ] || { echo "::error::$name manque à l'environnement GitHub production : rien n'est promu."; exit 1; }
+          done
+          vercel() { npx --yes "$VERCEL_CLI" "$@" --scope "$VERCEL_ORG_ID"; }
+          preprod=$(vercel api "/v7/deployments?projectId=$VERCEL_PROJECT_ID&sha=$GITHUB_SHA&branch=main&target=preview&state=READY&limit=1") || { echo "::error::La liste des déploiements a échoué (jeton, portée ou API) : rien n'est promu."; exit 1; }
+          url=$(jq -r --arg sha "$GITHUB_SHA" '.deployments[0] | select(.meta.githubCommitSha == $sha) | .url' <<<"$preprod")
+          if [ -z "$url" ]; then
+            echo "::error::Aucun déploiement de pré-prod prêt (Preview, branche main, READY) pour $GITHUB_SHA : rien n'est promu. Réponse de l'API : $preprod"
+            exit 1
+          fi
+          production=$(vercel promote "https://$url" --yes --json)
+          if ! id=$(jq -er '.deployment.id' <<<"$production"); then
+            echo "::error::Promotion demandée, mais sa réponse ne nomme aucun déploiement à attendre : suivre son build dans Vercel. Réponse : $production"
+            exit 1
+          fi
+          vercel inspect "$id" --wait --timeout 25m

@@ -175,6 +175,28 @@ async function freshEndpoint(token: () => string | undefined = () => TOKEN) {
 }
 
 /**
+ * Appelle `regler_part` sous les en-têtes `headers`, sur un point d'entrée neuf au jeton configuré
+ * que rend `token` : l'appel échoue, sans que la base soit demandée, l'outil exécuté ni une ligne
+ * d'audit écrite. Rend les réponses du point d'entrée, au moins une.
+ */
+async function refusedCall(
+	headers: Record<string, string>,
+	token?: () => string | undefined,
+) {
+	const { db, database, tools, serve, responses } = await freshEndpoint(token);
+	const callTool = async () => {
+		const client = await connectClient(serve, headers);
+		await client.callTool({ name: "regler_part", arguments: { part: 0.5 } });
+	};
+	await expect(callTool()).rejects.toThrow();
+	expect(responses).not.toHaveLength(0);
+	expect(database).not.toHaveBeenCalled();
+	expect(tools.setShare.run).not.toHaveBeenCalled();
+	expect(await auditRows(db)).toEqual([]);
+	return responses;
+}
+
+/**
  * Simule un gestionnaire qui émet un message avant son résultat, première voie vers le SSE
  * (ADR 0005, « Sans SSE ») : aucun outil n'a encore de quoi émettre.
  */
@@ -220,26 +242,37 @@ describe("point d'entrée du serveur MCP", () => {
 	])(
 		"401, %s : l'outil n'est pas exécuté, rien n'est écrit",
 		async (_, headers, configuredToken) => {
-			const { db, database, tools, serve, responses } = await freshEndpoint(
-				() => configuredToken,
-			);
-			const callTool = async () => {
-				const client = await connectClient(serve, headers);
-				await client.callTool({
-					name: "regler_part",
-					arguments: { part: 0.5 },
-				});
-			};
-			await expect(callTool()).rejects.toThrow();
+			const responses = await refusedCall(headers, () => configuredToken);
 			const challenges = responses.map((response) => [
 				response.status,
 				response.headers.get("www-authenticate"),
 			]);
-			expect(challenges).not.toHaveLength(0);
 			expect(challenges).toEqual(challenges.map(() => [401, "Bearer"]));
-			expect(database).not.toHaveBeenCalled();
-			expect(tools.setShare.run).not.toHaveBeenCalled();
-			expect(await auditRows(db)).toEqual([]);
+		},
+	);
+
+	// Aucun client navigateur n'est prévu : tout `Origin` non vide est refusé, avant le jeton. Sans
+	// `Origin`, la requête de Claude Code, les autres tests de ce fichier passent.
+	test.each<[string, Record<string, string>]>([
+		[
+			"une origine étrangère, avec le bon jeton",
+			{ origin: "https://ailleurs.example", authorization: AUTHORIZATION },
+		],
+		[
+			"une origine étrangère, sans jeton : l'origine se contrôle d'abord",
+			{ origin: "https://ailleurs.example" },
+		],
+		[
+			"l'origine opaque null, avec le bon jeton",
+			{ origin: "null", authorization: AUTHORIZATION },
+		],
+	])(
+		"403, %s : l'outil n'est pas exécuté, rien n'est écrit",
+		async (_, headers) => {
+			const statuses = (await refusedCall(headers)).map(
+				(response) => response.status,
+			);
+			expect(statuses).toEqual(statuses.map(() => 403));
 		},
 	);
 
